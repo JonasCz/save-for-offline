@@ -37,19 +37,18 @@ public class SaveService extends IntentService {
 	public void onHandleIntent(Intent intent) {
 
 		mBuilder = new Notification.Builder(this)
-			.setSmallIcon(R.drawable.ic_notify_save)
 			.setContentTitle("Saving webpage...")
 			.setOngoing(true)
 			.setOnlyAlertOnce(true)
 			.setPriority(Notification.PRIORITY_HIGH)
 			.setContentText("Save in progress");
 
-		startForeground(notification_id, mBuilder.build());
+		//startForeground(notification_id, mBuilder.build());
 		mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-		//mNotificationManager.notify(notification_id, mBuilder.build());
-
-
 		mBuilder.setTicker("Saving webpage...");
+		mBuilder.setSmallIcon(android.R.drawable.stat_sys_download);
+		mNotificationManager.notify(notification_id, mBuilder.build());
+		
 		webview = new WebView(this);
 
 		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
@@ -84,9 +83,15 @@ public class SaveService extends IntentService {
 
 		webview.setWebChromeClient(new WebChromeClient() {
 				public void onProgressChanged(WebView view, int progress) {
-
-					mBuilder.setProgress(100, progress, false);
-					mNotificationManager.notify(notification_id, mBuilder.build());
+					
+					if (webviewHasLoaded) {
+						mBuilder.setProgress(100, progress, false);
+						mNotificationManager.notify(notification_id, mBuilder.build());
+					} else {
+						mBuilder.setProgress(0, 0, false);
+						mBuilder.setSmallIcon(android.R.drawable.stat_sys_warning);
+						mNotificationManager.notify(notification_id, mBuilder.build());
+					}
 
 
 				}
@@ -97,9 +102,9 @@ public class SaveService extends IntentService {
 				@Override
 				public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
 					
-					if (failingUrl.equalsIgnoreCase(origurl)) {
+					if (failingUrl.equalsIgnoreCase(origurl) || webview.getTitle().equalsIgnoreCase("webpage not available")) {
 					webviewHasLoaded = false;
-					
+					mBuilder.setSmallIcon(android.R.drawable.stat_notify_error);
 					mBuilder.setContentText(description + " Tap to retry.");
 					mBuilder.setTicker("Page not saved: " + description);
 					// Removes the progress bar
@@ -128,6 +133,7 @@ public class SaveService extends IntentService {
 						mBuilder.setProgress(0, 0, false);
 						mBuilder.setOngoing(false);
 						mBuilder.setOnlyAlertOnce(false);
+						mBuilder.setSmallIcon(R.drawable.ic_notify_save);
 						mBuilder.setPriority(Notification.PRIORITY_LOW);
 						mBuilder.setContentTitle("Savd webpage");
 						mNotificationManager.notify(notification_id, mBuilder.build());
