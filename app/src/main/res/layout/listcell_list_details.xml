@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="match_parent"
+	android:layout_height="fill_parent"
+	android:padding="8dp"
+	android:background="#E2E2E2"
+	android:id="@+id/gridCellLayout">
+
+	<ImageView
+		android:id="@+id/listimage"
+		android:layout_width="200dp"
+		android:layout_height="match_parent"
+		android:layout_alignParentBottom="true"
+		android:layout_alignParentTop="true"
+		android:layout_marginRight="8dp"
+		android:contentDescription="TODO"
+		android:src="@drawable/ic_launcher"
+		android:adjustViewBounds="true"/>
+
+	<TextView
+		android:id="@+id/txt_title"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:layout_toRightOf="@id/listimage"
+		android:text="Title"
+		android:textSize="16sp"/>
+
+	<TextView
+		android:id="@+id/txt_orig_url"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:text="Original URL"
+		android:layout_toRightOf="@id/listimage"
+		android:layout_below="@id/txt_title"
+		android:textSize="12sp"/>
+
+	<TextView
+		android:id="@+id/txt_date"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:text="Saved one week ago"
+		android:layout_toRightOf="@id/listimage"
+		android:layout_below="@id/txt_orig_url"
+		android:textSize="12sp"
+		android:layout_alignParentBottom="true"
+		android:gravity="bottom"/>
+
+	<TextView
+		android:id="@+id/txt_id"
+		android:layout_width="wrap_content"
+		android:layout_height="0dp"
+		android:layout_weight="1"
+		android:height="0dp"
+		android:visibility="gone"/>
+
+	<TextView
+		android:id="@+id/txt_fileLocation"
+		android:layout_width="wrap_content"
+		android:layout_height="0dp"
+		android:height="0dp"
+		android:layout_weight="1"
+		android:visibility="gone"/>
+
+</RelativeLayout>
+

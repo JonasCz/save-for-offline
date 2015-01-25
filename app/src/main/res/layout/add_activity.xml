@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+	
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	android:orientation="vertical"
+	android:id="@+id/addActivityLayout"
+	android:padding="5dp">
+
+	<TextView
+		android:id="@+id/frst_txtV"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:text="Enter URL address (Must include the http:// bit)"
+		android:layout_marginTop="10dp"
+		android:inputType="textUri"
+		android:layout_marginLeft="10dp"/>
+
+	<EditText
+		android:id="@+id/frst_editTxt"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginTop="10dp"
+		android:hint="http://example.com/example"
+		android:maxLines="1"
+		android:inputType="textUri"
+		android:layout_below="@id/frst_txtV"
+		android:layout_marginBottom="10dp"
+		android:layout_marginRight="60dp"/>
+
+	<Button
+		android:layout_height="40dp"
+		style="?android:attr/buttonStyleSmall"
+		android:text="Paste"
+		android:layout_width="wrap_content"
+		android:layout_below="@id/frst_txtV"
+		android:layout_marginTop="10dp"
+		android:layout_alignParentRight="true"
+		android:onClick="btn_paste"
+		android:id="@+id/pasteButton"/>
+
+	<LinearLayout
+		style="?android:attr/buttonBarStyle"
+		android:layout_height="wrap_content"
+		android:layout_width="match_parent"
+		android:orientation="horizontal"
+		android:layout_below="@id/frst_editTxt"
+		android:id="@+id/addactivityLinearLayout1">
+		
+		<Button
+			
+			style="?android:attr/buttonBarButtonStyle"
+			android:id="@+id/cancel_btn"
+			android:layout_height="wrap_content"
+			android:text="Cancel"
+			android:layout_width="match_parent"
+			android:onClick="cancelButtonClick"
+			android:layout_weight="0.5"/>
+		
+
+		<Button
+			style="?android:attr/buttonBarButtonStyle"
+			android:id="@+id/save_btn"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:text="OK"
+			android:onClick="okButtonClick"
+			android:layout_weight="0.5"/>
+
+		
+	</LinearLayout>
+
+</RelativeLayout>
+

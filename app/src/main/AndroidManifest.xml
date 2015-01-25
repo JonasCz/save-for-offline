@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="jonas.tool.saveForOffline" 
+	android:hardwareAccelerated="true"
+	android:versionCode="2" 
+	android:versionName="1.2.1">
+	<uses-permission android:name="android.permission.INTERNET"/>
+	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/actionBarLightRedTheme" >
+		
+        <activity
+            android:name=".MainActivity"
+            android:label="@string/app_name"
+			>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+		<activity
+            android:name=".AddActivity"
+            android:theme="@android:style/Theme.Holo.Light.Dialog" >
+			<intent-filter>
+				<action android:name="android.intent.action.SEND" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:mimeType="text/plain" />
+			</intent-filter>
+	
+        </activity>
+		<activity
+            android:name=".ViewActivity"
+            
+			android:parentActivityName=".MainActivity">
+        </activity>
+		<activity
+            android:name=".SaveActivity"
+            android:theme="@android:style/Theme.Holo.Light.Dialog" >
+        </activity>
+		
+		<activity
+            android:name=".FirstRunDialog"
+            android:theme="@android:style/Theme.Holo.Light.Dialog" >
+        </activity>
+		
+		<activity
+            android:name=".Preferences"
+             >
+        </activity>
+		
+		<service android:name="jonas.tool.saveForOffline.SaveService" />
+    </application>
+
+</manifest>

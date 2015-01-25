@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v4.widget.DrawerLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:id="@+id/drawer_layout"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent">
+
+	<LinearLayout
+		android:layout_height="wrap_content"
+		android:layout_width="wrap_content"
+		android:orientation="vertical">
+
+		<GridView
+			xmlns:tools="http://schemas.android.com/tools"
+			android:id="@+id/List"
+			android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:columnWidth="200dp"
+			android:horizontalSpacing="5dp"
+			android:numColumns="1"
+			android:stretchMode="columnWidth"
+			android:verticalSpacing="5dp"/>
+
+		<TextView
+			android:layout_height="wrap_content"
+			android:text="No Saved Pages"
+			android:textAppearance="?android:attr/textAppearanceMedium"
+			android:layout_width="wrap_content"
+			android:id="@+id/textNoSavedPages"
+			android:layout_gravity="center_horizontal"
+			android:paddingTop="48dp"/>
+
+		<TextView
+			android:layout_height="wrap_content"
+			android:text="To save a webpage, choose 'Share' in your web browser, and then choose 'Save For Offline'."
+			android:textAppearance="?android:attr/textAppearanceSmall"
+			android:layout_width="wrap_content"
+			android:id="@+id/how_to_text"
+			android:layout_gravity="center_horizontal"/>
+
+	</LinearLayout>
+
+	<LinearLayout
+		android:layout_height="match_parent"
+		android:orientation="vertical"
+		android:layout_width="240dp"
+		android:background="#E2E2E2"
+		android:layout_gravity="start">
+
+		<TextView
+			android:layout_height="wrap_content"
+			android:text="Nothing to display here"
+			android:textAppearance="?android:attr/textAppearanceMedium"
+			android:layout_width="wrap_content"
+			android:layout_gravity="center_horizontal"/>
+
+		<ListView
+			android:id="@+id/left_drawer_list"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:choiceMode="singleChoice"
+			android:divider="@android:color/transparent"
+			android:dividerHeight="0dp"/>
+
+	</LinearLayout>
+
+</android.support.v4.widget.DrawerLayout>
+

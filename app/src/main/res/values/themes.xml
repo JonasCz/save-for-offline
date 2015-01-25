@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+	<resources>
+		<style name="actionBarLightRedTheme" parent="@android:style/Theme.Holo.Light" >
+			<item name="android:actionBarStyle">@style/themeLightRed</item>
+			<item name="android:actionModeStyle">@style/themeLightRed</item>
+			<item name="android:popupMenuStyle">@style/popupMenu</item>	
+		</style>
+		
+		<style name="themeLightRed" parent="@android:style/Widget.Holo.Light.ActionBar.Solid">
+			 <item name="android:background">#FFC107</item>
+		</style>
+		
+		<style name="popupMenu" parent="@android:Widget.Holo.Light.ListPopupWindow">
+			  <item name="android:background">#FFC107</item>
+		</style>
+		
+		<style name="themeLightRedButton" parent="@android:Widget.Holo.Light.Button">
+			  <item name="android:background">#FFC107</item>
+		</style>
+		
+		
+		
+		
+		
+	</resources>

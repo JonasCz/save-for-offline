@@ -1,0 +1,72 @@
+<PreferenceScreen
+        xmlns:android="http://schemas.android.com/apk/res/android">
+                
+    <PreferenceCategory
+            android:title="Saving Options">
+
+                
+        <ListPreference
+                android:key="user_agent"
+                android:title="User agent"
+				android:defaultValue="mobile"
+                android:summary="Choose wheather to save the desktop or mobile version of webpage"
+                android:entries="@array/entries_list_preference"
+                android:entryValues="@array/entryvalues_list_preference"
+                android:dialogTitle="Choose" />
+		
+		<ListPreference
+			android:key="storage_dir"
+			android:title="File storage location"
+			android:defaultValue="external"
+			android:summary="This option is currently not implemented. Files are stored in /sdcard/Android/data/jonas.tool.saveForOffline/"
+			android:entries="@array/storage_dir_list"
+			android:entryValues="@array/storage_dir_list_values"
+			android:dialogTitle="Choose" />
+			
+		<EditTextPreference 
+			
+			android:key="custom_storage_dir" 
+			android:title="Custom storage location" 
+			android:summary="Enter the directory path where you want data to be saved. If it does not exist, it will be created." 
+			android:dialogTitle="Enter directory path (eg. /sdcard/saved-pages/ )"/>
+
+    </PreferenceCategory>
+	
+	<PreferenceCategory
+		android:title="Appearance">
+		
+		<ListPreference
+			android:key="layout"
+			android:title="Layout for saved pages list"
+			android:defaultValue="1"
+			android:summary="Choose between list or grid."
+			android:entries="@array/layout_list"
+			android:entryValues="@array/layout_list_values"
+			android:dialogTitle="Choose" />
+
+    </PreferenceCategory>
+	
+	<PreferenceCategory android:title="Advanced settings">
+		<CheckBoxPreference 
+			android:key="save_in_background" 
+			android:defaultValue="true"
+			android:title="Save in background" 
+			android:summary="Keep this enabled unless you experience problems"/>
+	</PreferenceCategory>
+
+    <PreferenceCategory
+            android:title="About this app">
+
+        <PreferenceScreen
+                android:title="GitHub project page"
+                android:summary="Feature request? Found a bug? Go here!">
+
+            <intent android:action="android.intent.action.VIEW"
+                    android:data="http://github.com/jonasCz/save-for-offline" />
+
+        </PreferenceScreen>
+
+    </PreferenceCategory>
+    
+</PreferenceScreen>
+

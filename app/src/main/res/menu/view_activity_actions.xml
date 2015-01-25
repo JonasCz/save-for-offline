@@ -1,0 +1,22 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <item
+        android:id="@+id/action_delete"
+        android:title="@string/action_delete"
+		android:icon="@drawable/ic_action_discard"
+		android:showAsAction="ifRoom|withText"/>
+	<item
+        android:id="@+id/action_open_in_external"
+        android:title="@string/action_open_in_external"
+		android:icon="@drawable/ic_action_web_site"
+		android:showAsAction="never"/>
+	
+	<item android:id="@+id/ic_action_settings"
+		android:title="Settings"
+		android:showAsAction="never" />
+	
+	<item android:id="@+id/ic_action_about"
+		android:title="About this app"
+		android:showAsAction="never" />
+    
+</menu>

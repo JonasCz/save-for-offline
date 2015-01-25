@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content"
+	android:orientation="vertical">
+
+	<LinearLayout
+		android:layout_height="wrap_content"
+		android:layout_width="match_parent"
+		android:orientation="vertical"
+		android:background="#E8B19C">
+
+		<TextView
+			android:layout_height="wrap_content"
+			android:text="This is a beta version!"
+			android:textAppearance="?android:attr/textAppearanceMedium"
+			android:layout_width="wrap_content"
+			android:paddingLeft="8dp"
+			android:paddingRight="8dp"/>
+
+		<TextView
+			android:layout_height="wrap_content"
+			android:text="This app is not finished, and may (does...) have bugs and features which don't work as expected ( or just don't work at all... ). If you find any bugs, please report them."
+			android:layout_width="wrap_content"
+			android:paddingLeft="8dp"
+			android:paddingRight="8dp"
+			android:paddingBottom="8dp"/>
+
+	</LinearLayout>
+
+	<TextView
+		android:layout_height="wrap_content"
+		android:text="What does it do?"
+		android:textAppearance="?android:attr/textAppearanceMedium"
+		android:layout_width="wrap_content"
+		android:paddingRight="8dp"
+		android:paddingLeft="8dp"/>
+
+	<TextView
+		android:layout_height="wrap_content"
+		android:text="Save for Offline is an app which lets you save webpages for later reading and viewing without an internet connection."
+		android:layout_width="match_parent"
+		android:paddingRight="8dp"
+		android:paddingLeft="8dp"
+		android:paddingBottom="8dp"/>
+
+	<TextView
+		android:layout_height="wrap_content"
+		android:text="How to use it?"
+		android:textAppearance="?android:attr/textAppearanceMedium"
+		android:layout_width="wrap_content"
+		android:paddingLeft="8dp"/>
+
+	<TextView
+		android:layout_height="wrap_content"
+		android:text="To save a webpage for offline reading, choose 'share' in your web browser, and then choose 'Save for Offline'. It's that simple!"
+		android:layout_width="match_parent"
+		android:paddingBottom="8dp"
+		android:paddingLeft="8dp"
+		android:paddingRight="8dp"/>
+
+	<TextView
+		android:layout_height="wrap_content"
+		android:text="More info"
+		android:textAppearance="?android:attr/textAppearanceMedium"
+		android:layout_width="wrap_content"
+		android:paddingRight="8dp"
+		android:paddingLeft="8dp"/>
+
+	<TextView
+		android:layout_height="wrap_content"
+		android:text="This app uses webArchiveReader  (github.com/gregko/webarchivereader) and FuzzyDateFormatter by Ionut G. Stan.  Made with love by me."
+		android:layout_width="wrap_content"
+		android:paddingLeft="8dp"
+		android:paddingRight="8dp"
+		android:paddingBottom="8dp"/>
+
+	<Button
+		android:layout_height="wrap_content"
+		android:text="Close"
+		android:layout_width="match_parent"
+		android:onClick="closeButtonClick"/>
+
+</LinearLayout>
+

@@ -1,0 +1,43 @@
+<resources>
+	
+	<string-array name="entries_list_preference">
+		<item>Desktop</item>
+		<item>Mobile (Recommended)</item>
+		<item>iPad</item>
+	</string-array>
+	
+	<string-array name="entryvalues_list_preference">
+		<item>desktop</item>
+		<item>mobile</item>
+		<item>ipad</item>
+	</string-array>
+	
+	<string-array name="storage_dir_list">
+		<item>Default (External)</item>
+		<item>/sdcard/saved-pages/</item>
+		<item>Custom</item>
+	</string-array>
+	
+	<string-array name="storage_dir_list_values">
+		<item>external</item>
+		<item>public</item>
+		<item>custom</item>
+	</string-array>
+	
+	<string-array name="layout_list">
+		<item>Automatic (Choose according to screen size)</item>
+		<item>Grid</item>
+		<item>List</item>
+		<item>List with details</item>
+	</string-array>
+
+	<string-array name="layout_list_values">
+		<item>1</item>
+		<item>2</item>
+		<item>3</item>
+		<item>4</item>
+	</string-array>
+	
+	
+	
+</resources>
