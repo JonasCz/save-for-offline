@@ -31,9 +31,15 @@ Head to the [Releases section](http://github.com/JonasCz/save-for-offline/releas
 
 Please report any bugs you find, and contribute if you can!
 
-## Licence 
+## About
 
-Licence is GPL, see the LICENCE file
+#### This app uses
+
+*  [WebArchiveReader](http://github.com/JonasCz/save-for-offline/releases) thanks to StackOverflow user [Gregko](http://github.com/JonasCz/save-for-offline/releases)
+
+* [FuzzyDateFormatter](http://github.com/JonasCz/save-for-offline/releases) by Ionut G. Stan
+
+#### Licence is GPL, see the LICENCE file
 
 ```
     This program is free software; you can redistribute it and/or modify
