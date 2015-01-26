@@ -19,6 +19,8 @@ public class SaveService extends IntentService {
 	private String thumbnail;
 	private String title;
 	private String origurl;
+	
+	private boolean hasTimedOut = true;
 
 	private boolean thumbnailWasSaved = false;
 	
@@ -78,13 +80,31 @@ public class SaveService extends IntentService {
 		webview.measure(600, 400);
 		webview.layout(0, 0, 600, 400); 
 		webview.getSettings().setJavaScriptEnabled(true);
+		
+		
+		new Thread(new Runnable() {
+			public void run() {
+				synchronized (this) {try {wait(15000);} catch (InterruptedException e) {}}
+				
+				if (hasTimedOut) {
+					Intent retryIntent = new Intent(SaveService.this, AddActivity.class);
+					retryIntent.putExtra(Intent.EXTRA_TEXT, origurl);
+					startService(retryIntent);
+					stopSelf();
+				}
+				
+			}
+		}).start();
+		
 
 		webview.loadUrl(origurl);
 
 		webview.setWebChromeClient(new WebChromeClient() {
 				public void onProgressChanged(WebView view, int progress) {
 					
-					if (webviewHasLoaded) {
+					if (progress == 100 && webviewHasLoaded) {
+						handleSave();
+					} else if (webviewHasLoaded) {
 						mBuilder.setProgress(100, progress, false);
 						mNotificationManager.notify(notification_id, mBuilder.build());
 					} else {
@@ -102,8 +122,21 @@ public class SaveService extends IntentService {
 				@Override
 				public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
 					
-					if (failingUrl.equalsIgnoreCase(origurl) || webview.getTitle().equalsIgnoreCase("webpage not available")) {
+					if (failingUrl.equalsIgnoreCase(origurl)) {
 					webviewHasLoaded = false;
+					Intent retryIntent = new Intent(SaveService.this, AddActivity.class);
+						retryIntent.putExtra(Intent.EXTRA_TEXT, origurl);
+						
+						TaskStackBuilder stackBuilder = TaskStackBuilder.create(SaveService.this);
+						stackBuilder.addParentStack(MainActivity.class);
+						stackBuilder.addNextIntent(retryIntent);
+						PendingIntent resultPendingIntent =
+							stackBuilder.getPendingIntent(
+							0,
+							PendingIntent.FLAG_UPDATE_CURRENT);
+					mBuilder.setContentIntent(resultPendingIntent);
+						
+					
 					mBuilder.setSmallIcon(android.R.drawable.stat_notify_error);
 					mBuilder.setContentText(description + " Tap to retry.");
 					mBuilder.setTicker("Page not saved: " + description);
@@ -115,6 +148,8 @@ public class SaveService extends IntentService {
 					mBuilder.setContentTitle("Error: Page not saved.");
 					mNotificationManager.notify(notification_id, mBuilder.build());
 					
+					stopSelf();
+					
 					}
 					
 
@@ -124,7 +159,8 @@ public class SaveService extends IntentService {
 				@Override
 				public void onPageFinished(WebView view, String url) {
 
-					if (webviewHasLoaded && !webview.getTitle().equalsIgnoreCase("webpage not available")) {
+					if (webviewHasLoaded) {
+						hasTimedOut = false;
 
 						title = webview.getTitle();
 						mBuilder.setContentText(title);
@@ -221,6 +257,8 @@ public class SaveService extends IntentService {
 			mBuilder.setContentTitle("Save completed");
 
 			mNotificationManager.notify(notification_id, mBuilder.build());
+			
+			stopSelf();
 
 
 			return null;
