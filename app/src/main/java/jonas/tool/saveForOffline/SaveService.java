@@ -124,7 +124,7 @@ public class SaveService extends IntentService {
 				@Override
 				public void onPageFinished(WebView view, String url) {
 
-					if (webviewHasLoaded) {
+					if (webviewHasLoaded && !webview.getTitle().equalsIgnoreCase("webpage not available")) {
 
 						title = webview.getTitle();
 						mBuilder.setContentText(title);
