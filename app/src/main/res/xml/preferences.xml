@@ -59,7 +59,7 @@
 
         <PreferenceScreen
                 android:title="GitHub project page"
-                android:summary="Feature request? Found a bug? Go here!">
+                android:summary="Feature request? Found a bug? Want to contribute? Go here!">
 
             <intent android:action="android.intent.action.VIEW"
                     android:data="http://github.com/jonasCz/save-for-offline" />

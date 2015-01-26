@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout
-	
 	xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:tools="http://schemas.android.com/tools"
 	android:layout_width="match_parent"
@@ -48,17 +47,16 @@
 		android:orientation="horizontal"
 		android:layout_below="@id/frst_editTxt"
 		android:id="@+id/addactivityLinearLayout1">
-		
+
 		<Button
-			
 			style="?android:attr/buttonBarButtonStyle"
 			android:id="@+id/cancel_btn"
 			android:layout_height="wrap_content"
 			android:text="Cancel"
 			android:layout_width="match_parent"
 			android:onClick="cancelButtonClick"
-			android:layout_weight="0.5"/>
-		
+			android:layout_weight="0.5"
+			android:background="@drawable/normal_button_selector"/>
 
 		<Button
 			style="?android:attr/buttonBarButtonStyle"
@@ -67,10 +65,22 @@
 			android:layout_height="wrap_content"
 			android:text="OK"
 			android:onClick="okButtonClick"
-			android:layout_weight="0.5"/>
+			android:layout_weight="0.5"
+			android:background="@drawable/normal_button_selector"/>
 
-		
 	</LinearLayout>
+
+	<View
+		android:layout_width="match_parent"
+		android:layout_height="1dp"
+		android:background="?android:attr/dividerHorizontal"
+		android:layout_above="@id/addactivityLinearLayout1"/>
+
+	<View
+		android:layout_width="match_parent"
+		android:layout_height="1dp"
+		android:background="?android:attr/dividerHorizontal"
+		android:layout_below="@id/addactivityLinearLayout1"/>
 
 </RelativeLayout>
 
