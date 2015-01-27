@@ -6,15 +6,15 @@ In you web browser select 'share' , and then 'Save For Offline'
 
 ## Screenshots
 #### Grid layout for the list of all saved pages.
-![Grid layout](http://todo-add-url.com)
+![Grid layout](https://raw.githubusercontent.com/JonasCz/save-for-offline/master/screenshots/gridlayout.png)
 ***
 
 #### List layout with details.
-![List layout](http://todo-add-url.com)
+![List layout](https://raw.githubusercontent.com/JonasCz/save-for-offline/master/screenshots/listlayout.png)
 ***
 
 #### Built in viewer. (Future versions may support opening saved files in web browser)
-![Viewer](http://todo-add-url.com)
+![Viewer](https://raw.githubusercontent.com/JonasCz/save-for-offline/master/screenshots/viewer.png)
 ***
 
 
