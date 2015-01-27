@@ -35,9 +35,9 @@ Please report any bugs you find, and contribute if you can!
 
 #### This app uses
 
-*  [WebArchiveReader](http://github.com/JonasCz/save-for-offline/releases) thanks to StackOverflow user [Gregko](http://github.com/JonasCz/save-for-offline/releases)
+*  [WebArchiveReader](https://github.com/gregko/WebArchiveReader) thanks to StackOverflow user [Gregko] (http://stackoverflow.com/users/1477347/gregko)
 
-* [FuzzyDateFormatter](http://github.com/JonasCz/save-for-offline/releases) by Ionut G. Stan
+* [FuzzyDateFormatter] (https://github.com/igstan/java-fuzzy-dates) by Ionut G. Stan
 
 #### Licence is GPL, see the LICENCE file
 
