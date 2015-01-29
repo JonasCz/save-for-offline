@@ -11,11 +11,24 @@ import android.database.sqlite.*;
 import android.view.View.*;
 import android.os.*;
 import android.preference.*;
+import android.os.Process;
 
-public class SaveService extends IntentService {
+public class SaveService extends Service {
+	
+	private Looper mServiceLooper;
+	private ServiceHandler mServiceHandler;
+	private Message msg;
+	private Intent intent;
+	
+	private final class ServiceHandler extends Handler {
+		public ServiceHandler(Looper looper) {
+			super(looper);
+		}
 
 	private WebView webview;
+	
 	private String filelocation;
+	private String destinationDirectory;
 	private String thumbnail;
 	private String title;
 	private String origurl;
@@ -26,19 +39,24 @@ public class SaveService extends IntentService {
 	
 	private boolean wasAddedToDb = false;
 	private boolean webviewHasLoaded = true;
+	
+	private boolean errorOccurred = false;
+	private String errorDescription = "";
 
 	private int notification_id = 1;
 	Notification.Builder mBuilder;
 	NotificationManager mNotificationManager;
 
-	public SaveService() {
-		super("SaveService");
-	}
-
 	@Override
-	public void onHandleIntent(Intent intent) {
+	public void handleMessage(final Message msg) {
+		
+		errorDescription = "";
+		wasAddedToDb = false;
+		errorOccurred = false;
+		webviewHasLoaded = true;
+		thumbnailWasSaved = false;
 
-		mBuilder = new Notification.Builder(this)
+		mBuilder = new Notification.Builder(SaveService.this)
 			.setContentTitle("Saving webpage...")
 			.setOngoing(true)
 			.setOnlyAlertOnce(true)
@@ -51,9 +69,9 @@ public class SaveService extends IntentService {
 		mBuilder.setSmallIcon(android.R.drawable.stat_sys_download);
 		mNotificationManager.notify(notification_id, mBuilder.build());
 		
-		webview = new WebView(this);
+		webview = new WebView(SaveService.this);
 
-		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(SaveService.this);
 		String ua = sharedPref.getString("user_agent", "mobile");
 
 		if (ua.equals("desktop")) {
@@ -67,11 +85,14 @@ public class SaveService extends IntentService {
 
 		DirectoryHelper dh = new DirectoryHelper();
 		filelocation = dh.getFileLocation();
+		destinationDirectory = dh.getUnpackedDir();
+		
 		thumbnail = dh.getThumbnailLocation();
+		
 		origurl = intent.getStringExtra("origurl");
 
 
-		Toast.makeText(this, "Saving page...", Toast.LENGTH_SHORT).show();
+		Toast.makeText(SaveService.this, "Saving page...", Toast.LENGTH_SHORT).show();
 
 
 		// This is the important code :)  
@@ -81,21 +102,6 @@ public class SaveService extends IntentService {
 		webview.layout(0, 0, 600, 400); 
 		webview.getSettings().setJavaScriptEnabled(true);
 		
-		
-		new Thread(new Runnable() {
-			public void run() {
-				synchronized (this) {try {wait(15000);} catch (InterruptedException e) {}}
-				
-				if (hasTimedOut) {
-					Intent retryIntent = new Intent(SaveService.this, AddActivity.class);
-					retryIntent.putExtra(Intent.EXTRA_TEXT, origurl);
-					startService(retryIntent);
-					stopSelf();
-				}
-				
-			}
-		}).start();
-		
 
 		webview.loadUrl(origurl);
 
@@ -103,14 +109,38 @@ public class SaveService extends IntentService {
 				public void onProgressChanged(WebView view, int progress) {
 					
 					if (progress == 100 && webviewHasLoaded) {
+						errorOccurred = false;
 						handleSave();
 					} else if (webviewHasLoaded) {
 						mBuilder.setProgress(100, progress, false);
 						mNotificationManager.notify(notification_id, mBuilder.build());
 					} else {
+						Intent retryIntent = new Intent(SaveService.this, SaveService.class);
+						retryIntent.putExtra("origurl", origurl);
+
+						TaskStackBuilder stackBuilder = TaskStackBuilder.create(SaveService.this);
+
+						stackBuilder.addNextIntent(retryIntent);
+						PendingIntent resultPendingIntent =
+							stackBuilder.getPendingIntent(
+							0,
+							PendingIntent.FLAG_CANCEL_CURRENT);
+						mBuilder.setContentIntent(resultPendingIntent);
+
+
+						mBuilder.setSmallIcon(android.R.drawable.stat_notify_error);
+						mBuilder.setContentText(errorDescription + " Tap to retry.");
+						mBuilder.setTicker("Page not saved: " + errorDescription);
+						// Removes the progress bar
 						mBuilder.setProgress(0, 0, false);
-						mBuilder.setSmallIcon(android.R.drawable.stat_sys_warning);
+						mBuilder.setOngoing(false);
+						mBuilder.setOnlyAlertOnce(false);
+						mBuilder.setPriority(Notification.PRIORITY_HIGH);
+						mBuilder.setAutoCancel(true);
+						mBuilder.setContentTitle("Error: Page not saved.");
 						mNotificationManager.notify(notification_id, mBuilder.build());
+
+						stopSelf(msg.arg1);
 					}
 
 
@@ -121,37 +151,41 @@ public class SaveService extends IntentService {
 
 				@Override
 				public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-					
+
 					if (failingUrl.equalsIgnoreCase(origurl)) {
-					webviewHasLoaded = false;
-					Intent retryIntent = new Intent(SaveService.this, AddActivity.class);
-						retryIntent.putExtra(Intent.EXTRA_TEXT, origurl);
 						
+						webviewHasLoaded = false;
+						errorDescription = description;
+						
+						Intent retryIntent = new Intent(SaveService.this, SaveService.class);
+						retryIntent.putExtra("origurl", origurl);
+
 						TaskStackBuilder stackBuilder = TaskStackBuilder.create(SaveService.this);
-						stackBuilder.addParentStack(MainActivity.class);
+						
 						stackBuilder.addNextIntent(retryIntent);
 						PendingIntent resultPendingIntent =
 							stackBuilder.getPendingIntent(
 							0,
-							PendingIntent.FLAG_UPDATE_CURRENT);
-					mBuilder.setContentIntent(resultPendingIntent);
-						
-					
-					mBuilder.setSmallIcon(android.R.drawable.stat_notify_error);
-					mBuilder.setContentText(description + " Tap to retry.");
-					mBuilder.setTicker("Page not saved: " + description);
-					// Removes the progress bar
-					mBuilder.setProgress(0, 0, false);
-					mBuilder.setOngoing(false);
-					mBuilder.setOnlyAlertOnce(false);
-					mBuilder.setPriority(Notification.PRIORITY_LOW);
-					mBuilder.setContentTitle("Error: Page not saved.");
-					mNotificationManager.notify(notification_id, mBuilder.build());
-					
-					stopSelf();
-					
+							PendingIntent.FLAG_CANCEL_CURRENT);
+						mBuilder.setContentIntent(resultPendingIntent);
+
+
+						mBuilder.setSmallIcon(android.R.drawable.stat_notify_error);
+						mBuilder.setContentText(description + " Tap to retry.");
+						mBuilder.setTicker("Page not saved: " + description);
+						// Removes the progress bar
+						mBuilder.setProgress(0, 0, false);
+						mBuilder.setOngoing(false);
+						mBuilder.setOnlyAlertOnce(false);
+						mBuilder.setPriority(Notification.PRIORITY_HIGH);
+						mBuilder.setAutoCancel(true);
+						mBuilder.setContentTitle("Error: Page not saved.");
+						mNotificationManager.notify(notification_id, mBuilder.build());
+
+						stopSelf(msg.arg1);
+
 					}
-					
+
 
 
 				}
@@ -161,6 +195,7 @@ public class SaveService extends IntentService {
 
 					if (webviewHasLoaded) {
 						hasTimedOut = false;
+						errorOccurred = false;
 
 						title = webview.getTitle();
 						mBuilder.setContentText(title);
@@ -175,6 +210,7 @@ public class SaveService extends IntentService {
 						mNotificationManager.notify(notification_id, mBuilder.build());
 
 						handleSave();
+						stopSelf(msg.arg1);
 					}
 
 				}
@@ -186,12 +222,21 @@ public class SaveService extends IntentService {
 	}
 
 	private void handleSave() {
+		
+		if (!webviewHasLoaded || errorOccurred || title.equalsIgnoreCase("webpage not available")) return;
 
 		addToDb();
 
 		webview.saveWebArchive(filelocation);
+		
+//		Intent unpackerServiceIntent = new Intent(this, webArchiveUnpacker.class);
+//		unpackerServiceIntent.putExtra("archivelocation", filelocation);
+//		unpackerServiceIntent.putExtra("destdir", destinationDirectory);
+//		startService(unpackerServiceIntent);
 
 		new takeScreenshotTask().execute();
+		
+		stopSelf();
 
 	}
 
@@ -202,7 +247,7 @@ public class SaveService extends IntentService {
 		//dont want to put it in the database multiple times
 		if (wasAddedToDb) return;
 
-		DbHelper mHelper = new DbHelper(this);
+		DbHelper mHelper = new DbHelper(SaveService.this);
 		SQLiteDatabase dataBase = mHelper.getWritableDatabase();
 		ContentValues values=new ContentValues();
 
@@ -270,5 +315,39 @@ public class SaveService extends IntentService {
 
 
 
+
+	}	//service related stuff below, its probably easyer to use intentService...
+
+	@Override
+	public void onCreate() {
+
+		HandlerThread thread = new HandlerThread("ServiceStartArguments", Process.THREAD_PRIORITY_BACKGROUND);
+		thread.start();
+
+		// Get the HandlerThread's Looper and use it for our Handler 
+		mServiceLooper = thread.getLooper();
+		mServiceHandler = new ServiceHandler(mServiceLooper);
+	}
+
+	@Override
+	public int onStartCommand(Intent startintent, int flags, int startId) {
+		
+		intent = startintent;
+
+		// For each start request, send a message to start a job and deliver the
+		// start ID so we know which request we're stopping when we finish the job
+		msg = mServiceHandler.obtainMessage();
+		msg.arg1 = startId;
+		mServiceHandler.sendMessage(msg);
+
+		// If we get killed, after returning from here, restart
+		return START_REDELIVER_INTENT;
+	}
+
+	@Override
+	public IBinder onBind(Intent intent) {
+		// We don't provide binding, so return null
+		return null;
+	}
 
 }
