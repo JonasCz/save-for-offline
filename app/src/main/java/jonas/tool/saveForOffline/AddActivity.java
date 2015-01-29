@@ -26,8 +26,7 @@ import android.widget.*;
  * @author ketan(Visit my <a
  *         href="http://androidsolution4u.blogspot.in/">blog</a>)
  */
-public class AddActivity extends Activity
-{
+public class AddActivity extends Activity {
 	private Button btn_save;
 	private EditText edit_origurl;
 	private Intent incomingIntent ;
@@ -38,8 +37,7 @@ public class AddActivity extends Activity
 
 
     @Override
-    public void onCreate(Bundle savedInstanceState)
-	{
+    public void onCreate(Bundle savedInstanceState) {
 		incomingIntent = getIntent();
 
         super.onCreate(savedInstanceState);
@@ -55,56 +53,47 @@ public class AddActivity extends Activity
 
 		//save directly if activity was tarted via intent
 		origurl = edit_origurl.getText().toString().trim();
-		if (origurl.length() > 0)
-		{
+		if (origurl.length() > 0) {
 			startSaveActivity();
 		}
 
 		edit_origurl.addTextChangedListener(new TextWatcher(){
-				public void afterTextChanged(Editable s)
-				{
+				public void afterTextChanged(Editable s) {
 
-					if (edit_origurl.length() == 0)
-					{
+					if (edit_origurl.length() == 0) {
 						btn_save.setEnabled(false);
-					}
-					else
-					{btn_save.setEnabled(true);}
+					} else {btn_save.setEnabled(true);}
 				}
-				public void beforeTextChanged(CharSequence s, int start, int count, int after)
-				{}
-				public void onTextChanged(CharSequence s, int start, int before, int count)
-				{}
+				public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+				public void onTextChanged(CharSequence s, int start, int before, int count) {}
 			}); 
 	}
 
-	public void cancelButtonClick(View view)
-	{
+	public void cancelButtonClick(View view) {
 
 		//user clicked the cancel button, quit
 		finish();
 	}
-	
-	public void btn_paste(View view)
-	{
+
+	public void btn_paste(View view) {
 		ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
 		edit_origurl.setText(clipboard.getText());
 	}
 
 	// saveButton click event 
-	public void okButtonClick(View view)
-	{
+	public void okButtonClick(View view) {
 
 		origurl = edit_origurl.getText().toString().trim();
-		if (origurl.length() > 0)
-		{
+		if (origurl.length() > 0 && (origurl.startsWith("http://") || origurl.startsWith("file://"))) {
+			startSaveActivity();
+		} else if (origurl.length() > 0) {
+			origurl = "http://" + origurl;
 			startSaveActivity();
 		}
 	}
-	
 
-	private void startSaveActivity()
-	{
+
+	private void startSaveActivity() {
 		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
 		boolean save_in_background = sharedPref.getBoolean("save_in_background", true);
 		if (save_in_background) {
@@ -116,7 +105,7 @@ public class AddActivity extends Activity
 			intent.putExtra("origurl", origurl);
 			startActivity(intent);
 		}
-		
+
 		finish();
 	}
 
