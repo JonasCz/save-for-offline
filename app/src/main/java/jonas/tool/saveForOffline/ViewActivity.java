@@ -18,6 +18,8 @@ public class ViewActivity extends Activity
 	private WebView webview;
 	private WebView.HitTestResult result;
 	
+	private boolean save_in_background;
+	
 	@Override
 	public void onCreate(Bundle savedInstanceState)
 	{
@@ -38,6 +40,8 @@ public class ViewActivity extends Activity
 		webview = (WebView) findViewById(R.id.webview);
 		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
 		String ua = sharedPref.getString("user_agent", "mobile");
+		save_in_background = sharedPref.getBoolean("save_in_background", true);
+		
 		
 		registerForContextMenu(webview);
 		
@@ -148,7 +152,7 @@ public class ViewActivity extends Activity
 								DbHelper.TABLE_NAME,
 								DbHelper.KEY_ID + "=" + incomingIntent2.getStringExtra("id"), null);
 
-							Log.w("viewActivity", "Deleting !!");
+						
 
 							Toast.makeText(
 								getApplicationContext(),
@@ -206,9 +210,16 @@ public class ViewActivity extends Activity
 			Intent chooser = Intent.createChooser(intent, "Share link via");
 			startActivity(chooser);
 		} else if (item.getItemId() == 3) {
-			Intent intent = new Intent(this, SaveActivity.class);
-			intent.putExtra("origurl", result.getExtra());
-			startActivity(intent);
+			if (save_in_background) {
+				Intent intent = new Intent(this, SaveService.class);
+				intent.putExtra("origurl", result.getExtra());
+				startService(intent);
+			} else {
+				Intent intent = new Intent(this, SaveActivity.class);
+				intent.putExtra("origurl", result.getExtra());
+				startActivity(intent);
+			}
+	
 		}
 		return super.onContextItemSelected(item);
 		

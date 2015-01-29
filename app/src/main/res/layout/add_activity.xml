@@ -12,10 +12,20 @@
 		android:id="@+id/frst_txtV"
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
-		android:text="Enter URL address (Must include the http:// bit)"
+		android:text="Enter URL address"
 		android:layout_marginTop="10dp"
 		android:inputType="textUri"
 		android:layout_marginLeft="10dp"/>
+
+	<TextView
+		android:layout_height="wrap_content"
+		android:text="Tip: choose 'share' and then 'save for offline' to quickly save pages."
+		android:layout_width="wrap_content"
+		android:layout_below="@id/frst_txtV"
+		android:id="@+id/tipText"
+		android:paddingTop="10dp"
+		android:paddingLeft="10dp"
+		android:paddingRight="10dp"/>
 
 	<EditText
 		android:id="@+id/frst_editTxt"
@@ -25,7 +35,7 @@
 		android:hint="http://example.com/example"
 		android:maxLines="1"
 		android:inputType="textUri"
-		android:layout_below="@id/frst_txtV"
+		android:layout_below="@id/tipText"
 		android:layout_marginBottom="10dp"
 		android:layout_marginRight="60dp"/>
 
@@ -34,7 +44,7 @@
 		style="?android:attr/buttonStyleSmall"
 		android:text="Paste"
 		android:layout_width="wrap_content"
-		android:layout_below="@id/frst_txtV"
+		android:layout_below="@id/tipText"
 		android:layout_marginTop="10dp"
 		android:layout_alignParentRight="true"
 		android:onClick="btn_paste"
