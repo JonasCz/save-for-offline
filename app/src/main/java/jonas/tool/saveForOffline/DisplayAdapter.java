@@ -119,7 +119,9 @@ public class DisplayAdapter extends BaseAdapter
 	@Override
 	public long getItemId(int position)
 	{
+		if (dbCursor.getCount() != 0) {
 		return Long.valueOf(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_ID)));
+		} else return 0;
 	}
 
 	public String getPropertiesByPosition(int position, String type) {
