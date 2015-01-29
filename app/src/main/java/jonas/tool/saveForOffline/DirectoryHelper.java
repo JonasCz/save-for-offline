@@ -37,4 +37,10 @@ public class DirectoryHelper {
 		String fileLocation = getStorageDir() + createUniqueFilename() + ".mht";
 		return fileLocation;
 	}
+	
+	public String getUnpackedDir () {
+
+		String fileLocation = getStorageDir() + createUniqueFilename() + File.separatorChar;
+		return fileLocation;
+	}
 }
