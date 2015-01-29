@@ -248,6 +248,7 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 		if (gridAdapter.getCount() == 0 && !searchQuery.equals("")) {
 			noSavedPages.setText("No search results");
 			noSavedPages.setVisibility(View.VISIBLE);
+			noSavedPages.setGravity(Gravity.CENTER_HORIZONTAL);
 			mainGrid.setVisibility(View.GONE);
 		} 
 		else if (gridAdapter.getCount() == 0) {
