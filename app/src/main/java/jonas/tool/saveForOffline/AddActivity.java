@@ -21,6 +21,7 @@ import android.text.ClipboardManager;
 import android.app.*;
 import android.preference.*;
 import android.widget.*;
+import android.view.*;
 /**
  * activity to get input from user and insert into SQLite database
  * @author ketan(Visit my <a
@@ -38,10 +39,11 @@ public class AddActivity extends Activity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-		incomingIntent = getIntent();
-
-        super.onCreate(savedInstanceState);
+		super.onCreate(savedInstanceState);
+		
+		setTitle("Enter URL to save");
 		//init prefs
+		incomingIntent = getIntent();
 		PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
         setContentView(R.layout.add_activity);
 

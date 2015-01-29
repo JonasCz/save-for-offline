@@ -151,12 +151,20 @@ public class ViewActivity extends Activity
 							dataBase.delete(
 								DbHelper.TABLE_NAME,
 								DbHelper.KEY_ID + "=" + incomingIntent2.getStringExtra("id"), null);
+								
+							
+							File thumbfile = new File(incomingIntent2.getStringExtra("thumbnailLocation"));
+								thumbfile.delete();
+
+								
+							File mainfile = new File(incomingIntent2.getStringExtra("fileLocation"));
+								mainfile.delete();
 
 						
 
 							Toast.makeText(
 								getApplicationContext(),
-								incomingIntent2.getStringExtra("title") + " is deleted.", Toast.LENGTH_LONG).show();
+								"Saved page deleted.", Toast.LENGTH_LONG).show();
 
 							finish();
 						}

@@ -225,6 +225,7 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 					i.putExtra("title", gridAdapter.getPropertiesByPosition(position, "title"));
 					i.putExtra("id", gridAdapter.getPropertiesByPosition(position, "id"));
 					i.putExtra("fileLocation", gridAdapter.getPropertiesByPosition(position,"file_location"));
+					i.putExtra("thumbnailLocation", gridAdapter.getPropertiesByPosition(position,"thumbnail_location"));
 
 					startActivity(i);
 
