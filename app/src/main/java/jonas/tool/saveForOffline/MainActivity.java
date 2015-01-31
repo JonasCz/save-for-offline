@@ -339,7 +339,7 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 								}
 
 						
-								Toast.makeText(MainActivity.this, "Deleted " + mainGrid.getCheckedItemCount() + " saved pages", Toast.LENGTH_SHORT).show();
+								Toast.makeText(MainActivity.this, "Deleted " + mainGrid.getCheckedItemCount() + " saved pages", Toast.LENGTH_LONG).show();
 								dataBase.close();
 								displayData("");
 								mode.finish();	

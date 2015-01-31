@@ -202,6 +202,7 @@ public class ViewActivity extends Activity
 			menu.setHeaderTitle(result.getExtra());
 			menu.add(3, 3, 3, "Save Link");
 			menu.add(4, 4, 4, "Share Link");
+			menu.add(6, 6, 6, "Copy Link to clipboard");
 			menu.add(5, 5, 5, "Open Link");
 		}
 	}
@@ -213,10 +214,11 @@ public class ViewActivity extends Activity
 			Intent startBrowserIntent = new Intent(Intent.ACTION_VIEW, uri);
 			startActivity(startBrowserIntent);
 		} else if (item.getItemId() == 4) {
-			Uri uri = Uri.parse(result.getExtra());
-			Intent intent = new Intent(Intent.ACTION_SEND, uri);
-			Intent chooser = Intent.createChooser(intent, "Share link via");
-			startActivity(chooser);
+			Intent i = new Intent(Intent.ACTION_SEND);
+			i.setType("text/plain");
+			i.putExtra(Intent.EXTRA_TEXT, result.getExtra());
+			startActivity(Intent.createChooser(i, "Share Link via"));
+			
 		} else if (item.getItemId() == 3) {
 			if (save_in_background) {
 				Intent intent = new Intent(this, SaveService.class);
@@ -228,6 +230,13 @@ public class ViewActivity extends Activity
 				startActivity(intent);
 			}
 	
+		} else if (item.getItemId() == 6) {
+			
+			ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE); 
+			ClipData clip = ClipData.newPlainText(webview.getTitle(), result.getExtra());
+			clipboard.setPrimaryClip(clip);
+			Toast.makeText(this, "Link copied to clipboard", Toast.LENGTH_SHORT).show();
+
 		}
 		return super.onContextItemSelected(item);
 		

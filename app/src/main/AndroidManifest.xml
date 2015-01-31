@@ -54,7 +54,7 @@
         </activity>
 		
 		<service android:name="jonas.tool.saveForOffline.SaveService" />
-		<service android:name="jonas.tool.saveForOffline.webArchiveUnpacker" />
+		<service android:name="jonas.tool.saveForOffline.webArchiveUnpackerService" />
     </application>
 
 </manifest>
