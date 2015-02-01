@@ -6,16 +6,23 @@ In you web browser select 'share' , and then 'Save For Offline'
 
 ## Screenshots
 #### Grid layout for the list of all saved pages.
-![Grid layout](https://raw.githubusercontent.com/JonasCz/save-for-offline/master/screenshots/gridlayout.png)
+![Grid layout](http://todo-add-url.com)
 ***
 
 #### List layout with details.
-![List layout](https://raw.githubusercontent.com/JonasCz/save-for-offline/master/screenshots/listlayout.png)
+![List layout](http://todo-add-url.com)
 ***
 
 #### Built in viewer. (Future versions may support opening saved files in web browser)
-![Viewer](https://raw.githubusercontent.com/JonasCz/save-for-offline/master/screenshots/viewer.png)
+![Viewer](http://todo-add-url.com)
 ***
+
+
+## Download
+
+Head to the [Releases section](http://github.com/JonasCz/save-for-offline/releases) to download the APK.  *Not available on Google Play yet.*
+
+Please report any bugs you find, and contribute if you can!
 
 
 ## It can
@@ -24,20 +31,19 @@ In you web browser select 'share' , and then 'Save For Offline'
 * Save in the background, no need to wait for it to finish
 * Nice UI (In my opinion anyway & needs more testing on different devices and screen sizes)
 
-
-## Download
-
-Head to the [Releases section](http://github.com/JonasCz/save-for-offline/releases) to download the APK.
-
-Please report any bugs you find, and contribute if you can!
+```
+Todo:
+* Save real HTML files
+* Test ui on different devices & screens.
+```
 
 ## About
 
 #### This app uses
 
-*  [WebArchiveReader](https://github.com/gregko/WebArchiveReader) thanks to StackOverflow user [Gregko] (http://stackoverflow.com/users/1477347/gregko)
+*  [WebArchiveReader](http://github.com/JonasCz/save-for-offline/releases) thanks to StackOverflow user [Gregko](http://github.com/JonasCz/save-for-offline/releases)
 
-* [FuzzyDateFormatter] (https://github.com/igstan/java-fuzzy-dates) by Ionut G. Stan
+* [FuzzyDateFormatter](http://github.com/JonasCz/save-for-offline/releases) by Ionut G. Stan
 
 #### Licence is GPL, see the LICENCE file
 
