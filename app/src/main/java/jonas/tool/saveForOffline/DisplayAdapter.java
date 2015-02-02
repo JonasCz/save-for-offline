@@ -53,8 +53,14 @@ public class DisplayAdapter extends BaseAdapter
 	
 	public Cursor dbCursor;
 	
-	public void refreshData(String searchQuery, boolean dataSetChanged) {
-		sqlStatement = "SELECT * FROM " + DbHelper.TABLE_NAME + " WHERE " + DbHelper.KEY_TITLE + " LIKE'%"+searchQuery+"%' ORDER BY " + DbHelper.KEY_ID + " DESC";
+	public void refreshData(String searchQuery, int sortOrder, boolean dataSetChanged) {
+		//sortOrder 0 = date newest first, 1 = oldest first, 2 = alphabetical
+		if (sortOrder == 0) sqlStatement = "SELECT * FROM " + DbHelper.TABLE_NAME + " WHERE " + DbHelper.KEY_TITLE + " LIKE'%"+searchQuery+"%' ORDER BY " + DbHelper.KEY_ID + " DESC";
+		if (sortOrder == 1) sqlStatement = "SELECT * FROM " + DbHelper.TABLE_NAME + " WHERE " + DbHelper.KEY_TITLE + " LIKE'%"+searchQuery+"%' ORDER BY " + DbHelper.KEY_ID + " ASC";
+		else if (sortOrder == 2) sqlStatement = "SELECT * FROM " + DbHelper.TABLE_NAME + " WHERE " + DbHelper.KEY_TITLE + " LIKE'%"+searchQuery+"%' ORDER BY " + DbHelper.KEY_TITLE + " ASC";
+		else sqlStatement = "SELECT * FROM " + DbHelper.TABLE_NAME + " WHERE " + DbHelper.KEY_TITLE + " LIKE'%"+searchQuery+"%' ORDER BY " + DbHelper.KEY_ID + " DESC";
+	
+		 
 		dbCursor = dataBase.rawQuery(sqlStatement,null);
 		dbCursor.moveToFirst();
 		if (dataSetChanged) notifyDataSetChanged();
@@ -73,7 +79,7 @@ public class DisplayAdapter extends BaseAdapter
 		list_layout_type = Integer.parseInt(sharedPref.getString("layout" , "1"));
 	
 		
-		refreshData(null, false);
+		refreshData(null, 1, false);
 		
 		placeHolder = BitmapFactory.decodeResource(mContext.getResources(), R.drawable.placeholder);
 		

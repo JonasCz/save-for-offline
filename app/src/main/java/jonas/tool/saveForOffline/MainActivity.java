@@ -40,14 +40,14 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 	private TextView noSavedPages;
 	private TextView helpText;
 
-
+	private int sortOrder = 0;
 
 
 	private GridView mainGrid;
-	private AlertDialog.Builder build;
 	private SearchView mSearchView;
 	private String searchQuery = "";
 	private ProgressDialog pageLoadDialog;
+	private AlertDialog dialogSortItemsBy;
 	private ActionBar actionbar;
 
 	private int scrollPosition;
@@ -65,6 +65,7 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 
 		mainGrid.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE_MODAL);
 		mainGrid.setMultiChoiceModeListener(new ModeCallback());
+
 
 		int list_layout_type = Integer.parseInt(sharedPref.getString("layout" , "1"));
 		switch (list_layout_type) {
@@ -181,6 +182,22 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 				startActivity(i);
 
 				return true;
+				
+			case R.id.action_sort_by:
+				
+				AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+				builder.setTitle("Sort by");
+				builder.setSingleChoiceItems(R.array.sort_by, sortOrder, new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface dialog, int which) {
+							sortOrder = which;
+							displayData(searchQuery);
+							dialogSortItemsBy.cancel();
+						}
+					});
+				dialogSortItemsBy = builder.create();
+				dialogSortItemsBy.show();
+
+				return true;
 
 			case R.id.ic_action_settings:
 				Intent settings = new Intent(getApplicationContext(), Preferences.class);
@@ -232,19 +249,12 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 
 				}
 			});
-
-
-	}
-
-
-
-	/**
-	 * displays data from SQLite
-	 */
+		}
+			
 	private void displayData(String searchQuery)
 	{
 		
-		gridAdapter.refreshData(searchQuery, true);
+		gridAdapter.refreshData(searchQuery, sortOrder, true);
 
 		if (gridAdapter.getCount() == 0 && !searchQuery.equals("")) {
 			noSavedPages.setText("No search results");

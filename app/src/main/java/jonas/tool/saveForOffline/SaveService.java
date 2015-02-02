@@ -229,11 +229,6 @@ public class SaveService extends Service {
 
 		webview.saveWebArchive(filelocation);
 		
-		Intent unpackerServiceIntent = new Intent(SaveService.this, webArchiveUnpackerService.class);
-		unpackerServiceIntent.putExtra("archivelocation", filelocation);
-		unpackerServiceIntent.putExtra("destdir", destinationDirectory);
-		startService(unpackerServiceIntent);
-
 		new takeScreenshotTask().execute();
 		
 		stopSelf();

@@ -8,8 +8,8 @@ android {
         applicationId "jonas.tool.saveForOffline"
         minSdkVersion 14
         targetSdkVersion 19
-        versionCode 9
-        versionName "1.4.0 Beta"
+        versionCode 10
+        versionName "1.5.0 Beta"
     }
     buildTypes {
         release {

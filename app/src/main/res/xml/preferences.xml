@@ -14,7 +14,7 @@
                 android:entryValues="@array/entryvalues_list_preference"
                 android:dialogTitle="Choose" />
 		
-		<ListPreference
+		<!--<ListPreference
 			android:key="storage_dir"
 			android:title="File storage location"
 			android:defaultValue="external"
@@ -28,7 +28,7 @@
 			android:key="custom_storage_dir" 
 			android:title="Custom storage location" 
 			android:summary="Enter the directory path where you want data to be saved. If it does not exist, it will be created." 
-			android:dialogTitle="Enter directory path (eg. /sdcard/saved-pages/ )"/>
+			android:dialogTitle="Enter directory path (eg. /sdcard/saved-pages/ )"/>-->
 
     </PreferenceCategory>
 	
@@ -43,6 +43,15 @@
 			android:entries="@array/layout_list"
 			android:entryValues="@array/layout_list_values"
 			android:dialogTitle="Choose" />
+		
+		<!--<ListPreference
+			android:key="default_sort_order"
+			android:title="Sort saved pages list by"
+			android:defaultValue="0"
+			android:summary="Oldest first, newest first, or alphabetically"
+			android:entries="@array/sort_by"
+			android:entryValues="@array/sort_by_values"
+			android:dialogTitle="Sort by" />-->
 
     </PreferenceCategory>
 	
