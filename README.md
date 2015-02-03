@@ -10,7 +10,7 @@ In you web browser select 'share' , and then 'Save For Offline'
 ***
 
 #### List layout with details.
-![List layout](htps://raw.githubusercontent.com/JonasCz/save-for-offline/master/screenshots/listlayout.png)
+![List layout](https://raw.githubusercontent.com/JonasCz/save-for-offline/master/screenshots/listlayout.png)
 ***
 
 #### Built in viewer. (Future versions may support opening saved files in web browser)
