@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="match_parent"
+	android:layout_height="fill_parent"
+	android:padding="8dp"
+	android:background="#E2E2E2"
+	android:id="@+id/gridCellLayout">
+
+	<TextView
+		android:id="@+id/txt_title"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:text="Title"
+		android:textSize="16sp"/>
+
+	<TextView
+		android:id="@+id/txt_orig_url"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:text="Original URL"
+		android:layout_below="@id/txt_title"
+		android:textSize="12sp"
+		android:maxLines="1"/>
+
+	<TextView
+		android:id="@+id/txt_date"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_below="@id/txt_orig_url"
+		android:textSize="12sp"
+		android:gravity="bottom"
+		android:text="Date unavailable"/>
+
+	<TextView
+		android:id="@+id/txt_id"
+		android:layout_width="wrap_content"
+		android:layout_height="0dp"
+		android:layout_weight="1"
+		android:height="0dp"
+		android:visibility="gone"/>
+
+	<TextView
+		android:id="@+id/txt_fileLocation"
+		android:layout_width="wrap_content"
+		android:layout_height="0dp"
+		android:height="0dp"
+		android:layout_weight="1"
+		android:visibility="gone"/>
+
+</RelativeLayout>
+

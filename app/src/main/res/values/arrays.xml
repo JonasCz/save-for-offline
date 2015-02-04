@@ -29,6 +29,7 @@
 		<item>Grid</item>
 		<item>List</item>
 		<item>List with details</item>
+		<item>List, no thumbmails</item>
 	</string-array>
 
 	<string-array name="layout_list_values">
@@ -36,6 +37,7 @@
 		<item>2</item>
 		<item>3</item>
 		<item>4</item>
+		<item>5</item>
 	</string-array>
 	
 	<string-array name="sort_by">

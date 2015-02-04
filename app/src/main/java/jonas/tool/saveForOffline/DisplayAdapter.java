@@ -177,23 +177,26 @@ public class DisplayAdapter extends BaseAdapter
 				case 2: convertView = layoutInflater.inflate(R.layout.listcell_grid, null); break;
 				case 3: convertView = layoutInflater.inflate(R.layout.listcell_list, null); break;
 				case 4: convertView = layoutInflater.inflate(R.layout.listcell_list_details, null); break;
+				case 5: convertView = layoutInflater.inflate(R.layout.listcell_list_details_small, null); break;
 				default: convertView = layoutInflater.inflate(R.layout.listcell_default, null);
 			}
 			
 			mHolder = new Holder();
-			if (list_layout_type == 4) {
+			if (list_layout_type == 4 || list_layout_type == 5) {
 				mHolder.txt_date = (TextView) convertView.findViewById(R.id.txt_date);
 			}
 			mHolder.txt_id = (TextView) convertView.findViewById(R.id.txt_id);
 			mHolder.txt_filelocation = (TextView) convertView.findViewById(R.id.txt_fileLocation);
 			mHolder.txt_orig_url = (TextView) convertView.findViewById(R.id.txt_orig_url);
 			mHolder.txt_title = (TextView) convertView.findViewById(R.id.txt_title);
-			mHolder.listimage = (ImageView) convertView.findViewById(R.id.listimage);
+			if (list_layout_type != 5) {
+				mHolder.listimage = (ImageView) convertView.findViewById(R.id.listimage);
+			}
 			convertView.setTag(mHolder);
 		} else {
 			mHolder = (Holder) convertView.getTag();
 		}
-		if (list_layout_type == 4) {
+		if (list_layout_type == 4 || list_layout_type == 5) {
 			try {
 				mHolder.txt_date.setText("Saved " + fuzzyFormatter.getFuzzy(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_TIMESTAMP))));
 			} catch (ParseException e) {
@@ -215,8 +218,9 @@ public class DisplayAdapter extends BaseAdapter
 	
 		//mHolder.listimage.setImageBitmap(mHolder.mBitmap);
 		
-		loadBitmap(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_THUMBNAIL)), mHolder.listimage);
-		
+		if (list_layout_type != 5) {
+			loadBitmap(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_THUMBNAIL)), mHolder.listimage);
+		}
 		
 		return convertView;
 	}
