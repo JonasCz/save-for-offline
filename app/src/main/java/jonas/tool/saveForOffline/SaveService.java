@@ -33,6 +33,8 @@ public class SaveService extends Service {
 	private String title;
 	private String origurl;
 	
+	private boolean save_real_html;
+	
 	private boolean hasTimedOut = true;
 
 	private boolean thumbnailWasSaved = false;
@@ -101,9 +103,19 @@ public class SaveService extends Service {
 		webview.measure(600, 400);
 		webview.layout(0, 0, 600, 400); 
 		webview.getSettings().setJavaScriptEnabled(true);
+		save_real_html =  sharedPref.getBoolean("save_html_files" , true);
 		
+		if (save_real_html) {
+		saveCompleteWebpage webSaver = new saveCompleteWebpage();
+		try {
+			webSaver.grabPage(origurl, destinationDirectory);
+		} catch (Exception e) {
+			
+		} }
 
-		webview.loadUrl(origurl);
+		//synchronized (this) {try {wait(1000);} catch (InterruptedException e) {}}
+
+		webview.loadUrl("file://" + destinationDirectory + "index.html");
 
 		webview.setWebChromeClient(new WebChromeClient() {
 				public void onProgressChanged(WebView view, int progress) {
@@ -227,7 +239,9 @@ public class SaveService extends Service {
 
 		addToDb();
 
-		webview.saveWebArchive(filelocation);
+		if (!save_real_html) {
+			webview.saveWebArchive(filelocation);
+		}
 		
 		new takeScreenshotTask().execute();
 		
@@ -246,7 +260,11 @@ public class SaveService extends Service {
 		SQLiteDatabase dataBase = mHelper.getWritableDatabase();
 		ContentValues values=new ContentValues();
 
-		values.put(DbHelper.KEY_FILE_LOCATION, filelocation);
+		if (save_real_html) {
+			values.put(DbHelper.KEY_FILE_LOCATION, destinationDirectory + "index.html");
+		} else {
+			values.put(DbHelper.KEY_FILE_LOCATION, filelocation);
+		}
 		values.put(DbHelper.KEY_TITLE, title);
 		values.put(DbHelper.KEY_THUMBNAIL, thumbnail);
 		values.put(DbHelper.KEY_ORIG_URL, origurl);

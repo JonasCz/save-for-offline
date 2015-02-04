@@ -73,6 +73,7 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 				case 2: break;
 				case 3: mainGrid.setNumColumns(1); break;
 				case 4: mainGrid.setNumColumns(1); break;
+				case 5: mainGrid.setNumColumns(1); break;
 				default:
 			}
 

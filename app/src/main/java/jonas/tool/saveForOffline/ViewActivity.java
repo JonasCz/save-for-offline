@@ -60,10 +60,14 @@ public class ViewActivity extends Activity
 		webview.getSettings().setBuiltInZoomControls(true);
 		webview.getSettings().setDisplayZoomControls(false);
         
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-			//kitkat and up saves webarchives in a different format, which we can read easisly
+		if (incomingIntent.getStringExtra("fileLocation").endsWith("html")) {
+			webview.loadUrl("file://" + incomingIntent.getStringExtra("fileLocation"));
+			setProgressBarIndeterminateVisibility(false);
+		} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+			//kitkat and up saves webarchives in a different format, which we can read easyly
 			setProgressBarIndeterminateVisibility(false);
 			webview.loadUrl("file://" + incomingIntent.getStringExtra("fileLocation"));
+			setProgressBarIndeterminateVisibility(false);
 		} else loadWebView();
     }
 

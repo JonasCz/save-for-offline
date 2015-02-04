@@ -134,7 +134,7 @@ public abstract class WebArchiveReader {
     private class WebClient extends WebViewClient {
         @Override
         public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
-			Log.w("Reading", url);
+			
             if (!myLoadingArchive)
                 return null;
             int n = urlList.indexOf(url);

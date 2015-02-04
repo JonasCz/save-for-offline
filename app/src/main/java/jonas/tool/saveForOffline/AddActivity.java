@@ -86,7 +86,7 @@ public class AddActivity extends Activity {
 	public void okButtonClick(View view) {
 
 		origurl = edit_origurl.getText().toString().trim();
-		if (origurl.length() > 0 && (origurl.startsWith("http://") || origurl.startsWith("file://"))) {
+		if (origurl.length() > 0 && (origurl.startsWith("http://") || origurl.startsWith("file://") || origurl.startsWith("https://"))) {
 			startSaveActivity();
 		} else if (origurl.length() > 0) {
 			origurl = "http://" + origurl;

@@ -27,23 +27,20 @@ Please report any bugs you find, and contribute if you can!
 
 ## It can
 
-* Save web pages for offline reading
-* Save in the background, no need to wait for it to finish
+* **Save real HTML**  files which can be opened in other apps / devices
+* Download & **save entire web pages for offline reading & viewing**
+* **Save in the background**, no need to wait for it to finish
 * Nice UI (In my opinion anyway & needs more testing on different devices and screen sizes)
-
-```
-Todo:
-* Save real HTML files
-* Test ui on different devices & screens.
-```
 
 ## About
 
 #### This app uses
 
-*  [WebArchiveReader](http://github.com/JonasCz/save-for-offline/releases) thanks to StackOverflow user [Gregko](http://github.com/JonasCz/save-for-offline/releases)
+*  [WebArchiveReader](http://github.com/gregko/webArchiveReader/) thanks to StackOverflow user [Gregko](http://github.com/JonasCz/save-for-offline/releases)
 
-* [FuzzyDateFormatter](http://github.com/JonasCz/save-for-offline/releases) by Ionut G. Stan
+* [FuzzyDateFormatter](http://github.com/igstan/fuzzyDateFormatter/)
+
+* [GetMeThatPage](https://github.com/PramodKhare/GetMeThatPage/)
 
 #### Licence is GPL, see the LICENCE file
 
