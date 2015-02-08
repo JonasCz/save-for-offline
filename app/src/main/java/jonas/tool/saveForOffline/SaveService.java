@@ -31,7 +31,6 @@ public class SaveService extends IntentService {
 	private String filelocation;
 	private String destinationDirectory;
 	private String thumbnail;
-	private String title;
 	private String origurl;
 	
 	private String uaString;
@@ -67,10 +66,11 @@ public class SaveService extends IntentService {
 			.setContentTitle("Saving webpage...")
 			.setTicker("Saving webpage...")
 			.setSmallIcon(android.R.drawable.stat_sys_download)
+			.setProgress(0,0, true)
 			.setOngoing(true)
 			.setOnlyAlertOnce(true)
 			.setPriority(Notification.PRIORITY_HIGH)
-			.setContentText("Save in progress");
+			.setContentText("Save in progress: getting ready...");
 			
 		mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		mNotificationManager.notify(notification_id, mBuilder.build());
@@ -108,7 +108,7 @@ public class SaveService extends IntentService {
 		try {
 			grabPage(origurl, destinationDirectory);
 		} catch (Exception e) {
-			
+			return;
 		}
 		
 		addToDb();
@@ -128,6 +128,33 @@ public class SaveService extends IntentService {
 			.setPriority(Notification.PRIORITY_LOW)
 			.setContentText(GrabUtility.title);
 		mNotificationManager.notify(notification_id, mBuilder.build());
+	}
+	
+	private void notifyProgress(String filename, int maxProgress, int progress) {
+		mBuilder
+			.setContentText(filename)
+			.setProgress(maxProgress, progress, false);
+		mNotificationManager.notify(notification_id, mBuilder.build());
+	}
+	
+	
+	private void notifyError(String message, String extraMessage) {
+		if (message != null) {
+		mBuilder
+			.setContentText(extraMessage)
+			.setOnlyAlertOnce(false)
+			.setTicker("Could not save page!")
+			.setSmallIcon(android.R.drawable.stat_sys_warning)
+			.setContentTitle(message)
+			.setProgress(0,0,false);
+			
+		} else {
+			mBuilder
+			.setContentText(extraMessage);
+		}
+		mNotificationManager.notify(notification_id, mBuilder.build());
+		
+		
 	}
 
 	private void addToDb() {
@@ -157,31 +184,33 @@ public class SaveService extends IntentService {
 	
 	private void grabPage(String url, String outputDirPath) throws Exception {
 
+		GrabUtility.filesToGrab.clear();
+		GrabUtility.title = null;
+		GrabUtility.grabbedFiles.clear();
+		
 		int i = 0;
+		
         if(url == null || outputDirPath == null){
-        	System.out.println(GrabUtility.usageMessage);
-	        throw new Exception("Invalid input parameters");
-			
-        }
-
-		// in case no http protocol specified then add protocol part 
-		// to form proper url
+        	notifyError("Page not saved", "There was an internal error, this is a bug, so please report it.");
+	        throw new IllegalArgumentException();
+		}
 		if(!url.startsWith("http://") && !url.startsWith("https://")){
-			throw new Exception("url does not have protocol part. Must start with http:// or https://");
-
+			notifyError("Bad url","URL to save must start with http:// or https://");
+			throw new IllegalArgumentException("url does not have protocol part. Must start with http:// or https://");
 		}
 
 		URL obj = new URL(url);
+		
 		File outputDir = new File(outputDirPath);
+		
 		if(outputDir.exists() && outputDir.isFile()){
 			System.out.println("output directory path is wrong, please provide some directory path");
 			return;
 		} else if (!outputDir.exists()){
 			outputDir.mkdirs();
-			System.out.println("Directory created!!");
 		}
-		getWebPage(obj, outputDir);
-		System.out.println("First Page grabbed successfully!!");
+		
+		downloadMainHtmlAndParseLinks(url, outputDirPath);
 
 		//Links to visit ->
 		String tempEntry = null;
@@ -200,7 +229,8 @@ public class SaveService extends IntentService {
 					tempEntry = GrabUtility.filesToGrab.get(i);
 					obj = new URL(tempEntry);
 					if(!GrabUtility.isURLAlreadyGrabbed(tempEntry)){
-						getWebPage(obj, outputDir);
+						getExtraFile(obj, outputDir);
+						notifyProgress("Saving file: " + tempEntry.substring(tempEntry.lastIndexOf("/") + 1), GrabUtility.filesToGrab.size(), i);
 					}
 					
 					
@@ -210,43 +240,21 @@ public class SaveService extends IntentService {
 			}
 			linksToGrabSize = GrabUtility.filesToGrab.size();
 			
-			mBuilder
-				.setOnlyAlertOnce(true)
-				.setProgress(linksToGrabSize, i, false);
-			mNotificationManager.notify(notification_id, mBuilder.build());
 		}
 
-		Iterator<String> filesToGrab = GrabUtility.filesToGrab.iterator();
-		System.out.println("URLs to Grab - ");
-		while (filesToGrab.hasNext()) {
-			tempEntry = filesToGrab.next();
-			System.out.println(tempEntry);
-		}
-		System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-
-		//Total Links Visited:-
-		Iterator<String> grabbedFiles = GrabUtility.grabbedFiles.iterator();
-		System.out.println("Grabbeded URLs - ");
-		while (grabbedFiles.hasNext()) {
-			tempEntry = grabbedFiles.next();
-			System.out.println(tempEntry);
-		}
-		System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
 	}
-
-	private void getWebPage(URL obj, File outputDir) {
+	
+	private void downloadMainHtmlAndParseLinks (String url, String outputDir) throws IOException {
 		FileOutputStream fop = null;
 		BufferedReader in = null;
 		HttpURLConnection conn = null;
 		File outputFile = null;
 		InputStream is = null;
+		notifyProgress("Downloading main HTML file", 100, 1);
 		try {
-			String path = obj.getPath();
-			String filename = path.substring(path.lastIndexOf('/')+1);
-			if(filename.equals("/") || filename.equals("")){
-				filename = "index.html";
-			}
-			System.out.println(filename);
+			
+			URL obj = new URL(url);
+			String filename = "index.html";
 
 			//Output file name
 			outputFile = new File(outputDir, filename);
@@ -261,18 +269,137 @@ public class SaveService extends IntentService {
 
 			// normally, 3xx is redirect
 			int status = conn.getResponseCode();
-			if (status != HttpURLConnection.HTTP_OK) {
+			if (status != HttpURLConnection.HTTP_OK && status != HttpURLConnection.HTTP_NOT_FOUND) {
 				if (status == HttpURLConnection.HTTP_MOVED_TEMP
 					|| status == HttpURLConnection.HTTP_MOVED_PERM
 					|| status == HttpURLConnection.HTTP_SEE_OTHER){
 					redirect = true;
 				}else{
-					System.out.println("Unable to get resource mostly 404 "+status);
-					return;
+					notifyError("Could not save page", "Failed to download main HTML file. HTTP status code: " + status);
+					throw new IOException();
 				}
 			}
 
-			System.out.println("Response Code ... " + status);
+			if (redirect) {
+				// get redirect url from "location" header field
+				String newUrl = conn.getHeaderField("Location");
+				
+				// get the cookie if need, for login
+				String cookies = conn.getHeaderField("Set-Cookie");
+
+				// open the new connnection again
+				obj =  new URL(newUrl);
+				conn = (HttpURLConnection) obj.openConnection();
+				conn.setRequestProperty("Cookie", cookies);
+				conn.addRequestProperty("Accept-Language", "en-US,en;q=0.8");
+				conn.addRequestProperty("User-Agent", uaString);
+				conn.addRequestProperty("Referer", "google.com");
+			}
+
+			// if file doesn't exists, then create it
+			if (!outputFile.exists()) {
+				outputFile.createNewFile();
+			}
+			// can we write this file
+			if(!outputFile.canWrite()){
+				notifyError("Could not save page", "Cannot write to file - "+outputFile.getAbsolutePath());
+				System.out.println("Cannot write to file - "+outputFile.getAbsolutePath());
+				return;
+			}
+			
+			in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+			
+			String inputLine;
+			StringBuffer strResponse = new StringBuffer();
+			// append whole response into single string, save it into a file on storage
+			// if its of type html then parse it and get all css and images and javascript files
+			// and add them to filesToGrab list
+			while ((inputLine = in.readLine()) != null) {
+				strResponse.append(inputLine+"\r\n");
+			}
+			
+			notifyProgress("Parsing main HTML file", 100, 5);
+			String htmlContent = strResponse.toString();
+			htmlContent = GrabUtility.searchForNewFilesToGrab(htmlContent, obj);
+
+			outputFile = new File(outputDir, filename);
+
+			try {
+				// clear previous files contents
+				fop = new FileOutputStream(outputFile);
+				fop.write(htmlContent.getBytes());
+				fop.flush();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			
+			failCount = 0;
+		} catch (Exception e) {
+			
+			failCount++;
+
+			if (failCount <= 5) {
+				notifyError(null, "Failed to download main HTML file, retrying. Fail count: " + failCount );
+				synchronized (this) {try {wait(2500);} catch (InterruptedException ex) {}}
+				downloadMainHtmlAndParseLinks(url, outputDir);
+			} else {
+				notifyError("Could not save page", "Failed to download main HTML file.");
+				throw new IOException();
+			}
+
+		} finally {
+			try {
+				if(is != null){
+					is.close();
+				}
+				if(in != null){
+					in.close();
+				}
+				if (fop != null) {
+					fop.close();
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	private void getExtraFile(URL obj, File outputDir) throws IOException {
+		FileOutputStream fop = null;
+		BufferedReader in = null;
+		HttpURLConnection conn = null;
+		File outputFile = null;
+		InputStream is = null;
+		try {
+			String path = obj.getPath();
+			String filename = path.substring(path.lastIndexOf('/')+1);
+			if(filename.equals("/") || filename.equals("")){
+				return;
+			}
+
+			//Output file name
+			outputFile = new File(outputDir, filename);
+
+			conn = (HttpURLConnection) obj.openConnection();
+			conn.setReadTimeout(5000);
+			conn.addRequestProperty("Accept-Language", "en-US,en;q=0.8");
+			conn.addRequestProperty("User-Agent", uaString);
+			conn.addRequestProperty("Referer", "google.com");
+
+			boolean redirect = false;
+
+			// normally, 3xx is redirect
+			int status = conn.getResponseCode();
+			if (status != HttpURLConnection.HTTP_OK && status != HttpURLConnection.HTTP_NOT_FOUND) {
+				if (status == HttpURLConnection.HTTP_MOVED_TEMP
+					|| status == HttpURLConnection.HTTP_MOVED_PERM
+					|| status == HttpURLConnection.HTTP_SEE_OTHER){
+					redirect = true;
+				}else{
+					
+					return;
+				}
+			}
 
 			if (redirect) {
 				// get redirect url from "location" header field
@@ -301,64 +428,43 @@ public class SaveService extends IntentService {
 				System.out.println("Cannot write to file - "+outputFile.getAbsolutePath());
 				return;
 			}
-			//parse only HTML type page response, others just write them to their respective files
-			//in given output directory
-			if(filename.endsWith("html") || filename.endsWith("htm")
-			   || filename.endsWith("asp") || filename.endsWith("aspx")
-			   || filename.endsWith("php") || filename.endsWith("php")
-			   || filename.endsWith("net")){
-				in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-				//Convert parse only if its html, others leave it as is
-				String inputLine;
-				StringBuffer strResponse = new StringBuffer();
-				// append whole response into single string, save it into a file on storage
-				// if its of type html then parse it and get all css and images and javascript files
-				// and add them to filesToGrab list
-				while ((inputLine = in.readLine()) != null) {
-					strResponse.append(inputLine+"\r\n");
-				}
-				String htmlContent = strResponse.toString();
-				htmlContent = GrabUtility.searchForNewFilesToGrab(htmlContent, obj);
-
-				outputFile = new File(outputDir, "index.html");
-
-				try {
-					// clear previous files contents
-					fop = new FileOutputStream(outputFile);
-					fop.write(htmlContent.getBytes());
+			try {
+				fop = new FileOutputStream(outputFile);
+				is = conn.getInputStream();
+				// clear previous files contents
+				byte[] buffer = new byte[1024*16]; // read in batches of 16K
+		        int length;
+		        while ((length = is.read(buffer)) > 0) {
+		            fop.write(buffer, 0, length);
+	            }
 					fop.flush();
+					failCount = 0;					
 				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			} else {
-				// In case if file is not HTML type then directly store it to 
-				// output directory
-				try {
-					fop = new FileOutputStream(outputFile);
-					is = conn.getInputStream();
-					// clear previous files contents
-					byte[] buffer = new byte[1024*16]; // read in batches of 16K
-		            int length;
-		            while ((length = is.read(buffer)) > 0) {
-		                fop.write(buffer, 0, length);
-		            }
-					fop.flush();					
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
+					failCount++;
+
+					if (failCount <= 5) {
+						notifyError(null, "Failed to download: " + outputFile.getName() + ", retrying. Fail count: " + failCount );
+						synchronized (this) {try {wait(2500);} catch (InterruptedException ex) {}}
+						getExtraFile(obj, outputDir);
+					} else {
+						notifyError(null, "Failed to download extra file: " + outputFile.getName());
+						//handle it properly
+					}
+				
 			}
 		failCount = 0;
 		} catch (Exception e) {
-			System.out.println("Exception in getting webpage - "+obj);
-			
-			e.printStackTrace();
 			failCount++;
 			
 			if (failCount <= 5) {
-				System.out.println("Waiting and retrying");
+				notifyError(null, "Failed to download: " + outputFile.getName() + ", retrying in three seconds. Fail count: " + failCount );
 				synchronized (this) {try {wait(2500);} catch (InterruptedException ex) {}}
-				getWebPage(obj, outputDir);
+				getExtraFile(obj, outputDir);
+			} else {
+				notifyError("Could not save page", "Failed to download extra file: " + outputFile.getName());
+				
 			}
+			
 			
 		} finally {
 			try {
@@ -389,13 +495,6 @@ class GrabUtility{
 	public static HashSet<String> grabbedFiles = new HashSet<String>();
 	
 	public static String title;
-
-	public static final String usageMessage = 
-	"Usage: GrabWebPage [--url url-to-grab] [--out output-directory-full-path]"
-	+ 	"  		--url url-to-grab\turl of webpage to grab"
-	+ 	"  		--out output-directory-full-path where to store grabbed files"
-	+  	"For example -->  " 
-	+	" GrabWebPage --url \"http://www.google.com\" --out \"F:/New folder\"";
 
 	public static void addLinkGrabbedFilesList(String url){
 		synchronized (grabbedFiles) {

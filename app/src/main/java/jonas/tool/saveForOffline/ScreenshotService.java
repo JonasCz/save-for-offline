@@ -29,7 +29,7 @@ public class ScreenshotService extends Service {
 			super(looper);
 		}
 		@Override
-		public void handleMessage(Message msg) {
+		public void handleMessage(final Message msg) {
 			
 			webview = new WebView(ScreenshotService.this);
 
@@ -57,14 +57,15 @@ public class ScreenshotService extends Service {
 					@Override
 					public void onPageFinished(WebView view, String url) {
 						new takeScreenshotTask().execute();
-						stopSelf();
+						stopSelf(msg.arg1);
 
 
 					}
 				});
 			
+			}		
 			
-		}
+		
 	}
 	
 	private class takeScreenshotTask extends AsyncTask<Void, Void, Void> {
@@ -73,7 +74,7 @@ public class ScreenshotService extends Service {
 		protected Void doInBackground(Void[] p1) {
 
 			//allow the webview to render
-			
+			synchronized (this) {try {wait(250);} catch (InterruptedException ex) {}}
 
 			//here I save the bitmap to file
 			Bitmap b = webview.getDrawingCache();
