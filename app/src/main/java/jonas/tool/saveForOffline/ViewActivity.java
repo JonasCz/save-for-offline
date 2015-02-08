@@ -59,15 +59,32 @@ public class ViewActivity extends Activity
 		webview.getSettings().setJavaScriptEnabled(true);
 		webview.getSettings().setBuiltInZoomControls(true);
 		webview.getSettings().setDisplayZoomControls(false);
+		webview.getSettings().setAllowFileAccess(true);
+		webview.getSettings().setAllowFileAccessFromFileURLs(true);
+		
         
 		if (incomingIntent.getStringExtra("fileLocation").endsWith("html")) {
 			webview.loadUrl("file://" + incomingIntent.getStringExtra("fileLocation"));
-			setProgressBarIndeterminateVisibility(false);
+			webview.setWebViewClient(new WebViewClient() {
+
+					@Override
+					public void onPageFinished(WebView view, String url) {
+						setProgressBarIndeterminateVisibility(false);
+
+					}
+				});
 		} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
 			//kitkat and up saves webarchives in a different format, which we can read easyly
-			setProgressBarIndeterminateVisibility(false);
 			webview.loadUrl("file://" + incomingIntent.getStringExtra("fileLocation"));
-			setProgressBarIndeterminateVisibility(false);
+			webview.setWebViewClient(new WebViewClient() {
+
+					@Override
+					public void onPageFinished(WebView view, String url) {
+						setProgressBarIndeterminateVisibility(false);
+
+					}
+				});
+			
 		} else loadWebView();
     }
 

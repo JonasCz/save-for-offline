@@ -35,8 +35,6 @@ public class SaveService extends IntentService {
 	private String origurl;
 	
 	private String uaString;
-	
-	private boolean save_real_html;
 
 	private boolean thumbnailWasSaved = false;
 	
@@ -53,10 +51,6 @@ public class SaveService extends IntentService {
 	
 	public SaveService () {
 		super("SaveService");
-	}
-	
-	private void setTitle (String title) {
-		this.title = title;
 	}
 
 	@Override
@@ -108,8 +102,6 @@ public class SaveService extends IntentService {
 
 		// This is the important code :)  
 		// Without it the view will have a dimension of 0,0 and the bitmap will be null       
-		
-		save_real_html =  sharedPref.getBoolean("save_html_files" , true);
 		
 		
 		
@@ -362,7 +354,7 @@ public class SaveService extends IntentService {
 			e.printStackTrace();
 			failCount++;
 			
-			if (failCount < 5) {
+			if (failCount <= 5) {
 				System.out.println("Waiting and retrying");
 				synchronized (this) {try {wait(2500);} catch (InterruptedException ex) {}}
 				getWebPage(obj, outputDir);

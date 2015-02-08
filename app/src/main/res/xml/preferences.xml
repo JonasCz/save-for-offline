@@ -13,12 +13,6 @@
                 android:entries="@array/entries_list_preference"
                 android:entryValues="@array/entryvalues_list_preference"
                 android:dialogTitle="Choose" />
-			
-		<CheckBoxPreference 
-			android:key="save_html_files" 
-			android:defaultValue="true"
-			android:title="Save HTML files" 
-			android:summary="Saving may be unreliable if this is turned off"/>
 		
 		<!--<ListPreference
 			android:key="storage_dir"
