@@ -390,7 +390,7 @@ public class SaveService extends IntentService {
 
 			// normally, 3xx is redirect
 			int status = conn.getResponseCode();
-			if (status != HttpURLConnection.HTTP_OK && status != HttpURLConnection.HTTP_NOT_FOUND) {
+			if (status != HttpURLConnection.HTTP_OK) {
 				if (status == HttpURLConnection.HTTP_MOVED_TEMP
 					|| status == HttpURLConnection.HTTP_MOVED_PERM
 					|| status == HttpURLConnection.HTTP_SEE_OTHER){

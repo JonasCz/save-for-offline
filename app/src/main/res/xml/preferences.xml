@@ -9,10 +9,24 @@
                 android:key="user_agent"
                 android:title="User agent"
 				android:defaultValue="mobile"
-                android:summary="Choose wheather to save the desktop or mobile version of webpage"
+                android:summary="Choose whether to save the desktop or mobile version of webpage"
                 android:entries="@array/entries_list_preference"
                 android:entryValues="@array/entryvalues_list_preference"
                 android:dialogTitle="Choose" />
+			
+		<PreferenceScreen
+			xmlns:android="http://schemas.android.com/apk/res/android"
+			android:title="Advanced options for saving"
+			android:summary="Choose how errors should be handled and what parts of a webpage to save (images, scripts...) ">
+			<PreferenceCategory
+				android:title="Error handling">
+			<CheckBoxPreference 
+				android:key="ignore_errors_extra_files" 
+				android:defaultValue="true"
+				android:title="Ignore errors when saving extra files" 
+				android:summary="If an extra file such as image / script cannot be downloaded and saved, ignore it and continue"/>
+			</PreferenceCategory>
+		</PreferenceScreen>
 		
 		<!--<ListPreference
 			android:key="storage_dir"
