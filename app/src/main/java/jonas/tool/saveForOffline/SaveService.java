@@ -198,8 +198,6 @@ public class SaveService extends IntentService {
 			notifyError("Bad url","URL to save must start with http:// or https://");
 			throw new IllegalArgumentException("url does not have protocol part. Must start with http:// or https://");
 		}
-
-		URL obj = new URL(url);
 		
 		File outputDir = new File(outputDirPath);
 		
@@ -213,25 +211,24 @@ public class SaveService extends IntentService {
 		downloadMainHtmlAndParseLinks(url, outputDirPath);
 
 		//Links to visit ->
-		String tempEntry = null;
+	
 		int linksToGrabSize;
 		synchronized (GrabUtility.filesToGrab) {
 			linksToGrabSize = GrabUtility.filesToGrab.size();
-			System.out.println("Total filesToGrab - "+linksToGrabSize);
+			
 		}
 
 		for (i=0; i<linksToGrabSize; i++) {
 			System.out.println("Value of i - "+i);
-			tempEntry = null;
+			
 
 			synchronized (GrabUtility.filesToGrab) {
 				if(GrabUtility.filesToGrab.size() > i){
-					tempEntry = GrabUtility.filesToGrab.get(i);
-					obj = new URL(tempEntry);
-					if(!GrabUtility.isURLAlreadyGrabbed(tempEntry)){
-						getExtraFile(obj, outputDir);
-						notifyProgress("Saving file: " + tempEntry.substring(tempEntry.lastIndexOf("/") + 1), GrabUtility.filesToGrab.size(), i);
-					}
+					String urlToDownload = GrabUtility.filesToGrab.get(i);
+					
+						getExtraFile(urlToDownload, outputDir);
+						notifyProgress("Saving file: " + urlToDownload.substring(urlToDownload.lastIndexOf("/") + 1), GrabUtility.filesToGrab.size(), i);
+					
 					
 					
 				}
@@ -320,7 +317,7 @@ public class SaveService extends IntentService {
 			
 			notifyProgress("Parsing main HTML file", 100, 5);
 			String htmlContent = strResponse.toString();
-			htmlContent = GrabUtility.searchForNewFilesToGrab(htmlContent, obj);
+			htmlContent = GrabUtility.searchForNewFilesToGrab(htmlContent, url);
 
 			outputFile = new File(outputDir, filename);
 
@@ -364,13 +361,14 @@ public class SaveService extends IntentService {
 		}
 	}
 
-	private void getExtraFile(URL obj, File outputDir) throws IOException {
+	private void getExtraFile(String urlToDownload, File outputDir) throws IOException {
 		FileOutputStream fop = null;
 		BufferedReader in = null;
 		HttpURLConnection conn = null;
 		File outputFile = null;
 		InputStream is = null;
 		try {
+			URL obj = new URL(urlToDownload);
 			String path = obj.getPath();
 			String filename = path.substring(path.lastIndexOf('/')+1);
 			if(filename.equals("/") || filename.equals("")){
@@ -379,6 +377,9 @@ public class SaveService extends IntentService {
 
 			//Output file name
 			outputFile = new File(outputDir, filename);
+			if (outputFile.exists()) {
+				return;
+			}
 
 			conn = (HttpURLConnection) obj.openConnection();
 			conn.setReadTimeout(5000);
@@ -428,11 +429,12 @@ public class SaveService extends IntentService {
 				System.out.println("Cannot write to file - "+outputFile.getAbsolutePath());
 				return;
 			}
+			
+			
 			try {
 				fop = new FileOutputStream(outputFile);
 				is = conn.getInputStream();
-				// clear previous files contents
-				byte[] buffer = new byte[1024*16]; // read in batches of 16K
+				byte[] buffer = new byte[1024*32]; // read in batches of 16K
 		        int length;
 		        while ((length = is.read(buffer)) > 0) {
 		            fop.write(buffer, 0, length);
@@ -445,7 +447,7 @@ public class SaveService extends IntentService {
 					if (failCount <= 5) {
 						notifyError(null, "Failed to download: " + outputFile.getName() + ", retrying. Fail count: " + failCount );
 						synchronized (this) {try {wait(2500);} catch (InterruptedException ex) {}}
-						getExtraFile(obj, outputDir);
+						getExtraFile(urlToDownload, outputDir);
 					} else {
 						notifyError(null, "Failed to download extra file: " + outputFile.getName());
 						//handle it properly
@@ -459,7 +461,7 @@ public class SaveService extends IntentService {
 			if (failCount <= 5) {
 				notifyError(null, "Failed to download: " + outputFile.getName() + ", retrying in three seconds. Fail count: " + failCount );
 				synchronized (this) {try {wait(2500);} catch (InterruptedException ex) {}}
-				getExtraFile(obj, outputDir);
+				getExtraFile(urlToDownload, outputDir);
 			} else {
 				notifyError("Could not save page", "Failed to download extra file: " + outputFile.getName());
 				
@@ -518,12 +520,19 @@ class GrabUtility{
 		return newUrl;
 	}
 
-	public static String searchForNewFilesToGrab(String htmlContent, URL fromHTMLPageUrl){
+	public static String searchForNewFilesToGrab(String htmlContent, String baseUrl){
 		//get all links from this webpage and add them to Frontier List i.e. LinksToVisit ArrayList
 		Document responseHTMLDoc = null;
+		URL fromHTMLPageUrl;
+		try {
+			fromHTMLPageUrl = new URL(baseUrl);
+		} catch (MalformedURLException e) {
+			fromHTMLPageUrl = null;
+		}
+		
 		String urlToGrab = null;
 		if(!htmlContent.trim().equals("")){
-			responseHTMLDoc = Jsoup.parse(htmlContent);
+			responseHTMLDoc = Jsoup.parse(htmlContent, baseUrl);
 			
 			title = responseHTMLDoc.title();
 			// GrabUtility.searchNewLinksForCrawling(responseHTMLDoc, url);
@@ -531,34 +540,33 @@ class GrabUtility{
 			System.out.println("All Links - ");
 			Elements links = responseHTMLDoc.select("link[href]");
 			for(Element link: links){
-				urlToGrab = link.attr("href");
-				addLinkToFrontier(urlToGrab, fromHTMLPageUrl);
-				System.out.println("Actual URL - "+urlToGrab);
+				urlToGrab = link.attr("abs:href");
+				
+				addLinkToFrontier(urlToGrab,fromHTMLPageUrl);
+				
 				String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/")+1);
-				htmlContent = htmlContent.replaceAll(urlToGrab, replacedURL);
-				System.out.println("Replaced URL - "+replacedURL);
+				
+				link.attr("href", replacedURL);
+				
 			}
 
 			System.out.println("All external scripts - ");
 			Elements links2 = responseHTMLDoc.select("script[src]");
 			for(Element link: links2){
-				urlToGrab = link.attr("src");
+				urlToGrab = link.attr("abs:src");
 				addLinkToFrontier(urlToGrab, fromHTMLPageUrl);
-				System.out.println("Actual URL - "+urlToGrab);
 				String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/")+1);
-				htmlContent = htmlContent.replaceAll(urlToGrab, replacedURL);
-				System.out.println("Replaced URL - "+replacedURL);
+				link.attr("src", replacedURL);
 			}
 
 			System.out.println("All images - ");
 			Elements links3 = responseHTMLDoc.select("img[src]");
 			for(Element link: links3){
-				urlToGrab = link.attr("src");
+				urlToGrab = link.attr("abs:src");
 				addLinkToFrontier(urlToGrab, fromHTMLPageUrl);
-				System.out.println("Actual URL - "+urlToGrab);
+				
 				String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/")+1);
-				htmlContent = htmlContent.replaceAll(urlToGrab, replacedURL);
-				System.out.println("Replaced URL - "+replacedURL);
+				link.attr("src", replacedURL);
 			}
 		}
 		return htmlContent;
@@ -566,26 +574,14 @@ class GrabUtility{
 
 	public static void addLinkToFrontier(String link, URL fromHTMLPageUrl) {
 		synchronized (filesToGrab) {
-			if(link.startsWith("/")){
-				// meaning absolute url from root
-				System.out.println("Absolute Link - "+getRootUrlString(fromHTMLPageUrl)+link);
-				filesToGrab.add(getRootUrlString(fromHTMLPageUrl)+link);
-			} else if(link.startsWith("http://") && !filesToGrab.contains(link)){
-				System.out.println("Full Doamin Link - "+link);
-				URL url;
-				try {
-					url = new URL(link);
-					if(isValidlink(url, fromHTMLPageUrl))	//if link from different domain
-						filesToGrab.add(link);
-				} catch (MalformedURLException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			} else {
-				// meaning relative url from current directory
-				System.out.println("Relative Link - "+getCurrentFolder(fromHTMLPageUrl)+link);
-				filesToGrab.add(getCurrentFolder(fromHTMLPageUrl)+link);
-			}
+		
+		
+				
+					
+						
+					filesToGrab.add(link);
+			
+		
 		}
 	}
 
