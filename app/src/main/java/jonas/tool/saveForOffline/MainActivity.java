@@ -337,15 +337,24 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 
 								for (Integer position: gridAdapter.selectedViewsPositions)
 								{
+								
+									String fileLocation = gridAdapter.getPropertiesByPosition(position, "thumbnail_location");
+									File file = new File(fileLocation);
+									file.delete();
+
+									fileLocation = gridAdapter.getPropertiesByPosition(position, "file_location");
+									file = new File(fileLocation);
+									file.delete();
+									
+//									if (!gridAdapter.getPropertiesByPosition(position, "file_location").endsWith("mht")) {
+//										fileLocation = gridAdapter.getPropertiesByPosition(position, "file_location");
+//										file = new File(fileLocation);
+//										
+//									}
+									
 									dataBase.delete(DbHelper.TABLE_NAME, DbHelper.KEY_ID + "=" + gridAdapter.getPropertiesByPosition(position, "id"), null);
 									
-									String thumbnailLocation = gridAdapter.getPropertiesByPosition(position, "thumbnail_location");
-									File thumbfile = new File(thumbnailLocation);
-									thumbfile.delete();
-
-									String fileLocation = gridAdapter.getPropertiesByPosition(position, "file_location");
-									File mainfile = new File(fileLocation);
-									mainfile.delete();
+									
 									
 								}
 

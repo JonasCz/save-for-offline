@@ -33,8 +33,6 @@ public class SaveService extends IntentService {
 	private String thumbnail;
 	private String origurl;
 	
-	private String title;
-	
 	private String uaString;
 
 	private boolean thumbnailWasSaved = false;
@@ -97,15 +95,6 @@ public class SaveService extends IntentService {
 		thumbnail = dh.getThumbnailLocation();
 		
 		origurl = intent.getStringExtra("origurl");
-
-
-		Toast.makeText(SaveService.this, "Saving page...", Toast.LENGTH_SHORT).show();
-
-
-		// This is the important code :)  
-		// Without it the view will have a dimension of 0,0 and the bitmap will be null       
-		
-		
 		
 		try {
 			grabPage(origurl, destinationDirectory);
@@ -130,33 +119,6 @@ public class SaveService extends IntentService {
 			.setPriority(Notification.PRIORITY_LOW)
 			.setContentText(GrabUtility.title);
 		mNotificationManager.notify(notification_id, mBuilder.build());
-	}
-	
-	private void notifyProgress(String filename, int maxProgress, int progress) {
-		mBuilder
-			.setContentText(filename)
-			.setProgress(maxProgress, progress, false);
-		mNotificationManager.notify(notification_id, mBuilder.build());
-	}
-	
-	
-	private void notifyError(String message, String extraMessage) {
-		if (message != null) {
-		mBuilder
-			.setContentText(extraMessage)
-			.setOnlyAlertOnce(false)
-			.setTicker("Could not save page!")
-			.setSmallIcon(android.R.drawable.stat_sys_warning)
-			.setContentTitle(message)
-			.setProgress(0,0,false);
-			
-		} else {
-			mBuilder
-			.setContentText(extraMessage);
-		}
-		mNotificationManager.notify(notification_id, mBuilder.build());
-		
-		
 	}
 
 	private void addToDb() {
@@ -184,6 +146,33 @@ public class SaveService extends IntentService {
 		wasAddedToDb = true;
 	}
 	
+	private void notifyProgress(String filename, int maxProgress, int progress) {
+		mBuilder
+			.setContentText(filename)
+			.setProgress(maxProgress, progress, false);
+		mNotificationManager.notify(notification_id, mBuilder.build());
+	}
+
+
+	private void notifyError(String message, String extraMessage) {
+		if (message != null) {
+			mBuilder
+				.setContentText(extraMessage)
+				.setOnlyAlertOnce(false)
+				.setTicker("Could not save page!")
+				.setSmallIcon(android.R.drawable.stat_sys_warning)
+				.setContentTitle(message)
+				.setProgress(0,0,false);
+
+		} else {
+			mBuilder
+				.setContentText(extraMessage);
+		}
+		mNotificationManager.notify(notification_id, mBuilder.build());
+
+
+	}
+	
 	private void grabPage(String url, String outputDirPath) throws Exception {
 
 		GrabUtility.filesToGrab.clear();
@@ -194,9 +183,13 @@ public class SaveService extends IntentService {
         	notifyError("Page not saved", "There was an internal error, this is a bug, so please report it.");
 	        throw new IllegalArgumentException();
 		}
-		if(!url.startsWith("http://") && !url.startsWith("https://")){
-			notifyError("Bad url","URL to save must start with http:// or https://");
-			throw new IllegalArgumentException("url does not have protocol part. Must start with http:// or https://");
+		if(!url.startsWith("http")){
+			if (url.startsWith("file://")) {
+				notifyError("Bad url","Cannot save local files. URL must not start with file://");
+			} else {
+				notifyError("Bad url","URL to save must start with http:// or https://");
+			}
+			throw new IllegalArgumentException("URL does not have valid protocol part. Must start with http:// or https://");
 		}
 		
 		File outputDir = new File(outputDirPath);
@@ -234,6 +227,7 @@ public class SaveService extends IntentService {
 	}
 	
 	private void downloadHtmlAndParseLinks (String url, String outputDir, boolean isExtra) throws IOException {
+		//isExtra should be true when saving a html frame file.
 		FileOutputStream fop = null;
 		BufferedReader in = null;
 		HttpURLConnection conn = null;

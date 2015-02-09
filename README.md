@@ -29,7 +29,7 @@ Please report any bugs you find, and contribute if you can!
 
 * **Save real HTML**  files which can be opened in other apps / devices
 * Download & **save entire web pages for offline reading & viewing**
-* **Save in the background**, no need to wait for it to finish
+* **Save in the background**, no need to wait for it to finish saving
 * Nice UI (In my opinion anyway & needs more testing on different devices and screen sizes)
 
 ## About
@@ -41,6 +41,8 @@ Please report any bugs you find, and contribute if you can!
 * [FuzzyDateFormatter](http://github.com/igstan/fuzzyDateFormatter/)
 
 * [GetMeThatPage](https://github.com/PramodKhare/GetMeThatPage/)
+
+* [jSoup](http://jsoup.org)
 
 #### Licence is GPL, see the LICENCE file
 
