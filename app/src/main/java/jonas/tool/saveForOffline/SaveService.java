@@ -33,6 +33,8 @@ public class SaveService extends IntentService {
 	private String thumbnail;
 	private String origurl;
 	
+	private String title;
+	
 	private String uaString;
 
 	private boolean thumbnailWasSaved = false;
@@ -185,10 +187,8 @@ public class SaveService extends IntentService {
 	private void grabPage(String url, String outputDirPath) throws Exception {
 
 		GrabUtility.filesToGrab.clear();
+		GrabUtility.framesToGrab.clear();
 		GrabUtility.title = null;
-		GrabUtility.grabbedFiles.clear();
-		
-		int i = 0;
 		
         if(url == null || outputDirPath == null){
         	notifyError("Page not saved", "There was an internal error, this is a bug, so please report it.");
@@ -208,50 +208,62 @@ public class SaveService extends IntentService {
 			outputDir.mkdirs();
 		}
 		
-		downloadMainHtmlAndParseLinks(url, outputDirPath);
+		//download main html
+		downloadHtmlAndParseLinks(url, outputDirPath, false);
+		
+		//download and parse html frames
+		for (String urlToDownload: GrabUtility.framesToGrab) {
 
-		//Links to visit ->
-	
-		int linksToGrabSize;
-		synchronized (GrabUtility.filesToGrab) {
-			linksToGrabSize = GrabUtility.filesToGrab.size();
-			
+			downloadHtmlAndParseLinks(urlToDownload, outputDirPath, true);
+
 		}
 
-		for (i=0; i<linksToGrabSize; i++) {
-			System.out.println("Value of i - "+i);
-			
+		//download extra files
 
-			synchronized (GrabUtility.filesToGrab) {
-				if(GrabUtility.filesToGrab.size() > i){
-					String urlToDownload = GrabUtility.filesToGrab.get(i);
-					
-						getExtraFile(urlToDownload, outputDir);
-						notifyProgress("Saving file: " + urlToDownload.substring(urlToDownload.lastIndexOf("/") + 1), GrabUtility.filesToGrab.size(), i);
-					
-					
-					
-				}
-				
+		for (String urlToDownload: GrabUtility.filesToGrab) {
+			
+			getExtraFile(urlToDownload, outputDir);
+			
+			synchronized (GrabUtility.filesToGrab) {		
+				notifyProgress("Saving file: " + urlToDownload.substring(urlToDownload.lastIndexOf("/") + 1), GrabUtility.filesToGrab.size(), GrabUtility.filesToGrab.indexOf(urlToDownload));	
 				
 			}
-			linksToGrabSize = GrabUtility.filesToGrab.size();
 			
 		}
 
 	}
 	
-	private void downloadMainHtmlAndParseLinks (String url, String outputDir) throws IOException {
+	private void downloadHtmlAndParseLinks (String url, String outputDir, boolean isExtra) throws IOException {
 		FileOutputStream fop = null;
 		BufferedReader in = null;
 		HttpURLConnection conn = null;
 		File outputFile = null;
 		InputStream is = null;
-		notifyProgress("Downloading main HTML file", 100, 1);
+		String filename;
+		
+		if (isExtra) {
+			filename = url.substring(url.lastIndexOf("/") + 1);
+		} else {
+			filename = "index.html";
+		}
+		
+		if (isExtra) {
+			notifyProgress("Downloading extra HTML file", 100, 5);
+		} else {
+			notifyProgress("Downloading main HTML file", 100, 1);
+		}
+	
 		try {
 			
+			String baseUrl;
+			if(url.endsWith("/")){
+				baseUrl = url + "index.html";
+			} else {
+				baseUrl = url;
+			}
+			
 			URL obj = new URL(url);
-			String filename = "index.html";
+			
 
 			//Output file name
 			outputFile = new File(outputDir, filename);
@@ -272,8 +284,14 @@ public class SaveService extends IntentService {
 					|| status == HttpURLConnection.HTTP_SEE_OTHER){
 					redirect = true;
 				}else{
-					notifyError("Could not save page", "Failed to download main HTML file. HTTP status code: " + status);
-					throw new IOException();
+					if (isExtra) {
+						notifyError(null, "Failed to download extra HTML file. HTTP status code: " + status);
+						return;
+					} else {
+						notifyError("Could not save page", "Failed to download main HTML file. HTTP status code: " + status);
+						throw new IOException();
+					}
+					
 				}
 			}
 
@@ -299,9 +317,15 @@ public class SaveService extends IntentService {
 			}
 			// can we write this file
 			if(!outputFile.canWrite()){
-				notifyError("Could not save page", "Cannot write to file - "+outputFile.getAbsolutePath());
-				System.out.println("Cannot write to file - "+outputFile.getAbsolutePath());
-				return;
+				if (isExtra) {
+					notifyError("Could not save page", "Cannot write to file - "+outputFile.getAbsolutePath());
+					System.out.println("Cannot write to file - "+outputFile.getAbsolutePath());
+					return;
+				} else {
+					notifyError("Could not save page", "Cannot write to file - "+outputFile.getAbsolutePath());
+					System.out.println("Cannot write to file - "+outputFile.getAbsolutePath());
+					throw new IOException();
+				}
 			}
 			
 			in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
@@ -315,9 +339,15 @@ public class SaveService extends IntentService {
 				strResponse.append(inputLine+"\r\n");
 			}
 			
-			notifyProgress("Parsing main HTML file", 100, 5);
+			if (isExtra) {
+				notifyProgress("Processing extra HTML file", 100, 10);
+			} else {
+				notifyProgress("Processing main HTML file", 100, 5);
+			}
+			
 			String htmlContent = strResponse.toString();
-			htmlContent = GrabUtility.searchForNewFilesToGrab(htmlContent, url);
+		
+			htmlContent = GrabUtility.searchForNewFilesToGrab(htmlContent, baseUrl);
 
 			outputFile = new File(outputDir, filename);
 
@@ -335,14 +365,26 @@ public class SaveService extends IntentService {
 			
 			failCount++;
 
-			if (failCount <= 5) {
-				notifyError(null, "Failed to download main HTML file, retrying. Fail count: " + failCount );
-				synchronized (this) {try {wait(2500);} catch (InterruptedException ex) {}}
-				downloadMainHtmlAndParseLinks(url, outputDir);
+			if (isExtra) {
+				if (failCount <= 5) {
+					notifyError(null, "Failed to download extra HTML file, retrying. Fail count: " + failCount );
+					synchronized (this) {try {wait(2500);} catch (InterruptedException ex) {}}
+					downloadHtmlAndParseLinks(url, outputDir, isExtra);
+				} else {
+					notifyError(null, "Failed to download extra HTML file: " + filename);
+					return;
+				}
 			} else {
-				notifyError("Could not save page", "Failed to download main HTML file.");
-				throw new IOException();
+				if (failCount <= 5) {
+					notifyError(null, "Failed to download main HTML file, retrying. Fail count: " + failCount );
+					synchronized (this) {try {wait(2500);} catch (InterruptedException ex) {}}
+					downloadHtmlAndParseLinks(url, outputDir, isExtra);
+				} else {
+					notifyError("Could not save page", "Failed to download main HTML file.");
+					throw new IOException();
+				}
 			}
+			
 
 		} finally {
 			try {
@@ -434,7 +476,7 @@ public class SaveService extends IntentService {
 			try {
 				fop = new FileOutputStream(outputFile);
 				is = conn.getInputStream();
-				byte[] buffer = new byte[1024*32]; // read in batches of 16K
+				byte[] buffer = new byte[1024*32]; // read in batches of 32K
 		        int length;
 		        while ((length = is.read(buffer)) > 0) {
 		            fop.write(buffer, 0, length);
@@ -449,7 +491,7 @@ public class SaveService extends IntentService {
 						synchronized (this) {try {wait(2500);} catch (InterruptedException ex) {}}
 						getExtraFile(urlToDownload, outputDir);
 					} else {
-						notifyError(null, "Failed to download extra file: " + outputFile.getName());
+						notifyError(null, "Failed to download: " + outputFile.getName());
 						//handle it properly
 					}
 				
@@ -459,11 +501,11 @@ public class SaveService extends IntentService {
 			failCount++;
 			
 			if (failCount <= 5) {
-				notifyError(null, "Failed to download: " + outputFile.getName() + ", retrying in three seconds. Fail count: " + failCount );
+				notifyError(null, "Failed to download: " + outputFile.getName() + ", retrying. Fail count: " + failCount );
 				synchronized (this) {try {wait(2500);} catch (InterruptedException ex) {}}
 				getExtraFile(urlToDownload, outputDir);
 			} else {
-				notifyError("Could not save page", "Failed to download extra file: " + outputFile.getName());
+				notifyError(null, "Failed to download: " + outputFile.getName());
 				
 			}
 			
@@ -493,123 +535,104 @@ public class SaveService extends IntentService {
 class GrabUtility{
 	// filesToGrab - maintains all the links to files which we are going to grab/download
 	public static List<String> filesToGrab = new ArrayList<String>();
-	// grabbedFiles - links/urls to files which we have already downloaded
-	public static HashSet<String> grabbedFiles = new HashSet<String>();
+	//framesToGrab - list of html frame files to download
+	public static List<String> framesToGrab = new ArrayList<String>();
 	
 	public static String title;
 
-	public static void addLinkGrabbedFilesList(String url){
-		synchronized (grabbedFiles) {
-			grabbedFiles.add(url);
-		}
-	}
 
-	public static String getMovedUrlLocation(String responseHeader){
-		//handle HTTP Response
-		StringTokenizer stk = new StringTokenizer(responseHeader.toString(), "\n", false);
-		//check the new URL from response's location field
-		String newUrl = null;
-		while(stk.hasMoreTokens()){
-			String tmp = stk.nextToken();
-			if(tmp.toLowerCase().startsWith("location:") && 
-			   tmp.split(" ")[1] != null && !tmp.split(" ")[1].trim().equals("")){
-				newUrl = tmp.split(" ")[1];
-				break;
-			}
-		}
-		return newUrl;
-	}
-
-	public static String searchForNewFilesToGrab(String htmlContent, String baseUrl){
+	public static String searchForNewFilesToGrab(String htmlToParse, String baseUrl){
 		//get all links from this webpage and add them to Frontier List i.e. LinksToVisit ArrayList
-		Document responseHTMLDoc = null;
+		Document parsedHtml = null;
 		URL fromHTMLPageUrl;
+		System.out.println(baseUrl);
+		boolean noBaseUrl = false;
 		try {
 			fromHTMLPageUrl = new URL(baseUrl);
+			noBaseUrl = false;
 		} catch (MalformedURLException e) {
 			fromHTMLPageUrl = null;
+			noBaseUrl = true;
 		}
 		
 		String urlToGrab = null;
-		if(!htmlContent.trim().equals("")){
-			responseHTMLDoc = Jsoup.parse(htmlContent, baseUrl);
+		if(!htmlToParse.trim().equals("")){
 			
-			title = responseHTMLDoc.title();
-			// GrabUtility.searchNewLinksForCrawling(responseHTMLDoc, url);
+			if (noBaseUrl) {
+				parsedHtml = Jsoup.parse(htmlToParse);
+			} else {
+				parsedHtml = Jsoup.parse(htmlToParse, baseUrl);
+			}
+			
+			if (parsedHtml.title() != "") {
+				title = parsedHtml.title();
+			}
+			
+			
+			Elements links = parsedHtml.select("frame[src]");
+			for(Element link: links){
+				urlToGrab = link.attr("abs:src");
+				synchronized (framesToGrab) {
+					if (!framesToGrab.contains(urlToGrab)) {
+						framesToGrab.add(urlToGrab);
+					}
+				}
+				String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/")+1);
+				link.attr("src", replacedURL);
+			}
+			
+			links = parsedHtml.select("iframe[src]");
+			for(Element link: links){
+				urlToGrab = link.attr("abs:src");
+				synchronized (framesToGrab) {
+					if (!framesToGrab.contains(urlToGrab)) {
+						framesToGrab.add(urlToGrab);
+					}
+				}
+				String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/")+1);
+				link.attr("src", replacedURL);
+
+
+			}
+			
 			// Get all the links
-			System.out.println("All Links - ");
-			Elements links = responseHTMLDoc.select("link[href]");
+			links = parsedHtml.select("link[href]");
 			for(Element link: links){
 				urlToGrab = link.attr("abs:href");
-				
-				addLinkToFrontier(urlToGrab,fromHTMLPageUrl);
-				
+				addLinkToList(urlToGrab,fromHTMLPageUrl);
 				String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/")+1);
-				
 				link.attr("href", replacedURL);
+		
 				
 			}
 
-			System.out.println("All external scripts - ");
-			Elements links2 = responseHTMLDoc.select("script[src]");
-			for(Element link: links2){
+		
+			links = parsedHtml.select("script[src]");
+			for(Element link: links){
 				urlToGrab = link.attr("abs:src");
-				addLinkToFrontier(urlToGrab, fromHTMLPageUrl);
+				addLinkToList(urlToGrab, fromHTMLPageUrl);
 				String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/")+1);
 				link.attr("src", replacedURL);
 			}
-
-			System.out.println("All images - ");
-			Elements links3 = responseHTMLDoc.select("img[src]");
-			for(Element link: links3){
-				urlToGrab = link.attr("abs:src");
-				addLinkToFrontier(urlToGrab, fromHTMLPageUrl);
-				
-				String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/")+1);
-				link.attr("src", replacedURL);
-			}
-		}
-		return htmlContent;
-	}
-
-	public static void addLinkToFrontier(String link, URL fromHTMLPageUrl) {
-		synchronized (filesToGrab) {
-		
-		
-				
-					
-						
-					filesToGrab.add(link);
 			
 		
+			links = parsedHtml.select("img[src]");
+			for(Element link: links){
+				urlToGrab = link.attr("abs:src");
+				addLinkToList(urlToGrab, fromHTMLPageUrl);
+				
+				String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/")+1);
+				link.attr("src", replacedURL);
+			}
 		}
+		return parsedHtml.toString();
 	}
 
-	public static String getCurrentFolder(URL url){
-		String port = (url.getPort() == -1)? "" :(":"+String.valueOf(url.getPort()));
-		String path = url.getPath();
-		String currentFolderPath = path.substring(0, path.lastIndexOf("/") + 1);
-		return url.getProtocol() +"://" + url.getHost()+ port + currentFolderPath;
-	}
-
-	public static String getRootUrlString(URL url){
-		String port = (url.getPort() == -1)? "" :(":"+String.valueOf(url.getPort()));
-		return url.getProtocol() +"://" + url.getHost()+ port;
-	}
-
-	//links like mailto, .pdf, or any file downloads, are not to be crawled
-	public static boolean isValidlink(URL link, URL fromHTMLPageUrl) {
-		//if link is from same domain
-		if (getRootUrlString(link).equalsIgnoreCase(getRootUrlString(fromHTMLPageUrl))){
-			return true;
-		} else {
-			return false;
-		}
-	}
-
-	public static boolean isURLAlreadyGrabbed(String url){
-		synchronized (grabbedFiles) {
-			return grabbedFiles.contains(url);
+	public static void addLinkToList(String link, URL fromHTMLPageUrl) {
+		synchronized (filesToGrab) {
+			if (!filesToGrab.contains(link)) {
+				filesToGrab.add(link);
+			}
 		}
 	}
 }
