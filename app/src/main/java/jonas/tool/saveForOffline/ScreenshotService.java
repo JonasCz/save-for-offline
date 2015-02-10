@@ -34,7 +34,7 @@ public class ScreenshotService extends Service {
 			webview = new WebView(ScreenshotService.this);
 
 			//without this toast message, screenshot will be blank, dont ask me why...
-			Toast.makeText(ScreenshotService.this, " ", Toast.LENGTH_SHORT).show();
+			Toast.makeText(ScreenshotService.this, "Save completed.", Toast.LENGTH_SHORT).show();
 
 
 			// This is the important code :)   

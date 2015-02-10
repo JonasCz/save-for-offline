@@ -619,7 +619,7 @@ class GrabUtility{
 				link.attr("src", replacedURL);
 			}
 		}
-		return parsedHtml.toString();
+		return parsedHtml.outerHtml();
 	}
 
 	public static void addLinkToList(String link, URL fromHTMLPageUrl) {

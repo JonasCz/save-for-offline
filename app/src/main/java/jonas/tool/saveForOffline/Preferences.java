@@ -50,6 +50,8 @@ public class Preferences extends PreferenceActivity implements OnSharedPreferenc
 						SharedPreferences.Editor edit = getPreferenceScreen().getEditor();
 						edit.putBoolean("save_in_background", true);
 						edit.commit();
+						alert.cancel();
+						recreate();
 						
 					}
 				});
