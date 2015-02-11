@@ -14,47 +14,7 @@
                 android:entryValues="@array/entryvalues_list_preference"
                 android:dialogTitle="Choose" />
 			
-		<PreferenceScreen
-			xmlns:android="http://schemas.android.com/apk/res/android"
-			android:title="Advanced options for saving"
-			android:summary="Choose how errors should be handled and what parts of a webpage to save (images, scripts...) ">
-			<PreferenceCategory
-				android:title="Saving options">
-				<CheckBoxPreference 
-					android:key="save_images" 
-					android:defaultValue="true"
-					android:title="Save images in webpage" 
-					android:summary="Disable if you do not want images in webpages to be saved. Saving will be faster."/>
-				<CheckBoxPreference 
-					android:key="save_scripts" 
-					android:defaultValue="true"
-					android:title="Save scripts in webpage" 
-					android:summary="Disable if you do not want JavaScript in webpages to be saved."/>
-				<CheckBoxPreference 
-					android:key="save_other" 
-					android:defaultValue="true"
-					android:title="Save other stuff" 
-					android:summary="This includes CSS, extra data possibly needed by scripts, etc..."/>
-				<CheckBoxPreference 
-					android:key="save_frames" 
-					android:defaultValue="true"
-					android:title="Save HTML frames" 
-					android:summary="If there are other webpages inside the one being saved, save those too."/>
-				<CheckBoxPreference 
-					android:key="save_video" 
-					android:defaultValue="false"
-					android:title="Save HTML5 video" 
-					android:summary="Not recommended, and may not work. This app is not a video downloader."/>
-			</PreferenceCategory>
-			<PreferenceCategory
-				android:title="Error handling">
-			<CheckBoxPreference 
-				android:key="ignore_errors_extra_files" 
-				android:defaultValue="true"
-				android:title="Ignore errors when saving extra files" 
-				android:summary="If an extra file such as image / script cannot be downloaded and saved, ignore it and continue"/>
-			</PreferenceCategory>
-		</PreferenceScreen>
+		
 		
 		<!--<ListPreference
 			android:key="storage_dir"
@@ -97,12 +57,71 @@
 
     </PreferenceCategory>
 	
-	<PreferenceCategory android:title="Advanced settings">
+	<PreferenceCategory android:title="Advanced settings (Don\'t play with these unless you know what you are doing!)">
 		<CheckBoxPreference 
 			android:key="save_in_background" 
 			android:defaultValue="true"
 			android:title="Save in background" 
 			android:summary="Keep this enabled unless you experience problems"/>
+		
+		<PreferenceScreen
+			xmlns:android="http://schemas.android.com/apk/res/android"
+			android:title="Advanced options for saving"
+			android:summary="Choose how errors should be handled and what parts of a webpage to save (images, scripts...) "
+			android:key="saving_advanced_opts">
+			<PreferenceCategory
+				android:title="Saving options">
+				<CheckBoxPreference 
+					android:key="save_images" 
+					android:defaultValue="true"
+					android:title="Save images in webpage" 
+					android:summary="Disable if you do not want images in webpages to be saved. Saving will be faster."/>
+				<CheckBoxPreference 
+					android:key="save_scripts" 
+					android:defaultValue="true"
+					android:title="Save scripts in webpage" 
+					android:summary="Disable if you do not want JavaScript in webpages to be saved."/>
+				<CheckBoxPreference 
+					android:key="save_other" 
+					android:defaultValue="true"
+					android:title="Save other stuff" 
+					android:summary="This includes CSS, extra data possibly needed by scripts, etc..."/>
+				<CheckBoxPreference 
+					android:key="save_frames" 
+					android:defaultValue="true"
+					android:title="Save HTML frames" 
+					android:summary="If there are other webpages inside the one being saved, save those too."/>
+				<CheckBoxPreference 
+					android:key="save_video" 
+					android:defaultValue="false"
+					android:title="Save HTML5 video" 
+					android:summary="Not recommended, and may not work. This app is not a video downloader."/>
+			</PreferenceCategory>
+			<PreferenceCategory
+				android:title="Error handling">
+				<ListPreference
+					android:key="max_number_of_retries"
+					android:title="Maximum number of retries"
+					android:defaultValue="5"
+					android:summary="If a file such as image or script cannot be saved, the app will retry this many times"
+					android:entries="@array/max_num_retries"
+					android:entryValues="@array/max_num_retries_values"
+					android:dialogTitle="Maximum number of retries" />
+			</PreferenceCategory>
+			<PreferenceCategory
+				android:title="Advanced options">
+				<CheckBoxPreference 
+
+					android:key="make_links_absolute" 
+					android:defaultValue="true"
+					android:title="Make links absolute" 
+					android:summary="Recommended. Change links on page so they always point to the correct location, even if they are relative"/>
+
+
+			</PreferenceCategory>
+
+
+		</PreferenceScreen>
 		
 		
 	</PreferenceCategory>

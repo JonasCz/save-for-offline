@@ -9,6 +9,17 @@
         android:id="@+id/action_open_in_external"
         android:title="@string/action_open_in_external"
 		android:icon="@drawable/ic_action_web_site"
+		android:showAsAction="ifRoom|withText"/>
+	
+	<item
+        android:id="@+id/action_open_file_in_external"
+        android:title="Open saved file in browser"
+		android:icon="@drawable/ic_action_web_site"
+		android:showAsAction="never"/>
+	
+	<item
+        android:id="@+id/action_save_page_properties"
+        android:title="Details of saved page"
 		android:showAsAction="never"/>
 	
 	<item android:id="@+id/ic_action_settings"

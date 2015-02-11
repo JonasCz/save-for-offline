@@ -53,6 +53,20 @@
 	</string-array>
 	
 	
+	<string-array name="max_num_retries">
+		<item>Don\'t retry</item>
+		<item>3 Retries</item>
+		<item>5 Retries</item>
+	</string-array>
+
+	<string-array name="max_num_retries_values">
+		<item>0</item>
+		<item>3</item>
+		<item>5</item>
+	</string-array>
+	
+	
+	
 	
 	
 </resources>

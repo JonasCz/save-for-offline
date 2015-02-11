@@ -76,6 +76,13 @@ public class SaveService extends IntentService {
 
 		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(SaveService.this);
 		String ua = sharedPref.getString("user_agent", "mobile");
+		GrabUtility.makeLinksAbsolute = sharedPref.getBoolean("make_links_absolute", true);
+		GrabUtility.maxRetryCount = Integer.parseInt(sharedPref.getString("max_number_of_retries", "5"));
+		GrabUtility.saveFrames = sharedPref.getBoolean("save_frames", true);
+		GrabUtility.saveImages = sharedPref.getBoolean("save_images", true);
+		GrabUtility.saveOther = sharedPref.getBoolean("save_other", true);
+		GrabUtility.saveScripts = sharedPref.getBoolean("save_scripts", true);
+		GrabUtility.saveVideo = sharedPref.getBoolean("save_video", true);
 
 		if (ua.equals("desktop")) {
 			uaString = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.517 Safari/537.36";
@@ -358,7 +365,7 @@ public class SaveService extends IntentService {
 			failCount++;
 
 			if (isExtra) {
-				if (failCount <= 5) {
+				if (failCount <= GrabUtility.maxRetryCount) {
 					notifyError(null, "Failed to download extra HTML file, retrying. Fail count: " + failCount );
 					synchronized (this) {try {wait(2500);} catch (InterruptedException ex) {}}
 					downloadHtmlAndParseLinks(url, outputDir, isExtra);
@@ -367,7 +374,7 @@ public class SaveService extends IntentService {
 					return;
 				}
 			} else {
-				if (failCount <= 5) {
+				if (failCount <= GrabUtility.maxRetryCount) {
 					notifyError(null, "Failed to download main HTML file, retrying. Fail count: " + failCount );
 					synchronized (this) {try {wait(2500);} catch (InterruptedException ex) {}}
 					downloadHtmlAndParseLinks(url, outputDir, isExtra);
@@ -478,7 +485,7 @@ public class SaveService extends IntentService {
 				} catch (IOException e) {
 					failCount++;
 
-					if (failCount <= 5) {
+					if (failCount <= GrabUtility.maxRetryCount) {
 						notifyError(null, "Failed to download: " + outputFile.getName() + ", retrying. Fail count: " + failCount );
 						synchronized (this) {try {wait(2500);} catch (InterruptedException ex) {}}
 						getExtraFile(urlToDownload, outputDir);
@@ -492,7 +499,7 @@ public class SaveService extends IntentService {
 		} catch (Exception e) {
 			failCount++;
 			
-			if (failCount <= 5) {
+			if (failCount <= GrabUtility.maxRetryCount) {
 				notifyError(null, "Failed to download: " + outputFile.getName() + ", retrying. Fail count: " + failCount );
 				synchronized (this) {try {wait(2500);} catch (InterruptedException ex) {}}
 				getExtraFile(urlToDownload, outputDir);
@@ -531,9 +538,17 @@ class GrabUtility{
 	public static List<String> framesToGrab = new ArrayList<String>();
 	
 	public static String title;
+	public static int maxRetryCount;
+	public static boolean makeLinksAbsolute = true;
+	
+	public static boolean saveImages = true;
+	public static boolean saveFrames = true;
+	public static boolean saveOther = true;
+	public static boolean saveScripts = true;
+	public static boolean saveVideo = false;
 
 
-	public static String searchForNewFilesToGrab(String htmlToParse, String baseUrl){
+	public static String searchForNewFilesToGrab(String htmlToParse, String baseUrl) {
 		//get all links from this webpage and add them to Frontier List i.e. LinksToVisit ArrayList
 		Document parsedHtml = null;
 		URL fromHTMLPageUrl;
@@ -546,81 +561,100 @@ class GrabUtility{
 			fromHTMLPageUrl = null;
 			noBaseUrl = true;
 		}
-		
+
 		String urlToGrab = null;
-		if(!htmlToParse.trim().equals("")){
-			
+		if (!htmlToParse.trim().equals("")) {
+
 			if (noBaseUrl) {
 				parsedHtml = Jsoup.parse(htmlToParse);
 			} else {
 				parsedHtml = Jsoup.parse(htmlToParse, baseUrl);
 			}
-			
+
 			if (parsedHtml.title() != "") {
 				title = parsedHtml.title();
 			}
 			
-			
-			Elements links = parsedHtml.select("frame[src]");
-			for(Element link: links){
-				urlToGrab = link.attr("abs:src");
-				synchronized (framesToGrab) {
-					if (!framesToGrab.contains(urlToGrab)) {
-						framesToGrab.add(urlToGrab);
+			Elements links;
+
+			if (saveFrames) {
+				links = parsedHtml.select("frame[src]");
+				for (Element link: links) {
+					urlToGrab = link.attr("abs:src");
+
+					synchronized (framesToGrab) {
+						if (!framesToGrab.contains(urlToGrab)) {
+							framesToGrab.add(urlToGrab);
+						}
 					}
+
+					String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/") + 1);
+					link.attr("src", replacedURL);
 				}
-				String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/")+1);
-				link.attr("src", replacedURL);
-			}
-			
-			links = parsedHtml.select("iframe[src]");
-			for(Element link: links){
-				urlToGrab = link.attr("abs:src");
-				synchronized (framesToGrab) {
-					if (!framesToGrab.contains(urlToGrab)) {
-						framesToGrab.add(urlToGrab);
+
+				links = parsedHtml.select("iframe[src]");
+				for (Element link: links) {
+					urlToGrab = link.attr("abs:src");
+
+					synchronized (framesToGrab) {
+						if (!framesToGrab.contains(urlToGrab)) {
+							framesToGrab.add(urlToGrab);
+						}
 					}
+
+					String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/") + 1);
+					link.attr("src", replacedURL);
+
+
 				}
-				String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/")+1);
-				link.attr("src", replacedURL);
-
-
-			}
-			
-			// Get all the links
-			links = parsedHtml.select("link[href]");
-			for(Element link: links){
-				urlToGrab = link.attr("abs:href");
-				addLinkToList(urlToGrab,fromHTMLPageUrl);
-				String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/")+1);
-				link.attr("href", replacedURL);
-		
-				
 			}
 
-		
-			links = parsedHtml.select("script[src]");
-			for(Element link: links){
-				urlToGrab = link.attr("abs:src");
-				addLinkToList(urlToGrab, fromHTMLPageUrl);
-				String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/")+1);
-				link.attr("src", replacedURL);
+			if (saveOther) {
+				// Get all the links
+				links = parsedHtml.select("link[href]");
+				for (Element link: links) {
+					urlToGrab = link.attr("abs:href");
+					addLinkToList(urlToGrab);
+					String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/") + 1);
+					link.attr("href", replacedURL);
+
+				}	
 			}
-			
-		
-			links = parsedHtml.select("img[src]");
-			for(Element link: links){
-				urlToGrab = link.attr("abs:src");
-				addLinkToList(urlToGrab, fromHTMLPageUrl);
-				
-				String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/")+1);
-				link.attr("src", replacedURL);
+
+			if (saveScripts) {
+				links = parsedHtml.select("script[src]");
+				for (Element link: links) {
+					urlToGrab = link.attr("abs:src");
+					addLinkToList(urlToGrab);
+					String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/") + 1);
+					link.attr("src", replacedURL);
+				}
+			}
+
+			if (saveImages) {
+				links = parsedHtml.select("img[src]");
+				for (Element link: links) {
+					urlToGrab = link.attr("abs:src");
+					addLinkToList(urlToGrab);
+
+					String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/") + 1);
+					link.attr("src", replacedURL);
+				}
+			}
+
+			if (makeLinksAbsolute) {
+				//make links absolute, so they are not broken
+				links = parsedHtml.select("a[href]");
+				for (Element link: links) {
+					String absUrl = link.attr("abs:href");
+					link.attr("href", absUrl);
+				}
 			}
 		}
 		return parsedHtml.outerHtml();
 	}
 
-	public static void addLinkToList(String link, URL fromHTMLPageUrl) {
+	public static void addLinkToList(String link) {
 		synchronized (filesToGrab) {
 			if (!filesToGrab.contains(link)) {
 				filesToGrab.add(link);

@@ -136,6 +136,12 @@ public class ViewActivity extends Activity
 
 				return true;
 			
+			case R.id.action_save_page_properties:
+				
+				showPropertiesDialog();
+
+				return true;
+			
 			case R.id.action_open_in_external:
 				
 				Intent incomingIntent = getIntent();
@@ -145,6 +151,17 @@ public class ViewActivity extends Activity
 				Intent startBrowserIntent = new Intent(Intent.ACTION_VIEW, uri);
 				startActivity(startBrowserIntent);
 
+				return true;
+				
+			case R.id.action_open_file_in_external:
+				
+//				Intent incomingIntent3 = getIntent();
+//				
+//				
+//				Uri uri2 = Uri.parse(incomingIntent3.getStringExtra("fileLocation"));
+//				Intent openFileIntent= new Intent(Intent.ACTION_VIEW, uri2);
+//				startActivity(openFileIntent);
+//
 				return true;
 				
 			case R.id.ic_action_about:
@@ -214,6 +231,29 @@ public class ViewActivity extends Activity
 			default:
 				return super.onOptionsItemSelected(item);
 		}
+	}
+
+	private void showPropertiesDialog() {
+		AlertDialog.Builder build = new AlertDialog.Builder(this);
+		build.setTitle("Details of saved page");
+		View layout = getLayoutInflater().inflate(R.layout.properties_dialog, null);
+		build.setView(layout);
+		TextView t = (TextView) layout.findViewById(R.id.properties_dialog_text_title);
+		t.setText("Title: \r\n" + title);
+		t = (TextView) layout.findViewById(R.id.properties_dialog_text_file_location);
+		t.setText("File location: \r\n" + incomingIntent.getStringExtra("fileLocation"));
+		t = (TextView) layout.findViewById(R.id.properties_dialog_text_orig_url);
+		t.setText("Saved from: \r\n" + incomingIntent.getStringExtra("orig_url"));
+		build.setPositiveButton("OK",
+			new DialogInterface.OnClickListener() {
+
+				public void onClick(DialogInterface dialog, int which) {
+
+
+				}
+			});
+		AlertDialog alert = build.create();
+		alert.show();
 	}
 	
 	

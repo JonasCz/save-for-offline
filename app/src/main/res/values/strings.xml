@@ -5,7 +5,7 @@
 	
 	<string name="action_add">Add New</string>
 	<string name="action_delete">Delete</string>
-	<string name="action_open_in_external">Open in browser</string>
+	<string name="action_open_in_external">Open Link</string>
 	<string name="action_bar_subtitle_showing_all">Showing all saved pages</string>
 	<string name="one_search_result">One search result</string>
 	<string name="no_search_results">No search results</string>

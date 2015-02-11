@@ -16,7 +16,7 @@ public class Preferences extends PreferenceActivity implements OnSharedPreferenc
 
 	private AlertDialog alert;
 	private String list_appearance;
-	private boolean oldSaveInBackground;
+
 	
 	
 	@Override
@@ -26,14 +26,14 @@ public class Preferences extends PreferenceActivity implements OnSharedPreferenc
 		} else { setResult(RESULT_OK);}
 
 		if (key.equals("save_in_background") && preferences.getBoolean("save_in_background" , true) == false) {
-			AlertDialog.Builder build;
-			build = new AlertDialog.Builder(Preferences.this);
-
+			
+			Preference advancedSavingOptions = getPreferenceScreen().findPreference("saving_advanced_opts");
+			advancedSavingOptions.setEnabled(false);
+			advancedSavingOptions.setSummary("Theese options are only available if 'Save in background' is enabled");
+			
+			AlertDialog.Builder build = new AlertDialog.Builder(Preferences.this);
 			build.setTitle("Warning!");
-
-			build.setMessage("You should not turn off this option unless something is not working, or you need to login to website before saving. Note that this app can only save HTML files when this option is on.");
-
-
+			build.setMessage("You should not turn off this option unless something is not working. Note that this app can only save real HTML files when this option is on.");
 			build.setPositiveButton("OK",
 				new DialogInterface.OnClickListener() {
 
@@ -42,22 +42,14 @@ public class Preferences extends PreferenceActivity implements OnSharedPreferenc
 
 					}
 				});
-
-			build.setNegativeButton("Cancel",
-				new DialogInterface.OnClickListener() {
-
-					public void onClick(DialogInterface dialog, int which) {
-						SharedPreferences.Editor edit = getPreferenceScreen().getEditor();
-						edit.putBoolean("save_in_background", true);
-						edit.commit();
-						alert.cancel();
-						recreate();
-						
-					}
-				});
 			alert = build.create();
 			alert.show();
+		} else {
+			Preference advancedSavingOptions = getPreferenceScreen().findPreference("saving_advanced_opts");
+			advancedSavingOptions.setEnabled(true);
+			advancedSavingOptions.setSummary("Choose how errors should be handled and what parts of a webpage to save (images, scripts...) ");
 		}
+		//disabled for now
 	}
 
     @Override
@@ -71,6 +63,12 @@ public class Preferences extends PreferenceActivity implements OnSharedPreferenc
 		
 		
 		list_appearance = getPreferenceScreen().getSharedPreferences().getString("layout" , "1");
+		
+		if (getPreferenceScreen().getSharedPreferences().getBoolean("save_in_background" , true) == false) {
+			Preference advancedSavingOptions = getPreferenceScreen().findPreference("saving_advanced_opts");
+			advancedSavingOptions.setEnabled(false);
+			advancedSavingOptions.setSummary("Theese options are only available if 'Save in background' is enabled");
+		}
 		
 		getPreferenceScreen().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
 		if (alert != null) alert.cancel();
