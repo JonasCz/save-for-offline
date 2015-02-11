@@ -8,7 +8,7 @@ import android.os.*;
 
 public class DirectoryHelper {
 	
-	public String createUniqueFilename () {
+	public static String createUniqueFilename () {
 		
 		//creates filenames based on the date and time, hopefully unique
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.US);
@@ -16,7 +16,7 @@ public class DirectoryHelper {
 		return filename;
 	}
 	
-	private String getStorageDir() {
+	private static String getStorageDir() {
 		//FIXME!!!! replace this with getExternalStorageDir()
 		
 		String baseDir = Environment.getExternalStorageDirectory().toString();
@@ -26,21 +26,35 @@ public class DirectoryHelper {
 		return directory;
 	}
 	
-	public String getThumbnailLocation () {
+	public static String getThumbnailLocation () {
 		
 		String thumbnailLocation = getStorageDir() + createUniqueFilename() + ".png";
 		return thumbnailLocation;
 	}
 	
-	public String getFileLocation () {
+	public static String getFileLocation () {
 
 		String fileLocation = getStorageDir() + createUniqueFilename() + ".mht";
 		return fileLocation;
 	}
 	
-	public String getUnpackedDir () {
+	public static String getUnpackedDir () {
 
 		String fileLocation = getStorageDir() + createUniqueFilename() + File.separatorChar;
 		return fileLocation;
+	}
+	
+	public static void deleteDirectory(File directory) {
+		
+		if (!directory.exists()) {
+            return;
+		}
+		
+       if (directory.isDirectory()) {
+            for (File f : directory.listFiles()) {
+              	 deleteDirectory(f);	 
+            }
+        }
+       directory.delete();
 	}
 }

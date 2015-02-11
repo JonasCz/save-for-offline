@@ -48,11 +48,11 @@ public class ViewActivity extends Activity
 
 		if (ua.equals("desktop")) {
 			webview.getSettings().setUserAgentString("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.517 Safari/537.36");
-			Log.d("saveActivity", "using desktop ua");
+			
 		}
 		if (ua.equals("ipad")) {
 			webview.getSettings().setUserAgentString("todo:iPad ua");
-			Log.w("saveActivity", "iPad ua not implemented yet");
+			
 		}
 		webview.getSettings().setLoadWithOverviewMode(true);
 		webview.getSettings().setUseWideViewPort(true);
@@ -174,14 +174,19 @@ public class ViewActivity extends Activity
 								DbHelper.KEY_ID + "=" + incomingIntent2.getStringExtra("id"), null);
 								
 							
-							File thumbfile = new File(incomingIntent2.getStringExtra("thumbnailLocation"));
-								thumbfile.delete();
+							File file = new File(incomingIntent2.getStringExtra("thumbnailLocation"));
+								file.delete();
 
-								
-							File mainfile = new File(incomingIntent2.getStringExtra("fileLocation"));
-								mainfile.delete();
-
-						
+							if (incomingIntent2.getStringExtra("fileLocation").endsWith("mht")) {
+								String fileLocation = incomingIntent2.getStringExtra("fileLocation");
+								file = new File(fileLocation);
+								file.delete();
+							} else {
+								String fileLocation = incomingIntent2.getStringExtra("fileLocation");
+								file = new File(fileLocation);
+								file = file.getParentFile();
+								DirectoryHelper.deleteDirectory(file);
+							}
 
 							Toast.makeText(
 								getApplicationContext(),

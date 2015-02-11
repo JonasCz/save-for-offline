@@ -316,7 +316,7 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 					{
 						build.setTitle("Do you want to delete ?");
 
-						build.setMessage(gridAdapter.getPropertiesByPosition(0, "title"));
+						build.setMessage(gridAdapter.getPropertiesByPosition(gridAdapter.selectedViewsPositions.get(0), "title"));
 					}
 					else
 					{
@@ -342,15 +342,19 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 									File file = new File(fileLocation);
 									file.delete();
 
-									fileLocation = gridAdapter.getPropertiesByPosition(position, "file_location");
-									file = new File(fileLocation);
-									file.delete();
-									
-//									if (!gridAdapter.getPropertiesByPosition(position, "file_location").endsWith("mht")) {
-//										fileLocation = gridAdapter.getPropertiesByPosition(position, "file_location");
-//										file = new File(fileLocation);
-//										
-//									}
+									//for compatibility with old versions
+									if (gridAdapter.getPropertiesByPosition(position, "file_location").endsWith("mht")) {
+										fileLocation = gridAdapter.getPropertiesByPosition(position, "file_location");
+										file = new File(fileLocation);
+										file.delete();
+									} else {
+										fileLocation = gridAdapter.getPropertiesByPosition(position, "file_location");
+										file = new File(fileLocation);
+										Log.w("Deleting", file.getAbsolutePath());
+										file = file.getParentFile();
+										Log.w("Deleting parent file", file.getAbsolutePath());
+										DirectoryHelper.deleteDirectory(file);
+									}
 									
 									dataBase.delete(DbHelper.TABLE_NAME, DbHelper.KEY_ID + "=" + gridAdapter.getPropertiesByPosition(position, "id"), null);
 									
@@ -438,21 +442,6 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
             }
         }
 
-		private View getViewByPosition(int position, GridView grid)
-		{
-			final int firstListItemPosition = grid.getFirstVisiblePosition();
-			final int lastListItemPosition = firstListItemPosition + grid.getChildCount() - 1;
-
-			if (position < firstListItemPosition || position > lastListItemPosition)
-			{
-				return grid.getAdapter().getView(position, grid.getChildAt(position), grid);
-			}
-			else
-			{
-				final int childIndex = position - firstListItemPosition;
-				return grid.getChildAt(childIndex);
-			}
-		}
 	}
 
 

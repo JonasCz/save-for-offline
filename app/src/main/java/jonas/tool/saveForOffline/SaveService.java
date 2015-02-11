@@ -27,8 +27,6 @@ import java.net.MalformedURLException;
 
 public class SaveService extends IntentService {
 
-	
-	private String filelocation;
 	private String destinationDirectory;
 	private String thumbnail;
 	private String origurl;
@@ -89,10 +87,10 @@ public class SaveService extends IntentService {
 			uaString = "android";
 		}
 
-		DirectoryHelper dh = new DirectoryHelper();
-		filelocation = dh.getFileLocation();
-		destinationDirectory = dh.getUnpackedDir();
-		thumbnail = dh.getThumbnailLocation();
+		
+		
+		destinationDirectory = DirectoryHelper.getUnpackedDir();
+		thumbnail = DirectoryHelper.getThumbnailLocation();
 		
 		origurl = intent.getStringExtra("origurl");
 		
