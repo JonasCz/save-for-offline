@@ -15,7 +15,7 @@
 		android:layout_alignParentTop="true"
 		android:layout_marginRight="8dp"
 		android:contentDescription="TODO"
-		android:src="@drawable/ic_launcher"
+		android:src="@drawable/placeholder"
 		android:adjustViewBounds="true"/>
 
 	<TextView

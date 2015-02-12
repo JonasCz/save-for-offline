@@ -350,9 +350,7 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 									} else {
 										fileLocation = gridAdapter.getPropertiesByPosition(position, "file_location");
 										file = new File(fileLocation);
-										Log.w("Deleting", file.getAbsolutePath());
 										file = file.getParentFile();
-										Log.w("Deleting parent file", file.getAbsolutePath());
 										DirectoryHelper.deleteDirectory(file);
 									}
 									

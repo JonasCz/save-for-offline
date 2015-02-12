@@ -15,7 +15,8 @@
 		android:horizontalSpacing="5dp"
 		android:numColumns="auto_fit"
 		android:stretchMode="columnWidth"
-		android:verticalSpacing="5dp"/>
+		android:verticalSpacing="5dp"
+		/>
 
 	<TextView
 		android:layout_height="wrap_content"

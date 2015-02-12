@@ -15,7 +15,6 @@ import android.os.Process;
 import java.net.URL;
 import java.util.List;
 import java.util.StringTokenizer;
-import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.net.HttpURLConnection;
@@ -24,6 +23,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.select.Elements;
 import org.jsoup.nodes.Element;
 import java.net.MalformedURLException;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 public class SaveService extends IntentService {
 
@@ -91,7 +92,7 @@ public class SaveService extends IntentService {
 			uaString = "iPad ipad safari";
 
 		} else {
-			uaString = "android";
+			uaString = "Mozilla/5.0 (Linux; U; Android 4.2.2; en-us; Phone Build/IML74K) AppleWebkit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30";
 		}
 
 		
@@ -104,6 +105,9 @@ public class SaveService extends IntentService {
 		try {
 			grabPage(origurl, destinationDirectory);
 		} catch (Exception e) {
+			//if we crash, delete all files saved so far
+			File file = new File(destinationDirectory);
+			DirectoryHelper.deleteDirectory(file);
 			return;
 		}
 		
@@ -206,18 +210,23 @@ public class SaveService extends IntentService {
 			outputDir.mkdirs();
 		}
 		
-		//download main html
+		//download main html and parse -- isExtra parameter should be false
 		downloadHtmlAndParseLinks(url, outputDirPath, false);
 		
 		//download and parse html frames
 		for (String urlToDownload: GrabUtility.framesToGrab) {
-
 			downloadHtmlAndParseLinks(urlToDownload, outputDirPath, true);
-
+		}
+		
+		//download and parse css files
+		System.out.println("pre Dl css: ");
+		for (String urlToDownload: GrabUtility.cssToGrab) {
+			System.out.println("Dl css: ");
+			System.out.println("Dl css: ");
+			downloadCssAndParseLinks(urlToDownload, outputDirPath);
 		}
 
-		//download extra files
-
+		//download extra files, such as images / scripts
 		for (String urlToDownload: GrabUtility.filesToGrab) {
 			
 			getExtraFile(urlToDownload, outputDir);
@@ -330,7 +339,7 @@ public class SaveService extends IntentService {
 			in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 			
 			String inputLine;
-			StringBuffer strResponse = new StringBuffer();
+			StringBuilder strResponse = new StringBuilder();
 			// append whole response into single string, save it into a file on storage
 			// if its of type html then parse it and get all css and images and javascript files
 			// and add them to filesToGrab list
@@ -346,7 +355,7 @@ public class SaveService extends IntentService {
 			
 			String htmlContent = strResponse.toString();
 		
-			htmlContent = GrabUtility.searchForNewFilesToGrab(htmlContent, baseUrl);
+			htmlContent = GrabUtility.parseHtmlForLinks(htmlContent, baseUrl);
 
 			outputFile = new File(outputDir, filename);
 
@@ -401,6 +410,142 @@ public class SaveService extends IntentService {
 			}
 		}
 	}
+	
+	private void downloadCssAndParseLinks (String url, String outputDir) throws IOException {
+		
+		FileOutputStream fop = null;
+		BufferedReader in = null;
+		HttpURLConnection conn = null;
+		File outputFile = null;
+		InputStream is = null;
+		String filename;
+
+		filename = url.substring(url.lastIndexOf("/") + 1);
+	
+		notifyProgress("Downloading CSS file", 100, 5);
+
+		try {
+
+			String baseUrl = url;
+
+			URL obj = new URL(url);
+
+			//Output file
+			outputFile = new File(outputDir, filename);
+
+			conn = (HttpURLConnection) obj.openConnection();
+			conn.setReadTimeout(5000);
+			conn.addRequestProperty("Accept-Language", "en-US,en;q=0.8");
+			conn.addRequestProperty("User-Agent", uaString);
+			conn.addRequestProperty("Referer", "google.com");
+
+			boolean redirect = false;
+
+			//catch possible redirect, normally, 3xx is redirect
+			int status = conn.getResponseCode();
+			if (status != HttpURLConnection.HTTP_OK) {
+				if (status == HttpURLConnection.HTTP_MOVED_TEMP
+					|| status == HttpURLConnection.HTTP_MOVED_PERM
+					|| status == HttpURLConnection.HTTP_SEE_OTHER){
+					redirect = true;
+				}else{
+					notifyError(null, "Failed to download CSS file. HTTP status code: " + status);
+					return;
+				}
+			}
+
+			if (redirect) {
+				// get redirect url from "location" header field
+				String newUrl = conn.getHeaderField("Location");
+
+				// get the cookie if need, for login
+				String cookies = conn.getHeaderField("Set-Cookie");
+
+				// open the new connnection again
+				obj =  new URL(newUrl);
+				conn = (HttpURLConnection) obj.openConnection();
+				conn.setRequestProperty("Cookie", cookies);
+				conn.addRequestProperty("Accept-Language", "en-US,en;q=0.8");
+				conn.addRequestProperty("User-Agent", uaString);
+				conn.addRequestProperty("Referer", "google.com");
+			}
+
+			// if file doesn't exists, then create it
+			if (!outputFile.exists()) {
+				outputFile.createNewFile();
+			}
+			// can we write this file
+			if(!outputFile.canWrite()){
+				
+				notifyError("Could not save page", "Cannot write to file - "+outputFile.getAbsolutePath());
+				System.out.println("Cannot write to file - "+outputFile.getAbsolutePath());
+				return;
+			
+			}
+
+			in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+
+			String inputLine;
+			StringBuilder strResponse = new StringBuilder();
+			// append whole response into single string, save it into a file on storage
+			// if its of type html then parse it and get all css and images and javascript files
+			// and add them to filesToGrab list
+			while ((inputLine = in.readLine()) != null) {
+				strResponse.append(inputLine+"\r\n");
+			}
+
+			
+			notifyProgress("Processing CSS file", 100, 5);
+
+			String cssContent = strResponse.toString();
+
+			//parse for links and convert to relative links
+			System.out.println("Pre parse css ");
+			cssContent = GrabUtility.parseCssForLinks(cssContent, baseUrl);
+			System.out.println("Post parse css ");
+
+			outputFile = new File(outputDir, filename);
+			System.out.println("Create file parse css ");
+
+			try {
+				// clear previous files contents
+				System.out.println("pre write file parse css ");
+				fop = new FileOutputStream(outputFile);
+				fop.write(cssContent.getBytes());
+				fop.flush();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+			failCount = 0;
+		} catch (Exception e) {
+
+			failCount++;
+			e.printStackTrace();
+			if (failCount <= GrabUtility.maxRetryCount) {
+				notifyError(null, "Failed to download CSS file: " + filename+", retrying. Fail count: " + failCount);
+				synchronized (this) {try {wait(2500);} catch (InterruptedException ex) {}}
+				downloadCssAndParseLinks(url, outputDir);
+			} else {
+				notifyError(null, "Failed to download CSS file: " + filename);
+				return;
+			}
+		} finally {
+			try {
+				if(is != null){
+					is.close();
+				}
+				if(in != null){
+					in.close();
+				}
+				if (fop != null) {
+					fop.close();
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
 
 	private void getExtraFile(String urlToDownload, File outputDir) throws IOException {
 		FileOutputStream fop = null;
@@ -409,6 +554,7 @@ public class SaveService extends IntentService {
 		File outputFile = null;
 		InputStream is = null;
 		try {
+			
 			URL obj = new URL(urlToDownload);
 			String path = obj.getPath();
 			String filename = path.substring(path.lastIndexOf('/')+1);
@@ -528,7 +674,7 @@ public class SaveService extends IntentService {
 }
 
 /**
- * @author Pramod Khare
+ * @author Pramod Khare & improved by Jonas Czec
  * Contains all the utility methods used in above GrabWebPage class
  */
 class GrabUtility{
@@ -536,6 +682,8 @@ class GrabUtility{
 	public static List<String> filesToGrab = new ArrayList<String>();
 	//framesToGrab - list of html frame files to download
 	public static List<String> framesToGrab = new ArrayList<String>();
+	//cssToGrab - list of all css files to download an parse
+	public static List<String> cssToGrab = new ArrayList<String>();
 	
 	public static String title;
 	public static int maxRetryCount;
@@ -548,7 +696,7 @@ class GrabUtility{
 	public static boolean saveVideo = false;
 
 
-	public static String searchForNewFilesToGrab(String htmlToParse, String baseUrl) {
+	public static String parseHtmlForLinks(String htmlToParse, String baseUrl) {
 		//get all links from this webpage and add them to Frontier List i.e. LinksToVisit ArrayList
 		Document parsedHtml = null;
 		URL fromHTMLPageUrl;
@@ -611,10 +759,20 @@ class GrabUtility{
 
 			if (saveOther) {
 				// Get all the links
+				System.out.println("parse html: ");
 				links = parsedHtml.select("link[href]");
 				for (Element link: links) {
 					urlToGrab = link.attr("abs:href");
-					addLinkToList(urlToGrab);
+					
+					//if it is css, parse it to extract urls (images referenced from "background" attributes for example)
+					if (link.attr("rel").equals("stylesheet")) {
+						cssToGrab.add(link.attr("abs:href"));
+						System.out.println("parse for css: ");
+					} else {
+						addLinkToList(urlToGrab);
+						System.out.println("parse for other: ");
+					}
+					
 					String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/") + 1);
 					link.attr("href", replacedURL);
 
@@ -653,6 +811,30 @@ class GrabUtility{
 		}
 		return parsedHtml.outerHtml();
 	}
+	
+	public static String parseCssForLinks(String cssToParse, String baseUrl) {
+		
+		String patternString = "url(\\s*\\(\\s*[\"']\\s*)(.*?)([\"']\\s*\\))"; //I hate regexes...
+		Pattern pattern = Pattern.compile(patternString); 
+		Matcher matcher = pattern.matcher(cssToParse); 
+		
+		System.out.println(patternString + "Parsing: css");
+		
+		//find everything inside url(" ... ")
+		while (matcher.find()) {
+			System.out.println("Original url:" + matcher.group().replaceAll(patternString, "$2"));
+
+			if (matcher.group().replaceAll(patternString, "$2").contains("/")) {
+				System.out.println("Replaced url:" + matcher.group().replaceAll(patternString, "$2").substring(matcher.group().replaceAll(patternString, "$2").lastIndexOf("/") + 1));
+				cssToParse = cssToParse.replace(matcher.group().replaceAll(patternString, "$2"), matcher.group().replaceAll(patternString, "$2").substring(matcher.group().replaceAll(patternString, "$2").lastIndexOf("/") + 1));
+				
+			}
+			
+			addLinkToList(makeLinkRelative(matcher.group().replaceAll(patternString, "$2").trim(), baseUrl));
+		}
+		
+		return cssToParse;
+	}
 
 	public static void addLinkToList(String link) {
 		synchronized (filesToGrab) {
@@ -660,5 +842,12 @@ class GrabUtility{
 				filesToGrab.add(link);
 			}
 		}
+	}
+	
+	public static String makeLinkRelative(String link, String baseurl) {
+		//jsoup figures out the absolute url for me...
+		Document d = Document.createShell(baseurl);
+		d.body().appendElement("img").attr("src", link);
+		return d.body().child(0).attr("abs:src");
 	}
 }

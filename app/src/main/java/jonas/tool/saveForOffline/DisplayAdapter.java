@@ -42,7 +42,7 @@ public class DisplayAdapter extends BaseAdapter
 	public int list_layout_type = 1;
 	
 	public ArrayList<Integer> selectedViewsPositions = new ArrayList<Integer>();
-	//private ArrayList<Bitmap> bitmapCache = new ArrayList<Bitmap>();
+	
 	
 	private Bitmap placeHolder;
 	
@@ -152,6 +152,10 @@ public class DisplayAdapter extends BaseAdapter
 		
 		else if (type.equals("orig_url")) {
 			return dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_ORIG_URL));
+		}
+		
+		else if (type.equals("date")) {
+			return dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_TIMESTAMP));
 		}
 		
 		else { return null; }
@@ -268,8 +272,7 @@ public class DisplayAdapter extends BaseAdapter
 	static class AsyncDrawable extends BitmapDrawable {
 		private final WeakReference<BitmapWorkerTask> bitmapWorkerTaskReference;
 
-		public AsyncDrawable(Bitmap bitmap,
-							 BitmapWorkerTask bitmapWorkerTask) {
+		public AsyncDrawable(Bitmap bitmap, BitmapWorkerTask bitmapWorkerTask) {
 			super(bitmap);
 			bitmapWorkerTaskReference =
 				new WeakReference<BitmapWorkerTask>(bitmapWorkerTask);
@@ -333,6 +336,18 @@ public class DisplayAdapter extends BaseAdapter
 				if (imageView != null) {
 					
 					imageView.setImageBitmap(bitmap);
+					
+					// Transition drawable with a transparent drwabale and the final bitmap
+//					TransitionDrawable td = new TransitionDrawable(new Drawable[] {
+//						new ColorDrawable(Color.parseColor("#E2E2E2")),
+//						new BitmapDrawable(mContext.getResources(), bitmap)
+//					 });
+//					 
+//					// Set background to loading bitmap
+//					imageView.setBackgroundDrawable(new BitmapDrawable(mContext.getResources(), bitmap));
+//
+//					imageView.setImageDrawable(td);
+//					td.startTransition(5000);
 				}
 			}
 		}
