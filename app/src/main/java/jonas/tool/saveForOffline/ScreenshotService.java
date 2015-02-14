@@ -10,6 +10,7 @@ import java.io.*;
 import android.view.View.*;
 import android.os.*;
 import android.os.Process;
+import android.preference.PreferenceManager;
 
 //this is an example of how to take a screenshot in a background service
 //not very elegant, but it works (for me anyway)
@@ -36,6 +37,9 @@ public class ScreenshotService extends Service {
 			//without this toast message, screenshot will be blank, dont ask me why...
 			Toast.makeText(ScreenshotService.this, "Save completed.", Toast.LENGTH_SHORT).show();
 
+			SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(ScreenshotService.this);
+			boolean js = sharedPref.getBoolean("enable_javascript_screenshot", true);
+			webview.getSettings().setJavaScriptEnabled(js);
 
 			// This is the important code :)   
 			webview.setDrawingCacheEnabled(true);

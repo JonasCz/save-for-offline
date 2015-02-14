@@ -15,6 +15,7 @@ public class ViewActivity extends Activity
 {
 	private Intent incomingIntent;
 	private String title;
+	private String fileLocation;
 	private WebView webview;
 	private WebView.HitTestResult result;
 	
@@ -34,6 +35,7 @@ public class ViewActivity extends Activity
 		incomingIntent = getIntent();
 		actionBar.setSubtitle(incomingIntent.getStringExtra("title"));
 		title = incomingIntent.getStringExtra("title");
+		fileLocation = incomingIntent.getStringExtra("fileLocation");
 		
 		setProgressBarIndeterminateVisibility(true);
 		
@@ -61,10 +63,11 @@ public class ViewActivity extends Activity
 		webview.getSettings().setDisplayZoomControls(false);
 		webview.getSettings().setAllowFileAccess(true);
 		webview.getSettings().setAllowFileAccessFromFileURLs(true);
+		webview.getSettings().setMediaPlaybackRequiresUserGesture(false);
 		
         
-		if (incomingIntent.getStringExtra("fileLocation").endsWith("html")) {
-			webview.loadUrl("file://" + incomingIntent.getStringExtra("fileLocation"));
+		if (fileLocation.endsWith("html")) {
+			webview.loadUrl("file://" + fileLocation);
 			webview.setWebViewClient(new WebViewClient() {
 
 					@Override
@@ -75,7 +78,7 @@ public class ViewActivity extends Activity
 				});
 		} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
 			//kitkat and up saves webarchives in a different format, which we can read easyly
-			webview.loadUrl("file://" + incomingIntent.getStringExtra("fileLocation"));
+			webview.loadUrl("file://" + fileLocation);
 			webview.setWebViewClient(new WebViewClient() {
 
 					@Override
@@ -92,7 +95,7 @@ public class ViewActivity extends Activity
 	private void loadWebView()
 	{
 		try {
-			FileInputStream is = new FileInputStream(incomingIntent.getStringExtra("fileLocation"));
+			FileInputStream is = new FileInputStream(fileLocation);
             //InputStream is = getAssets().open("TestHtmlArchive.xml");
             WebArchiveReader wr = new WebArchiveReader() {
                 void onFinished(WebView v) {
@@ -144,6 +147,7 @@ public class ViewActivity extends Activity
 			
 			case R.id.action_open_in_external:
 				
+				
 				Intent incomingIntent = getIntent();
 				
 				
@@ -154,13 +158,14 @@ public class ViewActivity extends Activity
 				return true;
 				
 			case R.id.action_open_file_in_external:
-				
-//				Intent incomingIntent3 = getIntent();
-//				
-//				
-//				Uri uri2 = Uri.parse(incomingIntent3.getStringExtra("fileLocation"));
-//				Intent openFileIntent= new Intent(Intent.ACTION_VIEW, uri2);
-//				startActivity(openFileIntent);
+				Intent newIntent = new Intent(Intent.ACTION_VIEW);
+				newIntent.setDataAndType(Uri.fromFile(new File(fileLocation)),"text/html");
+				newIntent.setFlags(newIntent.FLAG_ACTIVITY_NEW_TASK);
+				try {
+					startActivity(newIntent);
+				} catch (android.content.ActivityNotFoundException e) {
+					Toast.makeText(this, "No installed app can open HTML files..", Toast.LENGTH_LONG).show();
+				}
 //
 				return true;
 				
@@ -241,7 +246,7 @@ public class ViewActivity extends Activity
 		TextView t = (TextView) layout.findViewById(R.id.properties_dialog_text_title);
 		t.setText("Title: \r\n" + title);
 		t = (TextView) layout.findViewById(R.id.properties_dialog_text_file_location);
-		t.setText("File location: \r\n" + incomingIntent.getStringExtra("fileLocation"));
+		t.setText("File location: \r\n" + fileLocation);
 		t = (TextView) layout.findViewById(R.id.properties_dialog_text_orig_url);
 		t.setText("Saved from: \r\n" + incomingIntent.getStringExtra("orig_url"));
 		build.setPositiveButton("OK",

@@ -17,7 +17,7 @@ public class DirectoryHelper {
 	}
 	
 	private static String getStorageDir() {
-		//FIXME!!!! replace this with getExternalStorageDir()
+		//FIXME!!!! replace this with getExternalFilesDir()
 		
 		String baseDir = Environment.getExternalStorageDirectory().toString();
 		String directory = baseDir + "/Android/data/jonas.tool.saveForOffline/files/";

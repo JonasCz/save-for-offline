@@ -13,7 +13,7 @@
 	
 	<item
         android:id="@+id/action_open_file_in_external"
-        android:title="Open saved file in browser"
+        android:title="Open in another app"
 		android:icon="@drawable/ic_action_web_site"
 		android:showAsAction="never"/>
 	

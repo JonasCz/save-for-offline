@@ -22,9 +22,9 @@ import org.jsoup.nodes.Document;
 import org.jsoup.Jsoup;
 import org.jsoup.select.Elements;
 import org.jsoup.nodes.Element;
-import java.net.MalformedURLException;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.net.MalformedURLException;
 
 public class SaveService extends IntentService {
 
@@ -96,15 +96,18 @@ public class SaveService extends IntentService {
 		}
 
 		
-		
+	
 		destinationDirectory = DirectoryHelper.getUnpackedDir();
-		thumbnail = DirectoryHelper.getThumbnailLocation();
+		thumbnail = destinationDirectory + "saveForOffline_thumbnail.png";
 		
 		origurl = intent.getStringExtra("origurl");
 		
 		try {
 			grabPage(origurl, destinationDirectory);
 		} catch (Exception e) {
+			e.printStackTrace();
+			
+			notifyError("Could not save page", "Failed to download main HTML file.");
 			//if we crash, delete all files saved so far
 			File file = new File(destinationDirectory);
 			DirectoryHelper.deleteDirectory(file);
@@ -155,15 +158,19 @@ public class SaveService extends IntentService {
 		wasAddedToDb = true;
 	}
 	
-	private void notifyProgress(String filename, int maxProgress, int progress) {
+	private void notifyProgress(String filename, int maxProgress, int progress, boolean indeterminate) {
+		//progress updates are sent here
 		mBuilder
 			.setContentText(filename)
-			.setProgress(maxProgress, progress, false);
+			.setProgress(maxProgress, progress, indeterminate);
 		mNotificationManager.notify(notification_id, mBuilder.build());
 	}
 
 
 	private void notifyError(String message, String extraMessage) {
+		//if message == null, we can't continue
+		//otherwise, the error is not fatal and we can continue anyway
+		//this tells the user if this is so
 		if (message != null) {
 			mBuilder
 				.setContentText(extraMessage)
@@ -186,7 +193,7 @@ public class SaveService extends IntentService {
 
 		GrabUtility.filesToGrab.clear();
 		GrabUtility.framesToGrab.clear();
-		GrabUtility.title = null;
+		GrabUtility.title = "";
 		
         if(url == null || outputDirPath == null){
         	notifyError("Page not saved", "There was an internal error, this is a bug, so please report it.");
@@ -212,18 +219,20 @@ public class SaveService extends IntentService {
 		
 		//download main html and parse -- isExtra parameter should be false
 		downloadHtmlAndParseLinks(url, outputDirPath, false);
+		failCount = 0;
 		
 		//download and parse html frames
 		for (String urlToDownload: GrabUtility.framesToGrab) {
 			downloadHtmlAndParseLinks(urlToDownload, outputDirPath, true);
+			failCount = 0;
 		}
 		
 		//download and parse css files
 		System.out.println("pre Dl css: ");
 		for (String urlToDownload: GrabUtility.cssToGrab) {
-			System.out.println("Dl css: ");
-			System.out.println("Dl css: ");
 			downloadCssAndParseLinks(urlToDownload, outputDirPath);
+			failCount = 0;
+			
 		}
 
 		//download extra files, such as images / scripts
@@ -231,11 +240,9 @@ public class SaveService extends IntentService {
 			
 			getExtraFile(urlToDownload, outputDir);
 			
-			synchronized (GrabUtility.filesToGrab) {		
-				notifyProgress("Saving file: " + urlToDownload.substring(urlToDownload.lastIndexOf("/") + 1), GrabUtility.filesToGrab.size(), GrabUtility.filesToGrab.indexOf(urlToDownload));	
-				
-			}
-			
+			notifyProgress("Saving file: " + urlToDownload.substring(urlToDownload.lastIndexOf("/") + 1), GrabUtility.filesToGrab.size(), GrabUtility.filesToGrab.indexOf(urlToDownload), false);	
+			failCount = 0;
+	
 		}
 
 	}
@@ -250,15 +257,15 @@ public class SaveService extends IntentService {
 		String filename;
 		
 		if (isExtra) {
-			filename = url.substring(url.lastIndexOf("/") + 1);
+			filename = url.substring(url.lastIndexOf("/") + 1).replaceAll("[^a-zA-Z0-9-_\\.]", "_");
 		} else {
 			filename = "index.html";
 		}
 		
 		if (isExtra) {
-			notifyProgress("Downloading extra HTML file", 100, 5);
+			notifyProgress("Downloading extra HTML file", 100, 5, true);
 		} else {
-			notifyProgress("Downloading main HTML file", 100, 1);
+			notifyProgress("Downloading main HTML file", 100, 5, true);
 		}
 	
 		try {
@@ -286,18 +293,27 @@ public class SaveService extends IntentService {
 
 			// normally, 3xx is redirect
 			int status = conn.getResponseCode();
-			if (status != HttpURLConnection.HTTP_OK && status != HttpURLConnection.HTTP_NOT_FOUND) {
+			System.out.println(status);
+			if (status != HttpURLConnection.HTTP_OK) {
 				if (status == HttpURLConnection.HTTP_MOVED_TEMP
 					|| status == HttpURLConnection.HTTP_MOVED_PERM
 					|| status == HttpURLConnection.HTTP_SEE_OTHER){
 					redirect = true;
-				}else{
+				} else if (status == HttpURLConnection.HTTP_UNAUTHORIZED ||
+						   status == HttpURLConnection.HTTP_ACCEPTED ||
+						   status == HttpURLConnection.HTTP_CREATED ||
+						   status == HttpURLConnection.HTTP_NOT_FOUND)
+							{
+								System.out.println("error");
+								notifyError(null, "Possibe error. HTTP status code: " + status);
+							   
+				} else {
 					if (isExtra) {
 						notifyError(null, "Failed to download extra HTML file. HTTP status code: " + status);
 						return;
 					} else {
 						notifyError("Could not save page", "Failed to download main HTML file. HTTP status code: " + status);
-						throw new IOException();
+						throw new IOException("HTTP status not ok. status: " + status);
 					}
 					
 				}
@@ -332,7 +348,7 @@ public class SaveService extends IntentService {
 				} else {
 					notifyError("Could not save page", "Cannot write to file - "+outputFile.getAbsolutePath());
 					System.out.println("Cannot write to file - "+outputFile.getAbsolutePath());
-					throw new IOException();
+					throw new IOException("Cannont write to file");
 				}
 			}
 			
@@ -348,9 +364,9 @@ public class SaveService extends IntentService {
 			}
 			
 			if (isExtra) {
-				notifyProgress("Processing extra HTML file", 100, 10);
+				notifyProgress("Processing extra HTML file", 100, 5, true);
 			} else {
-				notifyProgress("Processing main HTML file", 100, 5);
+				notifyProgress("Processing main HTML file", 100, 5, true);
 			}
 			
 			String htmlContent = strResponse.toString();
@@ -359,31 +375,29 @@ public class SaveService extends IntentService {
 
 			outputFile = new File(outputDir, filename);
 
-			try {
+		
 				// clear previous files contents
 				fop = new FileOutputStream(outputFile);
 				fop.write(htmlContent.getBytes());
 				fop.flush();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+		
 			
 			failCount = 0;
 		} catch (Exception e) {
-			
+			e.printStackTrace();
 			failCount++;
 
 			if (isExtra) {
-				if (failCount <= GrabUtility.maxRetryCount) {
+				if (GrabUtility.maxRetryCount >= failCount) {
 					notifyError(null, "Failed to download extra HTML file, retrying. Fail count: " + failCount );
 					synchronized (this) {try {wait(2500);} catch (InterruptedException ex) {}}
 					downloadHtmlAndParseLinks(url, outputDir, isExtra);
 				} else {
-					notifyError(null, "Failed to download extra HTML file: " + filename);
+					notifyError(null, "Failed to download extra HTML file.");
 					return;
 				}
 			} else {
-				if (failCount <= GrabUtility.maxRetryCount) {
+				if (GrabUtility.maxRetryCount >= failCount) {
 					notifyError(null, "Failed to download main HTML file, retrying. Fail count: " + failCount );
 					synchronized (this) {try {wait(2500);} catch (InterruptedException ex) {}}
 					downloadHtmlAndParseLinks(url, outputDir, isExtra);
@@ -412,22 +426,18 @@ public class SaveService extends IntentService {
 	}
 	
 	private void downloadCssAndParseLinks (String url, String outputDir) throws IOException {
-		
+		//todo: one method for saving & parsing both html & css, as they are very similar
 		FileOutputStream fop = null;
 		BufferedReader in = null;
 		HttpURLConnection conn = null;
 		File outputFile = null;
 		InputStream is = null;
-		String filename;
-
-		filename = url.substring(url.lastIndexOf("/") + 1);
+		String filename = url.substring(url.lastIndexOf("/") + 1).replaceAll("[^a-zA-Z0-9-_\\.]", "_");
+		System.out.println(filename);
 	
-		notifyProgress("Downloading CSS file", 100, 5);
+		notifyProgress("Downloading CSS file", 100, 5, true);
 
 		try {
-
-			String baseUrl = url;
-
 			URL obj = new URL(url);
 
 			//Output file
@@ -487,42 +497,40 @@ public class SaveService extends IntentService {
 
 			String inputLine;
 			StringBuilder strResponse = new StringBuilder();
-			// append whole response into single string, save it into a file on storage
-			// if its of type html then parse it and get all css and images and javascript files
-			// and add them to filesToGrab list
+			
 			while ((inputLine = in.readLine()) != null) {
 				strResponse.append(inputLine+"\r\n");
 			}
 
 			
-			notifyProgress("Processing CSS file", 100, 5);
+			notifyProgress("Processing CSS file", 100, 5, true);
 
 			String cssContent = strResponse.toString();
 
 			//parse for links and convert to relative links
 			System.out.println("Pre parse css ");
-			cssContent = GrabUtility.parseCssForLinks(cssContent, baseUrl);
+			cssContent = GrabUtility.parseCssForLinks(cssContent, url);
 			System.out.println("Post parse css ");
 
 			outputFile = new File(outputDir, filename);
 			System.out.println("Create file parse css ");
 
-			try {
 				// clear previous files contents
 				System.out.println("pre write file parse css ");
 				fop = new FileOutputStream(outputFile);
 				fop.write(cssContent.getBytes());
 				fop.flush();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+		
 
 			failCount = 0;
+		
+		
 		} catch (Exception e) {
 
 			failCount++;
 			e.printStackTrace();
-			if (failCount <= GrabUtility.maxRetryCount) {
+			
+			if (GrabUtility.maxRetryCount >= failCount) {
 				notifyError(null, "Failed to download CSS file: " + filename+", retrying. Fail count: " + failCount);
 				synchronized (this) {try {wait(2500);} catch (InterruptedException ex) {}}
 				downloadCssAndParseLinks(url, outputDir);
@@ -547,17 +555,23 @@ public class SaveService extends IntentService {
 		}
 	}
 
-	private void getExtraFile(String urlToDownload, File outputDir) throws IOException {
+	private void getExtraFile(String urlToDownload, File outputDir) {
 		FileOutputStream fop = null;
 		BufferedReader in = null;
 		HttpURLConnection conn = null;
 		File outputFile = null;
 		InputStream is = null;
+		URL obj;
+		
+		String filename = urlToDownload.substring(urlToDownload.lastIndexOf('/')+1).replaceAll("[^a-zA-Z0-9-_\\.]", "_");
+	
 		try {
+			obj  = new URL(urlToDownload);
 			
-			URL obj = new URL(urlToDownload);
-			String path = obj.getPath();
-			String filename = path.substring(path.lastIndexOf('/')+1);
+			System.out.println(urlToDownload);
+			
+			
+			System.out.println(filename);
 			if(filename.equals("/") || filename.equals("")){
 				return;
 			}
@@ -567,7 +581,7 @@ public class SaveService extends IntentService {
 			if (outputFile.exists()) {
 				return;
 			}
-
+			System.out.println(filename + "open conn");
 			conn = (HttpURLConnection) obj.openConnection();
 			conn.setReadTimeout(5000);
 			conn.addRequestProperty("Accept-Language", "en-US,en;q=0.8");
@@ -583,8 +597,7 @@ public class SaveService extends IntentService {
 					|| status == HttpURLConnection.HTTP_MOVED_PERM
 					|| status == HttpURLConnection.HTTP_SEE_OTHER){
 					redirect = true;
-				}else{
-					
+				} else {
 					return;
 				}
 			}
@@ -607,6 +620,7 @@ public class SaveService extends IntentService {
 				System.out.println("Redirect to URL : " + newUrl);
 			}
 
+			System.out.println(filename + "crate file");
 			// if file doesn't exists, then create it
 			if (!outputFile.exists()) {
 				outputFile.createNewFile();
@@ -618,7 +632,6 @@ public class SaveService extends IntentService {
 			}
 			
 			
-			try {
 				fop = new FileOutputStream(outputFile);
 				is = conn.getInputStream();
 				byte[] buffer = new byte[1024*32]; // read in batches of 32K
@@ -627,31 +640,21 @@ public class SaveService extends IntentService {
 		            fop.write(buffer, 0, length);
 	            }
 					fop.flush();
-					failCount = 0;					
-				} catch (IOException e) {
-					failCount++;
-
-					if (failCount <= GrabUtility.maxRetryCount) {
-						notifyError(null, "Failed to download: " + outputFile.getName() + ", retrying. Fail count: " + failCount );
-						synchronized (this) {try {wait(2500);} catch (InterruptedException ex) {}}
-						getExtraFile(urlToDownload, outputDir);
-					} else {
-						notifyError(null, "Failed to download: " + outputFile.getName());
-						//handle it properly
-					}
 				
-			}
+			
 		failCount = 0;
+		
 		} catch (Exception e) {
 			failCount++;
-			
-			if (failCount <= GrabUtility.maxRetryCount) {
-				notifyError(null, "Failed to download: " + outputFile.getName() + ", retrying. Fail count: " + failCount );
+			e.printStackTrace();
+			if (GrabUtility.maxRetryCount >= failCount) {
+				notifyError(null, "Failed to download: " + filename + ", retrying. Fail count: " + failCount );
 				synchronized (this) {try {wait(2500);} catch (InterruptedException ex) {}}
 				getExtraFile(urlToDownload, outputDir);
+				return;
 			} else {
-				notifyError(null, "Failed to download: " + outputFile.getName());
-				
+				notifyError(null, "Failed to download: " + filename);
+				return;
 			}
 			
 			
@@ -663,10 +666,10 @@ public class SaveService extends IntentService {
 				if(in != null){
 					in.close();
 				}
-				if (fop != null) {
+				if(fop != null) {
 					fop.close();
 				}
-			} catch (IOException e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
@@ -685,8 +688,8 @@ class GrabUtility{
 	//cssToGrab - list of all css files to download an parse
 	public static List<String> cssToGrab = new ArrayList<String>();
 	
-	public static String title;
-	public static int maxRetryCount;
+	public static String title = "";
+	public static int maxRetryCount = 5;
 	public static boolean makeLinksAbsolute = true;
 	
 	public static boolean saveImages = true;
@@ -705,7 +708,7 @@ class GrabUtility{
 		try {
 			fromHTMLPageUrl = new URL(baseUrl);
 			noBaseUrl = false;
-		} catch (MalformedURLException e) {
+		} catch (java.net.MalformedURLException e) {
 			fromHTMLPageUrl = null;
 			noBaseUrl = true;
 		}
@@ -719,7 +722,7 @@ class GrabUtility{
 				parsedHtml = Jsoup.parse(htmlToParse, baseUrl);
 			}
 
-			if (parsedHtml.title() != "") {
+			if (title == "") {
 				title = parsedHtml.title();
 			}
 			
@@ -736,7 +739,7 @@ class GrabUtility{
 						}
 					}
 
-					String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/") + 1);
+					String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/") + 1).replaceAll("[^a-zA-Z0-9-_\\.]", "_");
 					link.attr("src", replacedURL);
 				}
 
@@ -750,7 +753,7 @@ class GrabUtility{
 						}
 					}
 
-					String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/") + 1);
+					String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/") + 1).replaceAll("[^a-zA-Z0-9-_\\.]", "_");
 					link.attr("src", replacedURL);
 
 
@@ -759,24 +762,30 @@ class GrabUtility{
 
 			if (saveOther) {
 				// Get all the links
-				System.out.println("parse html: ");
 				links = parsedHtml.select("link[href]");
 				for (Element link: links) {
 					urlToGrab = link.attr("abs:href");
 					
-					//if it is css, parse it to extract urls (images referenced from "background" attributes for example)
+					//if it is css, parse it later to extract urls (images referenced from "background" attributes for example)
 					if (link.attr("rel").equals("stylesheet")) {
 						cssToGrab.add(link.attr("abs:href"));
-						System.out.println("parse for css: ");
 					} else {
 						addLinkToList(urlToGrab);
-						System.out.println("parse for other: ");
 					}
 					
-					String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/") + 1);
+					String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/") + 1).replaceAll("[^a-zA-Z0-9-_\\.]", "_");
 					link.attr("href", replacedURL);
 
 				}	
+				//get links in embedded css also, and modify the links to point to local files
+				links = parsedHtml.select("style[type=text/css]");
+				for (Element link: links) {
+					String cssToParse = link.data();
+					String parsedCss = parseCssForLinks(cssToParse, baseUrl);
+					if (link.dataNodes().size() != 0){
+						link.dataNodes().get(0).setWholeData(parsedCss);
+					}
+				}
 			}
 
 			if (saveScripts) {
@@ -784,7 +793,7 @@ class GrabUtility{
 				for (Element link: links) {
 					urlToGrab = link.attr("abs:src");
 					addLinkToList(urlToGrab);
-					String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/") + 1);
+					String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/") + 1).replaceAll("[^a-zA-Z0-9-_\\.]", "_");
 					link.attr("src", replacedURL);
 				}
 			}
@@ -795,7 +804,18 @@ class GrabUtility{
 					urlToGrab = link.attr("abs:src");
 					addLinkToList(urlToGrab);
 
-					String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/") + 1);
+					String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/") + 1).replaceAll("[^a-zA-Z0-9-_\\.]", "_");
+					link.attr("src", replacedURL);
+				}
+			}
+			
+			if (saveVideo) {
+				links = parsedHtml.select("video");
+				for (Element  link: links.select("[src]")){
+					urlToGrab = link.attr("abs:src");
+					addLinkToList(urlToGrab);
+
+					String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/") + 1).replaceAll("[^a-zA-Z0-9-_\\.]", "_");
 					link.attr("src", replacedURL);
 				}
 			}
@@ -815,6 +835,7 @@ class GrabUtility{
 	public static String parseCssForLinks(String cssToParse, String baseUrl) {
 		
 		String patternString = "url(\\s*\\(\\s*[\"']\\s*)(.*?)([\"']\\s*\\))"; //I hate regexes...
+	
 		Pattern pattern = Pattern.compile(patternString); 
 		Matcher matcher = pattern.matcher(cssToParse); 
 		
@@ -822,11 +843,11 @@ class GrabUtility{
 		
 		//find everything inside url(" ... ")
 		while (matcher.find()) {
-			System.out.println("Original url:" + matcher.group().replaceAll(patternString, "$2"));
+		//	System.out.println("Original url:" + matcher.group().replaceAll(patternString, "$2"));
 
 			if (matcher.group().replaceAll(patternString, "$2").contains("/")) {
-				System.out.println("Replaced url:" + matcher.group().replaceAll(patternString, "$2").substring(matcher.group().replaceAll(patternString, "$2").lastIndexOf("/") + 1));
-				cssToParse = cssToParse.replace(matcher.group().replaceAll(patternString, "$2"), matcher.group().replaceAll(patternString, "$2").substring(matcher.group().replaceAll(patternString, "$2").lastIndexOf("/") + 1));
+				//System.out.println("Replaced url:" + matcher.group().replaceAll(patternString, "$2").substring(matcher.group().replaceAll(patternString, "$2").lastIndexOf("/") + 1).replaceAll("[^a-zA-Z0-9-_\\.]", "_"));
+				cssToParse = cssToParse.replace(matcher.group().replaceAll(patternString, "$2"), matcher.group().replaceAll(patternString, "$2").substring(matcher.group().replaceAll(patternString, "$2").lastIndexOf("/") + 1).replaceAll("[^a-zA-Z0-9-_\\.]", "_"));
 				
 			}
 			
@@ -849,5 +870,6 @@ class GrabUtility{
 		Document d = Document.createShell(baseurl);
 		d.body().appendElement("img").attr("src", link);
 		return d.body().child(0).attr("abs:src");
+		
 	}
 }

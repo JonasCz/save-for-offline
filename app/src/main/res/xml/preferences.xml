@@ -110,13 +110,18 @@
 			</PreferenceCategory>
 			<PreferenceCategory
 				android:title="Advanced options">
-				<CheckBoxPreference 
-
+				<CheckBoxPreference
 					android:key="make_links_absolute" 
 					android:defaultValue="true"
 					android:title="Make links absolute" 
 					android:summary="Recommended. Change links on page so they always point to the correct location, even if they are relative"/>
 
+				<CheckBoxPreference 
+					android:key="enable_javascript_screenshot" 
+					android:defaultValue="true"
+					android:title="Enable javaScript when generating webpage thumbnail" 
+					android:summary="Thumbnail generation might be faster with this turned off"/>
+				
 
 			</PreferenceCategory>
 
