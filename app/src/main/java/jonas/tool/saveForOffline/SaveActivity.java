@@ -66,11 +66,10 @@ public class SaveActivity extends Activity
 
 		if (ua.equals("desktop")) {
 			webview.getSettings().setUserAgentString("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.517 Safari/537.36");
-			Log.d("saveActivity", "using desktop ua");
 		}
 		if (ua.equals("ipad")) {
 			webview.getSettings().setUserAgentString("todo:iPad ua");
-			Log.w("saveActivity", "iPad ua not implemented yet");
+			
 		}
 		
 		

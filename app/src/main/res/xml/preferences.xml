@@ -67,7 +67,7 @@
 		<PreferenceScreen
 			xmlns:android="http://schemas.android.com/apk/res/android"
 			android:title="Advanced options for saving"
-			android:summary="DONT play with these unless you are doing! Changimg these options may result in the app not working as expected"
+			android:summary="Choose how errors should be handled and what parts of a webpage to save (images, scripts...). Use with care"
 			android:key="saving_advanced_opts">
 			<PreferenceCategory
 				android:title="Saving options">

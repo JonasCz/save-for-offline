@@ -269,18 +269,6 @@ public class SaveService extends IntentService {
 
 		}
 
-		for (String f: GrabUtility.framesToGrab) {
-			lt.d(f);
-		}
-		for (String f: GrabUtility.cssToGrab) {
-			lt.d(f);
-		}
-		for (String f: GrabUtility.extraCssToGrab) {
-			lt.d(f);
-		}
-		for (String f: GrabUtility.filesToGrab) {
-			lt.d(f);
-		}
 		//download extra files, such as images / scripts
 		for (String urlToDownload: GrabUtility.filesToGrab) {
 			
@@ -729,8 +717,8 @@ public class SaveService extends IntentService {
 }
 
 /**
- * @author Pramod Khare & improved by Jonas Czec
- * Contains all the utility methods used in above GrabWebPage class
+ * @author Pramod Khare & improved by Jonas Czech
+ * Contains all the utility methods used in above class
  */
 class GrabUtility{
 	// filesToGrab - maintains all the links to files which we are going to grab/download
@@ -762,7 +750,7 @@ class GrabUtility{
 		try {
 			fromHTMLPageUrl = new URL(baseUrl);
 			noBaseUrl = false;
-		} catch (java.net.MalformedURLException e) {
+		} catch (MalformedURLException e) {
 			fromHTMLPageUrl = null;
 			noBaseUrl = true;
 		}
@@ -872,8 +860,18 @@ class GrabUtility{
 			}
 			
 			if (saveVideo) {
-				links = parsedHtml.select("video");
+				//video src is sometimes in a child element
+				links = parsedHtml.select("video:not([src])");
 				for (Element  link: links.select("[src]")){
+					urlToGrab = link.attr("abs:src");
+					addLinkToList(urlToGrab);
+
+					String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/") + 1).replaceAll("[^a-zA-Z0-9-_\\.]", "_");
+					link.attr("src", replacedURL);
+				}
+				
+				links = parsedHtml.select("video[src]");
+				for (Element  link: links){
 					urlToGrab = link.attr("abs:src");
 					addLinkToList(urlToGrab);
 
@@ -896,8 +894,6 @@ class GrabUtility{
 	
 	public static String parseCssForLinks(String cssToParse, String baseUrl) {
 		
-		
-		String importString = "@(import\\s*['\"])()([^ '\"]*)";
 		String patternString = "url(\\s*\\(\\s*['\"]*\\s*)(.*?)\\s*['\"]*\\s*\\)"; //I hate regexes...
 	
 		Pattern pattern = Pattern.compile(patternString); 
@@ -915,9 +911,11 @@ class GrabUtility{
 				
 			}
 			
-			addLinkToList(makeLinkRelative(matcher.group().replaceAll(patternString, "$2").trim(), baseUrl));
+			addLinkToList(makeLinkAbsolute(matcher.group().replaceAll(patternString, "$2").trim(), baseUrl));
 		}
 		
+		// find css linked with @import  -  needs testing
+		String importString = "@(import\\s*['\"])()([^ '\"]*)";
 		pattern = Pattern.compile(importString); 
 		matcher = pattern.matcher(cssToParse);
 		matcher.reset();
@@ -930,13 +928,14 @@ class GrabUtility{
 
 			}
 
-			extraCssToGrab.add(makeLinkRelative(matcher.group().replaceAll(patternString, "$2").trim(), baseUrl));
+			extraCssToGrab.add(makeLinkAbsolute(matcher.group().replaceAll(patternString, "$2").trim(), baseUrl));
 		}
 		
 		return cssToParse;
 	}
 
 	public static void addLinkToList(String link) {
+		//no multithreading for now
 		synchronized (filesToGrab) {
 			if (!filesToGrab.contains(link)) {
 				filesToGrab.add(link);
@@ -944,16 +943,23 @@ class GrabUtility{
 		}
 	}
 	
-	public static String makeLinkRelative(String link, String baseurl) {
-		//jsoup figures out the absolute url for me...
-		Document d = Document.createShell(baseurl);
-		d.body().appendElement("img").attr("src", link);
-		return d.body().child(0).attr("abs:src");
+	public static String makeLinkAbsolute(String link, String baseurl) {
 		
+		try {
+			URL u = new URL(new URL(baseurl), link);
+			return u.toString();
+		} catch (MalformedURLException e) {
+			lt.e("MalformedURLException while making url absolute");
+			lt.e("Link: " + link);
+			lt.e("BaseURL: " + baseurl);
+			return null;
+		}
+
 	}
 }
 
 class lt {
+	//log messages are sent here
 	public static void e (String message) {
 		Log.e("SaveService", message);
 	}

@@ -47,7 +47,7 @@ public class Preferences extends PreferenceActivity implements OnSharedPreferenc
 		} else {
 			Preference advancedSavingOptions = getPreferenceScreen().findPreference("saving_advanced_opts");
 			advancedSavingOptions.setEnabled(true);
-			advancedSavingOptions.setSummary("Choose how errors should be handled and what parts of a webpage to save (images, scripts...) ");
+			advancedSavingOptions.setSummary("Choose how errors should be handled and what parts of a webpage to save (images, scripts...). Use with care");
 		}
 		//disabled for now
 	}

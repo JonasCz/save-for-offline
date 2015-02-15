@@ -41,7 +41,7 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 	private TextView helpText;
 
 	private int sortOrder = 0;
-
+	
 
 	private GridView mainGrid;
 	private SearchView mSearchView;
@@ -51,7 +51,6 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 	private ActionBar actionbar;
 
 	private int scrollPosition;
-
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -63,6 +62,7 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 		mainGrid = (GridView) findViewById(R.id.List);
 
 		mainGrid.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE_MODAL);
+
 		mainGrid.setMultiChoiceModeListener(new ModeCallback());
 
 
@@ -93,13 +93,6 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 
 	}
 
-	private void deleteItems() {
-
-		
-		
-		
-	}
-
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {super.onActivityResult(requestCode, resultCode, data);
 		if (requestCode == 1 && resultCode == RESULT_FIRST_USER) {
@@ -117,6 +110,7 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 		mSearchView.setIconifiedByDefault(true);
 		mSearchView.setOnQueryTextListener(this);
 		return super.onCreateOptionsMenu(menu);
+
 	}
 
 
@@ -195,7 +189,7 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 				return true;
 
 			case R.id.ic_action_settings:
-				Intent settings = new Intent(getApplicationContext(), Preferences.class);
+				Intent settings = new Intent(this, Preferences.class);
 				startActivityForResult(settings, 1);
 
 				return true;
@@ -204,6 +198,7 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 				Intent intent = new Intent(this, FirstRunDialog.class);
 				startActivity(intent);
 				return true;
+
 
 			default:
 				return super.onOptionsItemSelected(item);
@@ -271,8 +266,9 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 
 	class ModeCallback implements ListView.MultiChoiceModeListener	{
 
-
+		@Override
         public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+
             MenuInflater inflater = getMenuInflater();
             inflater.inflate(R.menu.main_activity_multi_choice, menu);
             mode.setTitle("Select Items");
@@ -281,10 +277,15 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
             return true;
         }
 
+
+
+		@Override
         public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+			gridAdapter.selectedViewsPositions.clear();
             return true;
         }
 
+		@Override
         public boolean onActionItemClicked(final ActionMode mode, MenuItem item) {
 
 			switch (item.getItemId()) {
@@ -347,10 +348,10 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 								displayData("");
 								pd.hide();
 								pd.cancel();
-								
-								Toast.makeText(MainActivity.this, "Deleted " + gridAdapter.selectedViewsPositions.size() + " saved pages",Toast.LENGTH_LONG).show();
 
-								
+								Toast.makeText(MainActivity.this, "Deleted " + gridAdapter.selectedViewsPositions.size() + " saved pages", Toast.LENGTH_LONG).show();
+
+
 								mode.finish();	
 							}
 						});
@@ -370,18 +371,20 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 
 					break;
 				default:
-				
+
 					break;
             }
             return true;
         }
 
+		@Override
         public void onDestroyActionMode(ActionMode mode) {
-			
-				gridAdapter.selectedViewsPositions.clear();
-			
+
+			gridAdapter.selectedViewsPositions.clear();
+
         }
 
+		@Override
         public void onItemCheckedStateChanged(ActionMode mode,
 											  int position, long itemId, boolean checked) {
 			Integer pos = position;
@@ -409,14 +412,16 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 
             switch (checkedCount) {
                 case 0:
-                    mode.setSubtitle("Select items");
-					Log.w("MainActivity / Gridview", "Should never happen: nothing selected");
+                    mode.setSubtitle("Tap to select items");
+					findViewById(R.id.action_delete).setEnabled(false);
                     break;
                 case 1:
                     mode.setSubtitle("One item selected");
+					findViewById(R.id.action_delete).setEnabled(true);
                     break;
                 default:
-                    mode.setSubtitle("" + checkedCount + " items selected");
+                    mode.setSubtitle(checkedCount + " items selected");
+					findViewById(R.id.action_delete).setEnabled(true);
                     break;
             }
         }

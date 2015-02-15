@@ -13,8 +13,8 @@
 	
 	<item android:id="@+id/action_sort_by"
 		android:icon="@drawable/ic_action_sort"
-		android:title="Sort by"
-		android:showAsAction="ifRoom"/>
+		android:title="Sort items by"
+		android:showAsAction="never"/>
 	
 	<item android:id="@+id/ic_action_settings"
 		android:title="Settings"

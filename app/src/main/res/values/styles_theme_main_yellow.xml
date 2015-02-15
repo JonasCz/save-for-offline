@@ -26,7 +26,7 @@
         <item name="android:actionBarTabStyle">@style/ActionBarTabStyle.Theme_main_yellow</item>
         <item name="android:actionDropDownStyle">@style/DropDownNav.Theme_main_yellow</item>
         <item name="android:actionBarStyle">@style/ActionBar.Solid.Theme_main_yellow</item>
-        <item name="android:actionModeBackground">@drawable/cab_background_top_theme_main_yellow</item>
+		<item name="android:actionModeStyle">@style/ActionBar.Solid.Theme_main_yellow</item>
         <item name="android:actionModeSplitBackground">@drawable/cab_background_bottom_theme_main_yellow</item>
         <item name="android:actionModeCloseButtonStyle">@style/ActionButton.CloseMode.Theme_main_yellow</item>
         
