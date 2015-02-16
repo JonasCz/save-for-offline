@@ -4,7 +4,10 @@ Save for offline is an Android app for saving webpages for offline reading.
 
 In you web browser select 'share' , and then 'Save For Offline'
 ```
-This is an experimental beta version, and while it mostly works, it may have some problems. Please do report any bugs you find!
+This is an experimental beta version, 
+and while it mostly works, it may have some problems.
+
+Please do report any bugs you find!
 ```
 
 ## Screenshots
@@ -64,4 +67,3 @@ Please report any bugs you find, and contribute if you can!
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 ```
-

@@ -175,7 +175,6 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 			case R.id.action_sort_by:
 
 				AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-				builder.setTitle("Sort by");
 				builder.setSingleChoiceItems(R.array.sort_by, sortOrder, new DialogInterface.OnClickListener() {
 						public void onClick(DialogInterface dialog, int which) {
 							sortOrder = which;

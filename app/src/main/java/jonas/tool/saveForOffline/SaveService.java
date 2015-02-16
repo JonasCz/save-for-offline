@@ -132,7 +132,6 @@ public class SaveService extends IntentService {
 		} catch (Exception e) {
 			e.printStackTrace();
 			
-			notifyError("Could not save page", "Failed to download main HTML file.");
 			//if we crash, delete all files saved so far
 			File file = new File(destinationDirectory);
 			DirectoryHelper.deleteDirectory(file);
