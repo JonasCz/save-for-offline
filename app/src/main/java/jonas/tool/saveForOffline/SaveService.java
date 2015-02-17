@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 /**
  This was originally based on getMeThatPage (https://github.com/PramodKhare/GetMeThatPage/),
  with lots of improvements.
+ The code for actually saving pages is further down in this file.
 **/
 
 package jonas.tool.saveForOffline;
@@ -272,7 +273,7 @@ public class SaveService extends IntentService {
 		for (String urlToDownload: GrabUtility.filesToGrab) {
 			
 			getExtraFile(urlToDownload, outputDir);
-			lt.d("Prepare to download file: " + urlToDownload);
+			lt.i("Prepare to download file: " + urlToDownload);
 			notifyProgress("Saving file: " + urlToDownload.substring(urlToDownload.lastIndexOf("/") + 1), GrabUtility.filesToGrab.size(), GrabUtility.filesToGrab.indexOf(urlToDownload), false);	
 			failCount = 0;
 	
@@ -471,6 +472,7 @@ public class SaveService extends IntentService {
 		notifyProgress("Downloading CSS file", 100, 5, true);
 
 		try {
+			lt.i(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Preparing to download css file");
 			URL obj = new URL(url);
 
 			//Output file
@@ -478,14 +480,12 @@ public class SaveService extends IntentService {
 
 			conn = (HttpURLConnection) obj.openConnection();
 			conn.setReadTimeout(5000);
-			conn.addRequestProperty("Accept-Language", "en-US,en;q=0.8");
 			conn.addRequestProperty("User-Agent", uaString);
-			conn.addRequestProperty("Referer", "google.com");
-
 			boolean redirect = false;
 
 			//catch possible redirect, normally, 3xx is redirect
 			int status = conn.getResponseCode();
+			lt.i(lt.COMPONENT_CSS_FILE_DOWNLOADER, "HTTP status: " + status);
 			if (status != HttpURLConnection.HTTP_OK) {
 				if (status == HttpURLConnection.HTTP_MOVED_TEMP
 					|| status == HttpURLConnection.HTTP_MOVED_PERM
@@ -493,6 +493,7 @@ public class SaveService extends IntentService {
 					redirect = true;
 				}else{
 					notifyError(null, "Failed to download CSS file. HTTP status code: " + status);
+					
 					return;
 				}
 			}
@@ -508,9 +509,9 @@ public class SaveService extends IntentService {
 				obj =  new URL(newUrl);
 				conn = (HttpURLConnection) obj.openConnection();
 				conn.setRequestProperty("Cookie", cookies);
-				conn.addRequestProperty("Accept-Language", "en-US,en;q=0.8");
 				conn.addRequestProperty("User-Agent", uaString);
-				conn.addRequestProperty("Referer", "google.com");
+				
+				lt.i(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Redirect to URL: " + newUrl);
 			}
 
 			// if file doesn't exists, then create it
@@ -521,11 +522,12 @@ public class SaveService extends IntentService {
 			if(!outputFile.canWrite()){
 				
 				notifyError("Could not save page", "Cannot write to file - "+outputFile.getAbsolutePath());
-				System.out.println("Cannot write to file - "+outputFile.getAbsolutePath());
+				lt.i(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Cannot write to file - "+outputFile.getAbsolutePath());
 				return;
 			
 			}
 
+			lt.i(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Getting input stream...");
 			in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 
 			String inputLine;
@@ -541,20 +543,16 @@ public class SaveService extends IntentService {
 			String cssContent = strResponse.toString();
 
 			//parse for links and convert to relative links
-			System.out.println("Pre parse css ");
+			lt.i(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Will now parse CSS");
 			cssContent = GrabUtility.parseCssForLinks(cssContent, url);
-			System.out.println("Post parse css ");
 
 			outputFile = new File(outputDir, filename);
-			System.out.println("Create file parse css ");
-
-				// clear previous files contents
-				System.out.println("pre write file parse css ");
-				fop = new FileOutputStream(outputFile);
-				fop.write(cssContent.getBytes());
-				fop.flush();
-		
-
+			
+			lt.i(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Writing CSS file: " + filename);
+			fop = new FileOutputStream(outputFile);
+			fop.write(cssContent.getBytes());
+			fop.flush();
+			lt.i(lt.COMPONENT_CSS_FILE_DOWNLOADER, "CSS file downloaded.");
 			failCount = 0;
 		
 		
@@ -565,10 +563,12 @@ public class SaveService extends IntentService {
 			
 			if (GrabUtility.maxRetryCount >= failCount) {
 				notifyError(null, "Failed to download CSS file: " + filename+", retrying. Fail count: " + failCount);
+				lt.e(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Failed to download CSS file, retrying: " + filename);
 				synchronized (this) {try {wait(2500);} catch (InterruptedException ex) {}}
 				downloadCssAndParseLinks(url, outputDir);
 			} else {
 				notifyError(null, "Failed to download CSS file: " + filename);
+				lt.e(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Failed to download CSS file: " + filename);
 				return;
 			}
 		} finally {
@@ -587,6 +587,7 @@ public class SaveService extends IntentService {
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
+				lt.e(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Exception while closing streams!");
 			}
 		}
 	}
@@ -602,6 +603,7 @@ public class SaveService extends IntentService {
 		String filename = urlToDownload.substring(urlToDownload.lastIndexOf('/')+1).replaceAll("[^a-zA-Z0-9-_\\.]", "_");
 	
 		try {
+			lt.i(lt.COMPONENT_EXTRA_FILE_DOWNLOADER, "Preparing to download file: " + filename);
 			obj  = new URL(urlToDownload);
 			
 			if(filename.equals("/") || filename.equals("")){
@@ -611,20 +613,19 @@ public class SaveService extends IntentService {
 			//Output file name
 			outputFile = new File(outputDir, filename);
 			if (outputFile.exists()) {
-				lt.e("File already exists, skipping: " + filename);
+				lt.e(lt.COMPONENT_EXTRA_FILE_DOWNLOADER,"File already exists, skipping: " + filename);
 				return;
 			}
-			lt.d("Opening connection: " + urlToDownload);
+			lt.i(lt.COMPONENT_EXTRA_FILE_DOWNLOADER,"Opening connection: " + urlToDownload);
 			conn = (HttpURLConnection) obj.openConnection();
 			conn.setReadTimeout(5000);
-			conn.addRequestProperty("Accept-Language", "en-US,en;q=0.8");
 			conn.addRequestProperty("User-Agent", uaString);
-			conn.addRequestProperty("Referer", "google.com");
 
 			boolean redirect = false;
 
 			// normally, 3xx is redirect
 			int status = conn.getResponseCode();
+			lt.i(lt.COMPONENT_EXTRA_FILE_DOWNLOADER, "HTTP response status: " + status);
 			if (status != HttpURLConnection.HTTP_OK) {
 				if (status == HttpURLConnection.HTTP_MOVED_TEMP
 					|| status == HttpURLConnection.HTTP_MOVED_PERM
@@ -646,49 +647,52 @@ public class SaveService extends IntentService {
 				obj =  new URL(newUrl);
 				conn = (HttpURLConnection) obj.openConnection();
 				conn.setRequestProperty("Cookie", cookies);
-				conn.addRequestProperty("Accept-Language", "en-US,en;q=0.8");
-				conn.addRequestProperty("User-Agent", "Mozilla");
-				conn.addRequestProperty("Referer", "google.com");
+				conn.addRequestProperty("User-Agent", uaString);
 
-				lt.d("Redirect to URL : " + newUrl);
+				lt.i("Redirect to URL : " + newUrl);
 			}
 
 			
 			// if file doesn't exists, then create it
 			if (!outputFile.exists()) {
-				lt.d("Create file: " + filename);
+				lt.i(lt.COMPONENT_EXTRA_FILE_DOWNLOADER,"Create file: " + filename);
 				outputFile.createNewFile();
 			}
 			// can we write this file
 			if(!outputFile.canWrite()){
-				lt.e("Cannot write to file - "+outputFile.getAbsolutePath());
+				lt.e(lt.COMPONENT_EXTRA_FILE_DOWNLOADER,"Cannot write to file - "+outputFile.getAbsolutePath());
 				return;
 			}
 			
+			lt.i(lt.COMPONENT_EXTRA_FILE_DOWNLOADER, "Downloading file...");
+			fop = new FileOutputStream(outputFile);
+			is = conn.getInputStream();
+			byte[] buffer = new byte[1024*16]; // read in batches of 16K
+	        int length;
+	        while ((length = is.read(buffer)) > 0) {
+		       fop.write(buffer, 0, length);
+	        }
 			
-				fop = new FileOutputStream(outputFile);
-				is = conn.getInputStream();
-				byte[] buffer = new byte[1024*32]; // read in batches of 32K
-		        int length;
-		        while ((length = is.read(buffer)) > 0) {
-		            fop.write(buffer, 0, length);
-	            }
-					fop.flush();
+			fop.flush();
+			
+			lt.i(lt.COMPONENT_EXTRA_FILE_DOWNLOADER, "Extra file downloaded.");
 				
 			
 		failCount = 0;
 		
 		} catch (Exception e) {
 			failCount++;
-			lt.e(e + "while getting extra file, printing stack trace...");
+			lt.e(lt.COMPONENT_EXTRA_FILE_DOWNLOADER, e + "while getting extra file, printing stack trace...");
 			e.printStackTrace();
 			if (GrabUtility.maxRetryCount >= failCount) {
 				notifyError(null, "Failed to download: " + filename + ", retrying. Fail count: " + failCount );
+				lt.e(lt.COMPONENT_EXTRA_FILE_DOWNLOADER, "Error while getting extra file, waiting and retrying...");
 				synchronized (this) {try {wait(2500);} catch (InterruptedException ex) {}}
 				getExtraFile(urlToDownload, outputDir);
 				return;
 			} else {
 				notifyError(null, "Failed to download: " + filename);
+				lt.e(lt.COMPONENT_EXTRA_FILE_DOWNLOADER, "Error while getting extra file!");
 				return;
 			}
 			
@@ -708,7 +712,7 @@ public class SaveService extends IntentService {
 					fop.close();
 				}
 			} catch (IOException e) {
-				lt.e(e + "while closing streams");
+				lt.e(lt.COMPONENT_EXTRA_FILE_DOWNLOADER,e + "while closing streams!");
 				e.printStackTrace();
 			}
 		}
@@ -749,9 +753,12 @@ class GrabUtility{
 		try {
 			fromHTMLPageUrl = new URL(baseUrl);
 			noBaseUrl = false;
+			lt.e(lt.COMPONENT_HTML_PARSER, "Setting base url");
 		} catch (MalformedURLException e) {
 			fromHTMLPageUrl = null;
 			noBaseUrl = true;
+			lt.e(lt.COMPONENT_HTML_PARSER, "Error while setting base url!");
+			
 		}
 
 		String urlToGrab = null;
@@ -759,18 +766,21 @@ class GrabUtility{
 
 			if (noBaseUrl) {
 				parsedHtml = Jsoup.parse(htmlToParse);
+				lt.e(lt.COMPONENT_HTML_PARSER, "Parsing without base url!");
 			} else {
 				parsedHtml = Jsoup.parse(htmlToParse, baseUrl);
 			}
 
 			if (title == "") {
 				title = parsedHtml.title();
+				lt.i(lt.COMPONENT_HTML_PARSER, "Got title");
 			}
 			
 			Elements links;
 
 			if (saveFrames) {
 				links = parsedHtml.select("frame[src]");
+				lt.i(lt.COMPONENT_HTML_PARSER, "Got " + links.size() + " frames");
 				for (Element link: links) {
 					urlToGrab = link.attr("abs:src");
 
@@ -785,6 +795,7 @@ class GrabUtility{
 				}
 
 				links = parsedHtml.select("iframe[src]");
+				lt.i(lt.COMPONENT_HTML_PARSER, "Got " + links.size() + " iframes");
 				for (Element link: links) {
 					urlToGrab = link.attr("abs:src");
 
@@ -804,6 +815,7 @@ class GrabUtility{
 			if (saveOther) {
 				// Get all the links
 				links = parsedHtml.select("link[href]");
+				lt.i(lt.COMPONENT_HTML_PARSER, "Got " + links.size() + " link elements with a href attribute");
 				for (Element link: links) {
 					urlToGrab = link.attr("abs:href");
 					
@@ -820,6 +832,7 @@ class GrabUtility{
 				}	
 				//get links in embedded css also, and modify the links to point to local files
 				links = parsedHtml.select("style[type=text/css]");
+				lt.i(lt.COMPONENT_HTML_PARSER, "Got " + links.size() + " embedded stylesheets, parsing CSS");
 				for (Element link: links) {
 					String cssToParse = link.data();
 					String parsedCss = parseCssForLinks(cssToParse, baseUrl);
@@ -829,6 +842,7 @@ class GrabUtility{
 				}
 				
 				links = parsedHtml.select("[style]");
+				lt.i(lt.COMPONENT_HTML_PARSER, "Got " + links.size() + " elements with a style attribute, parsing CSS");
 				for (Element link: links) {
 					String cssToParse = link.attr("style");
 					String parsedCss = parseCssForLinks(cssToParse, baseUrl);
@@ -839,6 +853,7 @@ class GrabUtility{
 
 			if (saveScripts) {
 				links = parsedHtml.select("script[src]");
+				lt.i(lt.COMPONENT_HTML_PARSER, "Got " + links.size() + " script elements");
 				for (Element link: links) {
 					urlToGrab = link.attr("abs:src");
 					addLinkToList(urlToGrab);
@@ -849,6 +864,7 @@ class GrabUtility{
 
 			if (saveImages) {
 				links = parsedHtml.select("img[src]");
+				lt.i(lt.COMPONENT_HTML_PARSER, "Got " + links.size() + " image elements");
 				for (Element link: links) {
 					urlToGrab = link.attr("abs:src");
 					addLinkToList(urlToGrab);
@@ -861,6 +877,7 @@ class GrabUtility{
 			if (saveVideo) {
 				//video src is sometimes in a child element
 				links = parsedHtml.select("video:not([src])");
+				lt.i(lt.COMPONENT_HTML_PARSER, "Got " + links.size() + " video elements without src attribute");
 				for (Element  link: links.select("[src]")){
 					urlToGrab = link.attr("abs:src");
 					addLinkToList(urlToGrab);
@@ -870,6 +887,7 @@ class GrabUtility{
 				}
 				
 				links = parsedHtml.select("video[src]");
+				lt.i(lt.COMPONENT_HTML_PARSER, "Got " + links.size() + " video elements");
 				for (Element  link: links){
 					urlToGrab = link.attr("abs:src");
 					addLinkToList(urlToGrab);
@@ -882,6 +900,7 @@ class GrabUtility{
 			if (makeLinksAbsolute) {
 				//make links absolute, so they are not broken
 				links = parsedHtml.select("a[href]");
+				lt.i(lt.COMPONENT_HTML_PARSER, "Making " + links.size() + " links absolute");
 				for (Element link: links) {
 					String absUrl = link.attr("abs:href");
 					link.attr("href", absUrl);
@@ -898,14 +917,14 @@ class GrabUtility{
 		Pattern pattern = Pattern.compile(patternString); 
 		Matcher matcher = pattern.matcher(cssToParse); 
 		
-		System.out.println(patternString + "Parsing: css");
+		lt.i(lt.COMPONENT_CSS_PARSER, "Parsing CSS");
 		
 		//find everything inside url(" ... ")
 		while (matcher.find()) {
-		//	System.out.println("Original url:" + matcher.group().replaceAll(patternString, "$2"));
+			lt.i(lt.COMPONENT_CSS_PARSER,"Original url:" + matcher.group().replaceAll(patternString, "$2"));
 
 			if (matcher.group().replaceAll(patternString, "$2").contains("/")) {
-				//System.out.println("Replaced url:" + matcher.group().replaceAll(patternString, "$2").substring(matcher.group().replaceAll(patternString, "$2").lastIndexOf("/") + 1).replaceAll("[^a-zA-Z0-9-_\\.]", "_"));
+				lt.i(lt.COMPONENT_CSS_PARSER, "Replaced url:" + matcher.group().replaceAll(patternString, "$2").substring(matcher.group().replaceAll(patternString, "$2").lastIndexOf("/") + 1).replaceAll("[^a-zA-Z0-9-_\\.]", "_"));
 				cssToParse = cssToParse.replace(matcher.group().replaceAll(patternString, "$2"), matcher.group().replaceAll(patternString, "$2").substring(matcher.group().replaceAll(patternString, "$2").lastIndexOf("/") + 1).replaceAll("[^a-zA-Z0-9-_\\.]", "_"));
 				
 			}
@@ -919,10 +938,10 @@ class GrabUtility{
 		matcher = pattern.matcher(cssToParse);
 		matcher.reset();
 		while (matcher.find()) {
-			//	System.out.println("Original url:" + matcher.group().replaceAll(patternString, "$2"));
+			lt.i(lt.COMPONENT_CSS_PARSER, "Original url from @import: " + matcher.group().replaceAll(patternString, "$2"));
 
 			if (matcher.group().replaceAll(patternString, "$2").contains("/")) {
-				//System.out.println("Replaced url:" + matcher.group().replaceAll(patternString, "$2").substring(matcher.group().replaceAll(patternString, "$2").lastIndexOf("/") + 1).replaceAll("[^a-zA-Z0-9-_\\.]", "_"));
+				lt.i(lt.COMPONENT_CSS_PARSER, "Replaced url for@import: " + cssToParse.replace(matcher.group().replaceAll(patternString, "$2"), matcher.group().replaceAll(patternString, "$2").substring(matcher.group().replaceAll(patternString, "$2").lastIndexOf("/") + 1).replaceAll("[^a-zA-Z0-9-_\\.]", "_")));
 				cssToParse = cssToParse.replace(matcher.group().replaceAll(patternString, "$2"), matcher.group().replaceAll(patternString, "$2").substring(matcher.group().replaceAll(patternString, "$2").lastIndexOf("/") + 1).replaceAll("[^a-zA-Z0-9-_\\.]", "_"));
 
 			}
@@ -948,9 +967,9 @@ class GrabUtility{
 			URL u = new URL(new URL(baseurl), link);
 			return u.toString();
 		} catch (MalformedURLException e) {
-			lt.e("MalformedURLException while making url absolute");
-			lt.e("Link: " + link);
-			lt.e("BaseURL: " + baseurl);
+			lt.e(lt.COMPONENT_CSS_PARSER, "MalformedURLException while making url absolute");
+			lt.e(lt.COMPONENT_CSS_PARSER, "Link: " + link);
+			lt.e(lt.COMPONENT_CSS_PARSER, "BaseURL: " + baseurl);
 			return null;
 		}
 
@@ -959,10 +978,25 @@ class GrabUtility{
 
 class lt {
 	//log messages are sent here
+	public static final String COMPONENT_PARSER = "Parser";
+	public static final String COMPONENT_CSS_PARSER = "CSS Parser";
+	public static final String COMPONENT_HTML_PARSER = "HTML Parser";
+	public static final String COMPONENT_EXTRA_FILE_DOWNLOADER = "Extra file downloader";
+	public static final String COMPONENT_CSS_FILE_DOWNLOADER = "CSS file downloader";
+	public static final String COMPONENT_HTML_FILE_DOWNLOADER = "HTML file downloader";
 	public static void e (String message) {
 		Log.e("SaveService", message);
 	}
-	public static void d (String message) {
-		Log.d("SaveService", message);
+	
+	public static void e (String component, String message) {
+		Log.e("SaveService: " + component, message);
+	}
+	
+	public static void i (String message) {
+		Log.i("SaveService", message);
+	}
+	
+	public static void i (String component, String message) {
+		Log.i("SaveService: " + component, message);
 	}
 }
