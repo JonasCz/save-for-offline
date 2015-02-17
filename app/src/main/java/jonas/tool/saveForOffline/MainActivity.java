@@ -265,6 +265,7 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 
 	class ModeCallback implements ListView.MultiChoiceModeListener	{
 
+		private EditText e ;
 		@Override
         public boolean onCreateActionMode(ActionMode mode, Menu menu) {
 
@@ -288,6 +289,67 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
         public boolean onActionItemClicked(final ActionMode mode, MenuItem item) {
 
 			switch (item.getItemId()) {
+				case R.id.action_rename:
+					AlertDialog.Builder rename_dialog = new AlertDialog.Builder(MainActivity.this);
+					View layout = getLayoutInflater().inflate(R.layout.rename_dialog, null);
+					rename_dialog.setView(layout);
+					e = (EditText) layout.findViewById(R.id.rename_dialog_edit);
+					TextView t = (TextView) layout.findViewById(R.id.rename_dialog_text);
+					if (gridAdapter.selectedViewsPositions.size() == 1) {
+						e.setText(gridAdapter.getPropertiesByPosition(gridAdapter.selectedViewsPositions.get(0), "title"));
+						//t.setText("Enter new title for :\r\n" + gridAdapter.getPropertiesByPosition(gridAdapter.selectedViewsPositions.get(0), "title"));
+					} else {
+						
+						t.setText("Enter new title for these " + gridAdapter.selectedViewsPositions.size() + " saved pages :");
+					}
+					
+					
+					rename_dialog.setPositiveButton("Rename",
+						new DialogInterface.OnClickListener() {
+
+							public void onClick(DialogInterface dialog, int which) {
+
+								mHelper = new DbHelper(MainActivity.this);
+								dataBase = mHelper.getWritableDatabase();
+
+								for (Integer position: gridAdapter.selectedViewsPositions) {
+
+									ContentValues values=new ContentValues();
+
+									values.put(DbHelper.KEY_TITLE, e.getText().toString() );
+									dataBase.update(DbHelper.TABLE_NAME, values, DbHelper.KEY_ID + "=" + gridAdapter.getPropertiesByPosition(position, "id"), null);
+									
+
+								}
+								
+								if (gridAdapter.selectedViewsPositions.size() == 1) {
+									Toast.makeText(MainActivity.this, "Saved page renamed", Toast.LENGTH_LONG).show();
+								} else {
+									Toast.makeText(MainActivity.this, "Renamed " + gridAdapter.selectedViewsPositions.size() + " saved pages", Toast.LENGTH_LONG).show();
+									
+								}
+								
+
+								dataBase.close();
+
+								displayData("");
+								
+								mode.finish();
+							}
+						});
+						
+					rename_dialog.setNegativeButton("Cancel",
+						new DialogInterface.OnClickListener() {
+
+							public void onClick(DialogInterface dialog, int which) {
+
+								mode.finish();
+
+							}
+						});
+					AlertDialog rename_dialog_alert = rename_dialog.create();
+					rename_dialog_alert.show();
+				return true;
 				case R.id.action_delete:
 
 
