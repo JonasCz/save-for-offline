@@ -51,6 +51,10 @@ import org.jsoup.nodes.Element;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.net.MalformedURLException;
+import org.jsoup.nodes.Entities;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.Channels;
+import java.util.concurrent.TimeUnit;
 
 public class SaveService extends IntentService {
 
@@ -59,13 +63,7 @@ public class SaveService extends IntentService {
 	private String origurl;
 	
 	private String uaString;
-
-	private boolean thumbnailWasSaved = false;
-	
 	private boolean wasAddedToDb = false;
-	
-	private boolean errorOccurred = false;
-	private String errorDescription = "";
 	
 	private int failCount = 0;
 
@@ -80,13 +78,8 @@ public class SaveService extends IntentService {
 	@Override
 	public void onHandleIntent(Intent intent) {
 		
-		errorDescription = "";
 		wasAddedToDb = false;
-		errorOccurred = false;
 		
-		thumbnailWasSaved = false;
-		
-
 		mBuilder = new Notification.Builder(SaveService.this)
 			.setContentTitle("Saving webpage...")
 			.setTicker("Saving webpage...")
@@ -100,7 +93,6 @@ public class SaveService extends IntentService {
 		mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		mNotificationManager.notify(notification_id, mBuilder.build());
 		
-
 		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(SaveService.this);
 		String ua = sharedPref.getString("user_agent", "mobile");
 		
@@ -143,6 +135,8 @@ public class SaveService extends IntentService {
 			return;
 		}
 		
+		notifyProgress("Adding to list...", 100, 97, false);
+		
 		addToDb();
 		
 		Intent i = new Intent(this, ScreenshotService.class);
@@ -150,16 +144,8 @@ public class SaveService extends IntentService {
 		i.putExtra("thumbnail", thumbnail);
 		startService(i);
 		
-		mBuilder
-			.setContentTitle("Save completed.")
-			.setTicker("Saved: " + GrabUtility.title)
-			.setSmallIcon(R.drawable.ic_notify_save)
-			.setOngoing(false)
-			.setProgress(0,0,false)
-			.setOnlyAlertOnce(false)
-			.setPriority(Notification.PRIORITY_LOW)
-			.setContentText(GrabUtility.title);
-		mNotificationManager.notify(notification_id, mBuilder.build());
+		notifyFinished();
+		
 	}
 
 	private void addToDb() {
@@ -187,6 +173,24 @@ public class SaveService extends IntentService {
 		wasAddedToDb = true;
 	}
 	
+	private void notifyFinished () {
+		Intent notificationIntent = new Intent(this, MainActivity.class);
+		PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+		
+		mBuilder
+			.setContentTitle("Save completed.")
+			.setTicker("Saved: " + GrabUtility.title)
+			.setSmallIcon(R.drawable.ic_notify_save)
+			.setOngoing(false)
+			.setProgress(0,0,false)
+			.setOnlyAlertOnce(false)
+			.setContentIntent(pendingIntent)
+			.setAutoCancel(true)
+			.setPriority(Notification.PRIORITY_LOW)
+			.setContentText(GrabUtility.title);
+		mNotificationManager.notify(notification_id, mBuilder.build());
+	}
+	
 	
 	private void notifyProgress(String filename, int maxProgress, int progress, boolean indeterminate) {
 		//progress updates are sent here
@@ -202,12 +206,19 @@ public class SaveService extends IntentService {
 		//otherwise, the error is not fatal and we can continue anyway
 		//this tells the user if this is so
 		if (message != null) {
+			Intent notificationIntent = new Intent(this, SaveService.class);
+			notificationIntent.putExtra("origurl", origurl);
+			PendingIntent pendingIntent = PendingIntent.getService(this, 0, notificationIntent, 0);
+			
 			mBuilder
 				.setContentText(extraMessage)
 				.setOnlyAlertOnce(false)
 				.setTicker("Could not save page!")
 				.setSmallIcon(android.R.drawable.stat_sys_warning)
-				.setContentTitle(message)
+				.setContentTitle(message + " Tap to retry.")
+				.setContentIntent(pendingIntent)
+				.setAutoCancel(true)
+				.setOngoing(false)
 				.setProgress(0,0,false);
 
 		} else {
@@ -250,41 +261,50 @@ public class SaveService extends IntentService {
 		}
 		
 		//download main html and parse -- isExtra parameter should be false
+		lt.i("Download of main HTML...");
 		downloadHtmlAndParseLinks(url, outputDirPath, false);
 		failCount = 0;
 		
 		//download and parse html frames
+		lt.i("Number of HTML frames to download: " + GrabUtility.extraCssToGrab.size());
 		for (String urlToDownload: GrabUtility.framesToGrab) {
 			downloadHtmlAndParseLinks(urlToDownload, outputDirPath, true);
 			lt.i("--");
 			failCount = 0;
 		}
+		lt.i("Finished download of HTML frames.");
 		
 		//download and parse css files
+		lt.i("Number of CSS files to download: " + GrabUtility.extraCssToGrab.size());
 		for (String urlToDownload: GrabUtility.cssToGrab) {
 			downloadCssAndParseLinks(urlToDownload, outputDirPath);
 			lt.i("--");
-			failCount = 0;
-			
+			failCount = 0;	
 		}
+		lt.i("Finished download of CSS files.");
 		
 		//download and parse extra css files
+		//todo : make this recursive
+		lt.i("Number of extra CSS files to download: " + GrabUtility.extraCssToGrab.size());
 		for (String urlToDownload: GrabUtility.extraCssToGrab) {
 			downloadCssAndParseLinks(urlToDownload, outputDirPath);
 			lt.i("--");
 			failCount = 0;
-
 		}
+		lt.i("Finished download of extra CSS files.");
 
 		//download extra files, such as images / scripts
+		lt.i("Number of files to download: " + GrabUtility.filesToGrab.size());
 		for (String urlToDownload: GrabUtility.filesToGrab) {
-			
+			notifyProgress("Saving file: " + urlToDownload.substring(urlToDownload.lastIndexOf("/") + 1), GrabUtility.filesToGrab.size(), GrabUtility.filesToGrab.indexOf(urlToDownload), false);
 			getExtraFile(urlToDownload, outputDir);
-			lt.i("--");
-			notifyProgress("Saving file: " + urlToDownload.substring(urlToDownload.lastIndexOf("/") + 1), GrabUtility.filesToGrab.size(), GrabUtility.filesToGrab.indexOf(urlToDownload), false);	
+			lt.i("--");		
 			failCount = 0;
 	
 		}
+		
+		lt.i("Finished download of extra files.");
+		lt.i("Finished downloading HTML page.");
 
 	}
 	
@@ -601,7 +621,7 @@ public class SaveService extends IntentService {
 	}
 
 	private void getExtraFile(String urlToDownload, File outputDir) {
-		FileOutputStream fop = null;
+		FileOutputStream fos = null;
 		BufferedReader in = null;
 		HttpURLConnection conn = null;
 		File outputFile = null;
@@ -673,15 +693,20 @@ public class SaveService extends IntentService {
 			}
 			
 			lt.i(lt.COMPONENT_EXTRA_FILE_DOWNLOADER, "Downloading file...");
-			fop = new FileOutputStream(outputFile);
-			is = conn.getInputStream();
-			byte[] buffer = new byte[1024*16]; // read in batches of 16K
-	        int length;
-	        while ((length = is.read(buffer)) > 0) {
-		       fop.write(buffer, 0, length);
-	        }
 			
-			fop.flush();
+			ReadableByteChannel rbc = Channels.newChannel(conn.getInputStream());
+			fos = new FileOutputStream(outputFile);
+			fos.getChannel().transferFrom(rbc, 0, 1024*32);
+			fos.flush();
+			
+//			is = conn.getInputStream();
+//			byte[] buffer = new byte[1024*16]; // read in batches of 16K
+//	        int length;
+//	        while ((length = is.read(buffer)) > 0) {
+//		       fop.write(buffer, 0, length);
+//	        }
+//			
+//			fop.flush();
 			
 			lt.i(lt.COMPONENT_EXTRA_FILE_DOWNLOADER, "Extra file downloaded.");
 				
@@ -695,7 +720,10 @@ public class SaveService extends IntentService {
 			if (GrabUtility.maxRetryCount >= failCount) {
 				notifyError(null, "Failed to download: " + filename + ", retrying. Fail count: " + failCount );
 				lt.e(lt.COMPONENT_EXTRA_FILE_DOWNLOADER, "Error while getting extra file, waiting and retrying...");
-				synchronized (this) {try {wait(2500);} catch (InterruptedException ex) {}}
+				try {
+					TimeUnit.SECONDS.sleep(3);
+				} catch (InterruptedException ex) {}
+				
 				getExtraFile(urlToDownload, outputDir);
 				return;
 			} else {
@@ -716,8 +744,8 @@ public class SaveService extends IntentService {
 				if(in != null){
 					in.close();
 				}
-				if(fop != null) {
-					fop.close();
+				if(fos != null) {
+					fos.close();
 				}
 			} catch (IOException e) {
 				lt.e(lt.COMPONENT_EXTRA_FILE_DOWNLOADER,e + "while closing streams!");
@@ -756,7 +784,6 @@ class GrabUtility{
 		//get all links from this webpage and add them to Frontier List i.e. LinksToVisit ArrayList
 		Document parsedHtml = null;
 		URL fromHTMLPageUrl;
-		System.out.println(baseUrl);
 		boolean noBaseUrl = false;
 		try {
 			fromHTMLPageUrl = new URL(baseUrl);
@@ -778,6 +805,8 @@ class GrabUtility{
 			} else {
 				parsedHtml = Jsoup.parse(htmlToParse, baseUrl);
 			}
+			
+			parsedHtml.outputSettings().escapeMode(Entities.EscapeMode.xhtml);
 
 			if (title == "") {
 				title = parsedHtml.title();
