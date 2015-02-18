@@ -103,6 +103,10 @@ public class SaveService extends IntentService {
 
 		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(SaveService.this);
 		String ua = sharedPref.getString("user_agent", "mobile");
+		
+		lt.shouldLogDebug = sharedPref.getBoolean("enable_logging", false);
+		lt.shouldLogErrors = sharedPref.getBoolean("enable_logging_error", true);
+		
 		GrabUtility.makeLinksAbsolute = sharedPref.getBoolean("make_links_absolute", true);
 		GrabUtility.maxRetryCount = Integer.parseInt(sharedPref.getString("max_number_of_retries", "5"));
 		GrabUtility.saveFrames = sharedPref.getBoolean("save_frames", true);
@@ -252,12 +256,14 @@ public class SaveService extends IntentService {
 		//download and parse html frames
 		for (String urlToDownload: GrabUtility.framesToGrab) {
 			downloadHtmlAndParseLinks(urlToDownload, outputDirPath, true);
+			lt.i("--");
 			failCount = 0;
 		}
 		
 		//download and parse css files
 		for (String urlToDownload: GrabUtility.cssToGrab) {
 			downloadCssAndParseLinks(urlToDownload, outputDirPath);
+			lt.i("--");
 			failCount = 0;
 			
 		}
@@ -265,6 +271,7 @@ public class SaveService extends IntentService {
 		//download and parse extra css files
 		for (String urlToDownload: GrabUtility.extraCssToGrab) {
 			downloadCssAndParseLinks(urlToDownload, outputDirPath);
+			lt.i("--");
 			failCount = 0;
 
 		}
@@ -273,7 +280,7 @@ public class SaveService extends IntentService {
 		for (String urlToDownload: GrabUtility.filesToGrab) {
 			
 			getExtraFile(urlToDownload, outputDir);
-			lt.i("Prepare to download file: " + urlToDownload);
+			lt.i("--");
 			notifyProgress("Saving file: " + urlToDownload.substring(urlToDownload.lastIndexOf("/") + 1), GrabUtility.filesToGrab.size(), GrabUtility.filesToGrab.indexOf(urlToDownload), false);	
 			failCount = 0;
 	
@@ -291,7 +298,8 @@ public class SaveService extends IntentService {
 		String filename;
 		
 		if (isExtra) {
-			filename = url.substring(url.lastIndexOf("/") + 1).replaceAll("[^a-zA-Z0-9-_\\.]", "_");
+			filename = GrabUtility.getFileName(url);
+
 		} else {
 			filename = "index.html";
 		}
@@ -466,9 +474,9 @@ public class SaveService extends IntentService {
 		HttpURLConnection conn = null;
 		File outputFile = null;
 		InputStream is = null;
-		String filename = url.substring(url.lastIndexOf("/") + 1).replaceAll("[^a-zA-Z0-9-_\\.]", "_");
-		System.out.println(filename);
-	
+		
+		String filename = GrabUtility.getFileName(url);
+		
 		notifyProgress("Downloading CSS file", 100, 5, true);
 
 		try {
@@ -600,8 +608,8 @@ public class SaveService extends IntentService {
 		InputStream is = null;
 		URL obj;
 		
-		String filename = urlToDownload.substring(urlToDownload.lastIndexOf('/')+1).replaceAll("[^a-zA-Z0-9-_\\.]", "_");
-	
+		String filename = GrabUtility.getFileName(urlToDownload);
+		
 		try {
 			lt.i(lt.COMPONENT_EXTRA_FILE_DOWNLOADER, "Preparing to download file: " + filename);
 			obj  = new URL(urlToDownload);
@@ -784,13 +792,12 @@ class GrabUtility{
 				for (Element link: links) {
 					urlToGrab = link.attr("abs:src");
 
-					synchronized (framesToGrab) {
-						if (!framesToGrab.contains(urlToGrab)) {
-							framesToGrab.add(urlToGrab);
-						}
+					
+					if (!framesToGrab.contains(urlToGrab)) {
+						framesToGrab.add(urlToGrab);
 					}
 
-					String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/") + 1).replaceAll("[^a-zA-Z0-9-_\\.]", "_");
+					String replacedURL = GrabUtility.getFileName(urlToGrab);
 					link.attr("src", replacedURL);
 				}
 
@@ -805,7 +812,7 @@ class GrabUtility{
 						}
 					}
 
-					String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/") + 1).replaceAll("[^a-zA-Z0-9-_\\.]", "_");
+					String replacedURL = GrabUtility.getFileName(urlToGrab);
 					link.attr("src", replacedURL);
 
 
@@ -826,10 +833,11 @@ class GrabUtility{
 						addLinkToList(urlToGrab);
 					}
 					
-					String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/") + 1).replaceAll("[^a-zA-Z0-9-_\\.]", "_");
+					String replacedURL = GrabUtility.getFileName(urlToGrab);
 					link.attr("href", replacedURL);
 
-				}	
+				}
+				
 				//get links in embedded css also, and modify the links to point to local files
 				links = parsedHtml.select("style[type=text/css]");
 				lt.i(lt.COMPONENT_HTML_PARSER, "Got " + links.size() + " embedded stylesheets, parsing CSS");
@@ -857,7 +865,7 @@ class GrabUtility{
 				for (Element link: links) {
 					urlToGrab = link.attr("abs:src");
 					addLinkToList(urlToGrab);
-					String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/") + 1).replaceAll("[^a-zA-Z0-9-_\\.]", "_");
+					String replacedURL = GrabUtility.getFileName(urlToGrab);
 					link.attr("src", replacedURL);
 				}
 			}
@@ -869,7 +877,7 @@ class GrabUtility{
 					urlToGrab = link.attr("abs:src");
 					addLinkToList(urlToGrab);
 
-					String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/") + 1).replaceAll("[^a-zA-Z0-9-_\\.]", "_");
+					String replacedURL = GrabUtility.getFileName(urlToGrab);
 					link.attr("src", replacedURL);
 				}
 			}
@@ -882,7 +890,7 @@ class GrabUtility{
 					urlToGrab = link.attr("abs:src");
 					addLinkToList(urlToGrab);
 
-					String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/") + 1).replaceAll("[^a-zA-Z0-9-_\\.]", "_");
+					String replacedURL = GrabUtility.getFileName(urlToGrab);
 					link.attr("src", replacedURL);
 				}
 				
@@ -892,7 +900,7 @@ class GrabUtility{
 					urlToGrab = link.attr("abs:src");
 					addLinkToList(urlToGrab);
 
-					String replacedURL = urlToGrab.substring(urlToGrab.lastIndexOf("/") + 1).replaceAll("[^a-zA-Z0-9-_\\.]", "_");
+					String replacedURL = GrabUtility.getFileName(urlToGrab);
 					link.attr("src", replacedURL);
 				}
 			}
@@ -919,34 +927,40 @@ class GrabUtility{
 		
 		lt.i(lt.COMPONENT_CSS_PARSER, "Parsing CSS");
 		
+		int count = 0;
 		//find everything inside url(" ... ")
 		while (matcher.find()) {
+			count++;
 			lt.i(lt.COMPONENT_CSS_PARSER,"Original url:" + matcher.group().replaceAll(patternString, "$2"));
 
 			if (matcher.group().replaceAll(patternString, "$2").contains("/")) {
-				lt.i(lt.COMPONENT_CSS_PARSER, "Replaced url:" + matcher.group().replaceAll(patternString, "$2").substring(matcher.group().replaceAll(patternString, "$2").lastIndexOf("/") + 1).replaceAll("[^a-zA-Z0-9-_\\.]", "_"));
-				cssToParse = cssToParse.replace(matcher.group().replaceAll(patternString, "$2"), matcher.group().replaceAll(patternString, "$2").substring(matcher.group().replaceAll(patternString, "$2").lastIndexOf("/") + 1).replaceAll("[^a-zA-Z0-9-_\\.]", "_"));
+				lt.i(lt.COMPONENT_CSS_PARSER, "Replaced url:" + getFileName(matcher.group().replaceAll(patternString, "$2")));
+				cssToParse = cssToParse.replace(matcher.group().replaceAll(patternString, "$2"), getFileName(matcher.group().replaceAll(patternString, "$2")));
 				
 			}
 			
 			addLinkToList(makeLinkAbsolute(matcher.group().replaceAll(patternString, "$2").trim(), baseUrl));
 		}
 		
+		lt.i(lt.COMPONENT_CSS_PARSER, "Found " + count + " URLs in CSS");
+		
 		// find css linked with @import  -  needs testing
 		String importString = "@(import\\s*['\"])()([^ '\"]*)";
 		pattern = Pattern.compile(importString); 
 		matcher = pattern.matcher(cssToParse);
 		matcher.reset();
+		count = 0;
 		while (matcher.find()) {
 			lt.i(lt.COMPONENT_CSS_PARSER, "Original url from @import: " + matcher.group().replaceAll(patternString, "$2"));
-
+			count++;
 			if (matcher.group().replaceAll(patternString, "$2").contains("/")) {
-				lt.i(lt.COMPONENT_CSS_PARSER, "Replaced url for@import: " + cssToParse.replace(matcher.group().replaceAll(patternString, "$2"), matcher.group().replaceAll(patternString, "$2").substring(matcher.group().replaceAll(patternString, "$2").lastIndexOf("/") + 1).replaceAll("[^a-zA-Z0-9-_\\.]", "_")));
-				cssToParse = cssToParse.replace(matcher.group().replaceAll(patternString, "$2"), matcher.group().replaceAll(patternString, "$2").substring(matcher.group().replaceAll(patternString, "$2").lastIndexOf("/") + 1).replaceAll("[^a-zA-Z0-9-_\\.]", "_"));
-
+				lt.i(lt.COMPONENT_CSS_PARSER, "Replaced url:" + getFileName(matcher.group().replaceAll(patternString, "$2")));
+				cssToParse = cssToParse.replace(matcher.group().replaceAll(patternString, "$2"), getFileName(matcher.group().replaceAll(patternString, "$2")));
+				
 			}
 
 			extraCssToGrab.add(makeLinkAbsolute(matcher.group().replaceAll(patternString, "$2").trim(), baseUrl));
+			lt.i(lt.COMPONENT_CSS_PARSER, "Found " + count + " @import liked stylesheets in CSS");
 		}
 		
 		return cssToParse;
@@ -974,29 +988,54 @@ class GrabUtility{
 		}
 
 	}
+	
+	public static String getFileName(String url) {
+		
+		String filename = url.substring(url.lastIndexOf('/')+1);
+
+		if (filename.contains("?")) {
+			filename = filename.substring(0, filename.indexOf("?"));
+		}
+
+		filename = filename.replaceAll("[^a-zA-Z0-9-_\\.]", "_");
+		
+		return filename;
+	}
 }
 
 class lt {
 	//log messages are sent here
+	public static boolean shouldLogDebug = false;
+	public static boolean shouldLogErrors = true;
+	
 	public static final String COMPONENT_PARSER = "Parser";
 	public static final String COMPONENT_CSS_PARSER = "CSS Parser";
 	public static final String COMPONENT_HTML_PARSER = "HTML Parser";
 	public static final String COMPONENT_EXTRA_FILE_DOWNLOADER = "Extra file downloader";
 	public static final String COMPONENT_CSS_FILE_DOWNLOADER = "CSS file downloader";
 	public static final String COMPONENT_HTML_FILE_DOWNLOADER = "HTML file downloader";
+	
 	public static void e (String message) {
-		Log.e("SaveService", message);
+		if (shouldLogErrors) {
+			Log.e("SaveService", message);
+		}	
 	}
 	
 	public static void e (String component, String message) {
-		Log.e("SaveService: " + component, message);
+		if (shouldLogErrors) {
+			Log.e("SaveService: " + component, message);
+		}	
 	}
 	
-	public static void i (String message) {
-		Log.i("SaveService", message);
+	public static void i (String message) {	
+		if (shouldLogDebug) {
+			Log.i("SaveService", message);
+		}
 	}
 	
 	public static void i (String component, String message) {
-		Log.i("SaveService: " + component, message);
+		if (shouldLogDebug) {
+			Log.i("SaveService: " + component, message);
+		}		
 	}
 }

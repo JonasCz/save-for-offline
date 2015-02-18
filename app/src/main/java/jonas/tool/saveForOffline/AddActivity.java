@@ -22,11 +22,7 @@ import android.app.*;
 import android.preference.*;
 import android.widget.*;
 import android.view.*;
-/**
- * activity to get input from user and insert into SQLite database
- * @author ketan(Visit my <a
- *         href="http://androidsolution4u.blogspot.in/">blog</a>)
- */
+
 public class AddActivity extends Activity {
 	private Button btn_save;
 	private EditText edit_origurl;

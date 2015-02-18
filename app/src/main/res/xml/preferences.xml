@@ -109,6 +109,15 @@
 					android:dialogTitle="Maximum number of retries" />
 			</PreferenceCategory>
 			<PreferenceCategory
+				android:title="Viewer">
+				<CheckBoxPreference
+					android:key="viewer_enable_javascript" 
+					android:defaultValue="true"
+					android:title="Enable javaScript" 
+					android:summary="Enable javaScript in the viewer for saved pages"/>
+				
+			</PreferenceCategory>
+			<PreferenceCategory
 				android:title="Advanced options">
 				<CheckBoxPreference
 					android:key="make_links_absolute" 
@@ -119,8 +128,25 @@
 				<CheckBoxPreference 
 					android:key="enable_javascript_screenshot" 
 					android:defaultValue="true"
+					android:dependency="save_scripts"
 					android:title="Enable javaScript when generating webpage thumbnail" 
 					android:summary="Thumbnail generation might be faster with this turned off"/>
+				
+				<SwitchPreference 
+					android:key="enable_logging" 
+					android:defaultValue="false"
+					android:switchTextOn="Yes"
+					android:switchTextOff="No"
+					android:title="Logging (debug messages)" 
+					android:summary="Include app's messages in the system log. Information about what you are doing in this app may end up in the system log."/>
+				
+				<SwitchPreference 
+					android:key="enable_logging_error" 
+					android:defaultValue="true"
+					android:switchTextOn="Yes"
+					android:switchTextOff="No"
+					android:title="Logging (errors)" 
+					android:summary="Include app's error messages in the system log."/>
 				
 
 			</PreferenceCategory>
