@@ -29,10 +29,45 @@
 		<item name="android:actionModeStyle">@style/ActionBar.Solid.Theme_main_yellow</item>
         <item name="android:actionModeSplitBackground">@drawable/cab_background_bottom_theme_main_yellow</item>
         <item name="android:actionModeCloseButtonStyle">@style/ActionButton.CloseMode.Theme_main_yellow</item>
+		<item name="android:alertDialogTheme">@style/Theme_Dialog_Alert</item>
         
         
     </style>
+	
+	<style name="Theme_Dialog_Alert" parent="@style/Theme_Holo_Light_Dialog_Alert">
+		<item name="android:borderlessButtonStyle">@style/Widget.Theme.Button.Borderless</item>
+		<item name="android:buttonBarStyle">@style/Theme.ButtonBar.AlertDialog</item>
+	</style>
+	
+ 	<style name="Widget.Theme.Button.Borderless" parent="@android:style/Widget.Holo.Light.Button">
+		<item name="android:background">@drawable/normal_button_selector</item>
+		
+	</style>
 
+	<style name="TextAppearance.Theme.DialogButton" parent="@android:style/TextAppearance.Holo.Medium">
+		<item name="android:textColor">@android:color/holo_blue_light</item>
+	</style>
+
+	<style name="Theme.ButtonBar.AlertDialog" parent="@android:style/Holo.ButtonBar.AlertDialog">
+		
+	</style>
+
+	<!-- Local copy of android:Theme.Holo.Dialog.Alert -->
+	<style name="Theme_Holo_Light_Dialog_Alert" parent="@android:style/Theme.Holo.Light.Dialog">
+		<item name="android:windowBackground">@android:color/transparent</item>
+		<item name="android:windowTitleStyle">@style/DialogWindowTitle_Holo</item>
+		<item name="android:windowContentOverlay">@null</item>
+		<item name="android:windowMinWidthMajor">@android:dimen/dialog_min_width_major</item>
+		<item name="android:windowMinWidthMinor">@android:dimen/dialog_min_width_minor</item>
+		
+	 </style>
+	<!-- Local copy of android:DialogWindowTitle.Holo -->
+	<style name="DialogWindowTitle_Holo">
+		<item name="android:maxLines">1</item>
+		<item name="android:scrollHorizontally">true</item>
+		<item name="android:textAppearance">@android:style/TextAppearance.Holo.DialogWindowTitle</item>
+	</style>
+	
     <style name="ActionBar.Solid.Theme_main_yellow" parent="@android:style/Widget.Holo.Light.ActionBar.Solid">
         <item name="android:background">@drawable/ab_background_textured_theme_main_yellow</item>
         <item name="android:backgroundStacked">@drawable/ab_stacked_solid_theme_main_yellow</item>
