@@ -127,8 +127,8 @@ public class SaveService extends IntentService {
 		try {
 			grabPage(origurl, destinationDirectory);
 		} catch (Exception e) {
+			lt.e("Exception in onHandeIntent, returning!");
 			e.printStackTrace();
-			
 			//if we crash, delete all files saved so far
 			File file = new File(destinationDirectory);
 			DirectoryHelper.deleteDirectory(file);
@@ -146,12 +146,16 @@ public class SaveService extends IntentService {
 		
 		notifyFinished();
 		
+		lt.i("Finished");
+		
 	}
 
 	private void addToDb() {
 
 		//dont want to put it in the database multiple times
 		if (wasAddedToDb) return;
+		
+		lt.i("Adding to db...");
 
 		DbHelper mHelper = new DbHelper(SaveService.this);
 		SQLiteDatabase dataBase = mHelper.getWritableDatabase();
@@ -361,22 +365,22 @@ public class SaveService extends IntentService {
 					|| status == HttpURLConnection.HTTP_MOVED_PERM
 					|| status == HttpURLConnection.HTTP_SEE_OTHER){
 					redirect = true;
-				} else if (status == HttpURLConnection.HTTP_UNAUTHORIZED ||
-						   status == HttpURLConnection.HTTP_ACCEPTED ||
-						   status == HttpURLConnection.HTTP_CREATED ||
-						   status == HttpURLConnection.HTTP_NOT_FOUND)
-							{
-								System.out.println("error");
-								notifyError(null, "Possibe error. HTTP status code: " + status);
-							   
-				} else {
-					if (isExtra) {
-						notifyError(null, "Failed to download extra HTML file. HTTP status code: " + status);
-						return;
-					} else {
-						notifyError("Could not save page", "Failed to download main HTML file. HTTP status code: " + status);
-						throw new IOException("HTTP status not ok. status: " + status);
-					}
+//				} else if (status == HttpURLConnection.HTTP_UNAUTHORIZED ||
+//						   status == HttpURLConnection.HTTP_ACCEPTED ||
+//						   status == HttpURLConnection.HTTP_CREATED ||
+//						   status == HttpURLConnection.HTTP_NOT_FOUND ||
+//						   status == HttpURLConnection.HTTP_FORBIDDEN)
+//							{
+//								notifyError(null, "Possibe error. HTTP status code: " + status);
+//							   
+//				} else {
+//					if (isExtra) {
+//						notifyError(null, "Failed to download extra HTML file. HTTP status code: " + status);
+//						return;
+//					} else {
+//						notifyError("Could not save page", "Failed to download main HTML file. HTTP status code: " + status);
+//						throw new IOException("HTTP status not ok. status: " + status);
+//					}
 					
 				}
 			}
@@ -472,6 +476,9 @@ public class SaveService extends IntentService {
 
 		} finally {
 			try {
+				if(conn != null) {
+					conn.disconnect();
+				}
 				if(is != null){
 					is.close();
 				}
@@ -482,6 +489,7 @@ public class SaveService extends IntentService {
 					fop.close();
 				}
 			} catch (IOException e) {
+				lt.e(lt.COMPONENT_HTML_FILE_DOWNLOADER, "IOexception while closing streams!");
 				e.printStackTrace();
 			}
 		}
@@ -521,8 +529,7 @@ public class SaveService extends IntentService {
 					redirect = true;
 				}else{
 					notifyError(null, "Failed to download CSS file. HTTP status code: " + status);
-					
-					return;
+					lt.i(lt.COMPONENT_CSS_FILE_DOWNLOADER, "HTTP status code: notnok " + status);
 				}
 			}
 
@@ -651,16 +658,15 @@ public class SaveService extends IntentService {
 
 			boolean redirect = false;
 
-			// normally, 3xx is redirect
+			// catch redirect
 			int status = conn.getResponseCode();
 			lt.i(lt.COMPONENT_EXTRA_FILE_DOWNLOADER, "HTTP response status: " + status);
 			if (status != HttpURLConnection.HTTP_OK) {
 				if (status == HttpURLConnection.HTTP_MOVED_TEMP
 					|| status == HttpURLConnection.HTTP_MOVED_PERM
-					|| status == HttpURLConnection.HTTP_SEE_OTHER){
+					|| status == HttpURLConnection.HTTP_SEE_OTHER)
+					{
 					redirect = true;
-				} else {
-					return;
 				}
 			}
 
@@ -778,6 +784,8 @@ class GrabUtility{
 	public static boolean saveOther = true;
 	public static boolean saveScripts = true;
 	public static boolean saveVideo = false;
+	
+	public static final Pattern fileNameReplacementPattern = Pattern.compile("[^a-zA-Z0-9-_\\.]");
 
 
 	public static String parseHtmlForLinks(String htmlToParse, String baseUrl) {
@@ -806,7 +814,7 @@ class GrabUtility{
 				parsedHtml = Jsoup.parse(htmlToParse, baseUrl);
 			}
 			
-			parsedHtml.outputSettings().escapeMode(Entities.EscapeMode.xhtml);
+			parsedHtml.outputSettings().escapeMode(Entities.EscapeMode.extended);
 
 			if (title == "") {
 				title = parsedHtml.title();
@@ -947,7 +955,7 @@ class GrabUtility{
 		return parsedHtml.outerHtml();
 	}
 	
-	public static String parseCssForLinks(String cssToParse, String baseUrl) {
+	public static final String parseCssForLinks(String cssToParse, String baseUrl) {
 		
 		String patternString = "url(\\s*\\(\\s*['\"]*\\s*)(.*?)\\s*['\"]*\\s*\\)"; //I hate regexes...
 	
@@ -995,16 +1003,13 @@ class GrabUtility{
 		return cssToParse;
 	}
 
-	public static void addLinkToList(String link) {
-		//no multithreading for now
-		synchronized (filesToGrab) {
-			if (!filesToGrab.contains(link)) {
-				filesToGrab.add(link);
-			}
+	public static final void addLinkToList(String link) {
+		if (!filesToGrab.contains(link)) {
+			filesToGrab.add(link);		
 		}
 	}
 	
-	public static String makeLinkAbsolute(String link, String baseurl) {
+	public static final String makeLinkAbsolute(String link, String baseurl) {
 		
 		try {
 			URL u = new URL(new URL(baseurl), link);
@@ -1018,7 +1023,7 @@ class GrabUtility{
 
 	}
 	
-	public static String getFileName(String url) {
+	public static final String getFileName(String url) {
 		
 		String filename = url.substring(url.lastIndexOf('/')+1);
 
@@ -1026,7 +1031,7 @@ class GrabUtility{
 			filename = filename.substring(0, filename.indexOf("?"));
 		}
 
-		filename = filename.replaceAll("[^a-zA-Z0-9-_\\.]", "_");
+		filename = fileNameReplacementPattern.matcher(filename).replaceAll("_");
 		
 		return filename;
 	}
@@ -1037,6 +1042,7 @@ class lt {
 	public static boolean shouldLogDebug = false;
 	public static boolean shouldLogErrors = true;
 	
+	public static final String COMPONENT_SAVER_MAIN = "HTML Saver main";
 	public static final String COMPONENT_PARSER = "Parser";
 	public static final String COMPONENT_CSS_PARSER = "CSS Parser";
 	public static final String COMPONENT_HTML_PARSER = "HTML Parser";
@@ -1044,25 +1050,25 @@ class lt {
 	public static final String COMPONENT_CSS_FILE_DOWNLOADER = "CSS file downloader";
 	public static final String COMPONENT_HTML_FILE_DOWNLOADER = "HTML file downloader";
 	
-	public static void e (String message) {
+	public static final void e (String message) {
 		if (shouldLogErrors) {
 			Log.e("SaveService", message);
 		}	
 	}
 	
-	public static void e (String component, String message) {
+	public static final void e (String component, String message) {
 		if (shouldLogErrors) {
 			Log.e("SaveService: " + component, message);
 		}	
 	}
 	
-	public static void i (String message) {	
+	public static final void i (String message) {	
 		if (shouldLogDebug) {
 			Log.i("SaveService", message);
 		}
 	}
 	
-	public static void i (String component, String message) {
+	public static final void i (String component, String message) {
 		if (shouldLogDebug) {
 			Log.i("SaveService: " + component, message);
 		}		

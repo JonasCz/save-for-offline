@@ -11,6 +11,7 @@ import android.view.View.*;
 import android.os.*;
 import android.os.Process;
 import android.preference.PreferenceManager;
+import java.util.concurrent.TimeUnit;
 
 //this is an example of how to take a screenshot in a background service
 //not very elegant, but it works (for me anyway)
@@ -20,7 +21,6 @@ public class ScreenshotService extends Service {
 	private Looper mServiceLooper;
 	private ServiceHandler mServiceHandler;
 	private Message msg;
-	private Intent intent;
 	
 	private WebView webview;
 
@@ -48,6 +48,7 @@ public class ScreenshotService extends Service {
 			webview.measure(600, 400);
 			webview.layout(0, 0, 600, 400); 
 
+			final Intent intent = (Intent) msg.obj;
 
 			webview.loadUrl(intent.getStringExtra("origurl"));
 
@@ -60,8 +61,8 @@ public class ScreenshotService extends Service {
 
 					@Override
 					public void onPageFinished(WebView view, String url) {
-						new takeScreenshotTask().execute();
-						stopSelf();
+						new takeScreenshotTask().execute(intent.getStringExtra("thumbnail"));
+						stopSelf(msg.arg1);
 
 
 					}
@@ -72,24 +73,29 @@ public class ScreenshotService extends Service {
 		
 	}
 	
-	private class takeScreenshotTask extends AsyncTask<Void, Void, Void> {
+	private class takeScreenshotTask extends AsyncTask<String, Void, Void> {
 
 		@Override
-		protected Void doInBackground(Void[] p1) {
+		protected Void doInBackground(String[] thumblocation) {
 
 			//allow the webview to render
-			synchronized (this) {try {wait(300);} catch (InterruptedException ex) {}}
+			try {
+				TimeUnit.MILLISECONDS.sleep(500);
+			} catch (InterruptedException ex) {
+				Log.e("ScreenshotService", "InterruptedException while trying to save thumbnail!");
+			}
 
 			//here I save the bitmap to file
 			Bitmap b = webview.getDrawingCache();
 
-			File file = new File(intent.getStringExtra("thumbnail"));
-			OutputStream out;
+			File file = new File(thumblocation[0]);
+			
 
 
 			try {
-				out = new BufferedOutputStream(new FileOutputStream(file));
+				OutputStream out = new BufferedOutputStream(new FileOutputStream(file));
 				b.compress(Bitmap.CompressFormat.PNG, 100, out);
+				out.flush();
 				out.close();
 
 			} catch (IOException e) {
@@ -123,13 +129,12 @@ public class ScreenshotService extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-	
-		this.intent = intent;
 
 		// For each start request, send a message to start a job and deliver the
 		// start ID so we know which request we're stopping when we finish the job
 		msg = mServiceHandler.obtainMessage();
 		msg.arg1 = startId;
+		msg.obj = intent;
 		mServiceHandler.sendMessage(msg);
 		
 		
