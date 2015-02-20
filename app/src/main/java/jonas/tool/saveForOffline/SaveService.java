@@ -71,13 +71,22 @@ public class SaveService extends IntentService {
 	private Notification.Builder mBuilder;
 	private NotificationManager mNotificationManager;
 	
+	private int waitingIntentCount = 0;
+	
 	public SaveService () {
 		super("SaveService");
 	}
 
 	@Override
+	public int onStartCommand(Intent intent, int flags, int startId) {
+		waitingIntentCount++;
+		return super.onStartCommand(intent, flags, startId);
+	}
+	
+
+	@Override
 	public void onHandleIntent(Intent intent) {
-		
+		waitingIntentCount--;
 		wasAddedToDb = false;
 		
 		mBuilder = new Notification.Builder(SaveService.this)
@@ -178,6 +187,7 @@ public class SaveService extends IntentService {
 	}
 	
 	private void notifyFinished () {
+		
 		Intent notificationIntent = new Intent(this, MainActivity.class);
 		PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
 		
@@ -198,9 +208,19 @@ public class SaveService extends IntentService {
 	
 	private void notifyProgress(String filename, int maxProgress, int progress, boolean indeterminate) {
 		//progress updates are sent here
-		mBuilder
-			.setContentText(filename)
-			.setProgress(maxProgress, progress, indeterminate);
+		if (waitingIntentCount == 0) {
+			mBuilder
+				.setContentTitle("Saving webpage...")
+				.setContentText(filename)
+				.setProgress(maxProgress, progress, indeterminate);
+		} else {
+			int intentCount = waitingIntentCount + 1;
+			mBuilder
+				.setContentTitle("Saving " + intentCount + " webpages...")
+				.setContentText(filename)
+				.setProgress(maxProgress, progress, indeterminate);
+		}
+		
 		mNotificationManager.notify(notification_id, mBuilder.build());
 	}
 
@@ -312,7 +332,7 @@ public class SaveService extends IntentService {
 
 	}
 	
-	private void downloadHtmlAndParseLinks (String url, String outputDir, boolean isExtra) throws IOException {
+	private void downloadHtmlAndParseLinks (final String url, final String outputDir, final boolean isExtra) throws IOException {
 		//isExtra should be true when saving a html frame file.
 		FileOutputStream fop = null;
 		BufferedReader in = null;
@@ -323,7 +343,6 @@ public class SaveService extends IntentService {
 		
 		if (isExtra) {
 			filename = GrabUtility.getFileName(url);
-
 		} else {
 			filename = "index.html";
 		}
@@ -345,15 +364,12 @@ public class SaveService extends IntentService {
 			
 			URL obj = new URL(url);
 			
-
 			//Output file name
 			outputFile = new File(outputDir, filename);
 
 			conn = (HttpURLConnection) obj.openConnection();
 			conn.setReadTimeout(5000);
-			conn.addRequestProperty("Accept-Language", "en-US,en;q=0.8");
 			conn.addRequestProperty("User-Agent", uaString);
-			conn.addRequestProperty("Referer", "google.com");
 
 			boolean redirect = false;
 
@@ -396,9 +412,7 @@ public class SaveService extends IntentService {
 				obj =  new URL(newUrl);
 				conn = (HttpURLConnection) obj.openConnection();
 				conn.setRequestProperty("Cookie", cookies);
-				conn.addRequestProperty("Accept-Language", "en-US,en;q=0.8");
 				conn.addRequestProperty("User-Agent", uaString);
-				conn.addRequestProperty("Referer", "google.com");
 			}
 
 			// if file doesn't exists, then create it
@@ -426,7 +440,8 @@ public class SaveService extends IntentService {
 			// if its of type html then parse it and get all css and images and javascript files
 			// and add them to filesToGrab list
 			while ((inputLine = in.readLine()) != null) {
-				strResponse.append(inputLine+"\r\n");
+				strResponse.append(inputLine);
+				strResponse.append("\r\n");
 			}
 			
 			if (isExtra) {
@@ -436,16 +451,12 @@ public class SaveService extends IntentService {
 			}
 			
 			String htmlContent = strResponse.toString();
-		
 			htmlContent = GrabUtility.parseHtmlForLinks(htmlContent, baseUrl);
-
 			outputFile = new File(outputDir, filename);
 
-		
-				// clear previous files contents
-				fop = new FileOutputStream(outputFile);
-				fop.write(htmlContent.getBytes());
-				fop.flush();
+			fop = new FileOutputStream(outputFile);
+			fop.write(htmlContent.getBytes());
+			fop.flush();
 		
 			
 			failCount = 0;
@@ -456,7 +467,7 @@ public class SaveService extends IntentService {
 			if (isExtra) {
 				if (GrabUtility.maxRetryCount >= failCount) {
 					notifyError(null, "Failed to download extra HTML file, retrying. Fail count: " + failCount );
-					synchronized (this) {try {wait(2500);} catch (InterruptedException ex) {}}
+					tools.waitForInternet();
 					downloadHtmlAndParseLinks(url, outputDir, isExtra);
 				} else {
 					notifyError(null, "Failed to download extra HTML file.");
@@ -465,7 +476,7 @@ public class SaveService extends IntentService {
 			} else {
 				if (GrabUtility.maxRetryCount >= failCount) {
 					notifyError(null, "Failed to download main HTML file, retrying. Fail count: " + failCount );
-					synchronized (this) {try {wait(2500);} catch (InterruptedException ex) {}}
+					tools.waitForInternet();
 					downloadHtmlAndParseLinks(url, outputDir, isExtra);
 				} else {
 					notifyError("Could not save page", "Failed to download main HTML file.");
@@ -475,45 +486,52 @@ public class SaveService extends IntentService {
 			
 
 		} finally {
-			try {
-				if(conn != null) {
-					conn.disconnect();
-				}
-				if(is != null){
+			if(conn != null) {
+				conn.disconnect();
+			}
+			if(is != null){
+				try {
 					is.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+					lt.e(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Exception while input stream!");
 				}
-				if(in != null){
+			}
+			if(in != null){
+				try {
 					in.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+					lt.e(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Exception while closing input reader streams!");
 				}
-				if (fop != null) {
+			}
+			if (fop != null) {
+				try {
 					fop.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+					lt.e(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Exception while closing file output streams!");
 				}
-			} catch (IOException e) {
-				lt.e(lt.COMPONENT_HTML_FILE_DOWNLOADER, "IOexception while closing streams!");
-				e.printStackTrace();
 			}
 		}
 	}
 	
-	private void downloadCssAndParseLinks (String url, String outputDir) throws IOException {
+	private void downloadCssAndParseLinks (final String url, final String outputDir) {
 		//todo: one method for saving & parsing both html & css, as they are very similar
 		FileOutputStream fop = null;
 		BufferedReader in = null;
 		HttpURLConnection conn = null;
 		File outputFile = null;
 		InputStream is = null;
-		
 		String filename = GrabUtility.getFileName(url);
-		
 		notifyProgress("Downloading CSS file", 100, 5, true);
 
 		try {
 			lt.i(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Preparing to download css file");
 			URL obj = new URL(url);
 
-			//Output file
 			outputFile = new File(outputDir, filename);
-
+			
 			conn = (HttpURLConnection) obj.openConnection();
 			conn.setReadTimeout(5000);
 			conn.addRequestProperty("User-Agent", uaString);
@@ -529,7 +547,7 @@ public class SaveService extends IntentService {
 					redirect = true;
 				}else{
 					notifyError(null, "Failed to download CSS file. HTTP status code: " + status);
-					lt.i(lt.COMPONENT_CSS_FILE_DOWNLOADER, "HTTP status code: notnok " + status);
+					lt.i(lt.COMPONENT_CSS_FILE_DOWNLOADER, "HTTP status code: not nok " + status);
 				}
 			}
 
@@ -557,7 +575,7 @@ public class SaveService extends IntentService {
 			if(!outputFile.canWrite()){
 				
 				notifyError("Could not save page", "Cannot write to file - "+outputFile.getAbsolutePath());
-				lt.i(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Cannot write to file - "+outputFile.getAbsolutePath());
+				lt.e(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Cannot write to file - "+outputFile.getAbsolutePath());
 				return;
 			
 			}
@@ -569,7 +587,8 @@ public class SaveService extends IntentService {
 			StringBuilder strResponse = new StringBuilder();
 			
 			while ((inputLine = in.readLine()) != null) {
-				strResponse.append(inputLine+"\r\n");
+				strResponse.append(inputLine);
+				strResponse.append("\r\n");
 			}
 
 			
@@ -599,7 +618,7 @@ public class SaveService extends IntentService {
 			if (GrabUtility.maxRetryCount >= failCount) {
 				notifyError(null, "Failed to download CSS file: " + filename+", retrying. Fail count: " + failCount);
 				lt.e(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Failed to download CSS file, retrying: " + filename);
-				synchronized (this) {try {wait(2500);} catch (InterruptedException ex) {}}
+				tools.waitForInternet();
 				downloadCssAndParseLinks(url, outputDir);
 			} else {
 				notifyError(null, "Failed to download CSS file: " + filename);
@@ -607,32 +626,42 @@ public class SaveService extends IntentService {
 				return;
 			}
 		} finally {
-			try {
 				if(conn != null) {
 					conn.disconnect();
 				}
 				if(is != null){
-					is.close();
+					try {
+						is.close();
+					} catch (IOException e) {
+						e.printStackTrace();
+						lt.e(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Exception while input stream!");
+					}
 				}
 				if(in != null){
-					in.close();
+					try {
+						in.close();
+					} catch (IOException e) {
+						e.printStackTrace();
+						lt.e(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Exception while closing input reader streams!");
+					}
 				}
 				if (fop != null) {
-					fop.close();
+					try {
+						fop.close();
+					} catch (IOException e) {
+						e.printStackTrace();
+						lt.e(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Exception while closing file output streams!");
+					}
 				}
-			} catch (IOException e) {
-				e.printStackTrace();
-				lt.e(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Exception while closing streams!");
-			}
 		}
 	}
 
-	private void getExtraFile(String urlToDownload, File outputDir) {
-		FileOutputStream fos = null;
-		BufferedReader in = null;
-		HttpURLConnection conn = null;
-		File outputFile = null;
+	private void getExtraFile(final String urlToDownload, final File outputDir) {
+		HttpURLConnection connection = null;
 		InputStream is = null;
+		FileOutputStream fos = null;
+		File outputFile = null;
+		
 		URL obj;
 		
 		String filename = GrabUtility.getFileName(urlToDownload);
@@ -652,14 +681,14 @@ public class SaveService extends IntentService {
 				return;
 			}
 			lt.i(lt.COMPONENT_EXTRA_FILE_DOWNLOADER,"Opening connection: " + urlToDownload);
-			conn = (HttpURLConnection) obj.openConnection();
-			conn.setReadTimeout(5000);
-			conn.addRequestProperty("User-Agent", uaString);
+			connection = (HttpURLConnection) obj.openConnection();
+			connection.setReadTimeout(5000);
+			connection.addRequestProperty("User-Agent", uaString);
 
 			boolean redirect = false;
 
 			// catch redirect
-			int status = conn.getResponseCode();
+			int status = connection.getResponseCode();
 			lt.i(lt.COMPONENT_EXTRA_FILE_DOWNLOADER, "HTTP response status: " + status);
 			if (status != HttpURLConnection.HTTP_OK) {
 				if (status == HttpURLConnection.HTTP_MOVED_TEMP
@@ -672,26 +701,25 @@ public class SaveService extends IntentService {
 
 			if (redirect) {
 				// get redirect url from "location" header field
-				String newUrl = conn.getHeaderField("Location");
+				String newUrl = connection.getHeaderField("Location");
 
 				// get the cookie if need, for login
-				String cookies = conn.getHeaderField("Set-Cookie");
+				String cookies = connection.getHeaderField("Set-Cookie");
 
 				// open the new connnection again
 				obj =  new URL(newUrl);
-				conn = (HttpURLConnection) obj.openConnection();
-				conn.setRequestProperty("Cookie", cookies);
-				conn.addRequestProperty("User-Agent", uaString);
+				connection = (HttpURLConnection) obj.openConnection();
+				connection.setRequestProperty("Cookie", cookies);
+				connection.addRequestProperty("User-Agent", uaString);
 
 				lt.i("Redirect to URL : " + newUrl);
 			}
-
 			
 			// if file doesn't exists, then create it
 			if (!outputFile.exists()) {
-				lt.i(lt.COMPONENT_EXTRA_FILE_DOWNLOADER,"Create file: " + filename);
 				outputFile.createNewFile();
 			}
+			
 			// can we write this file
 			if(!outputFile.canWrite()){
 				lt.e(lt.COMPONENT_EXTRA_FILE_DOWNLOADER,"Cannot write to file - "+outputFile.getAbsolutePath());
@@ -700,19 +728,19 @@ public class SaveService extends IntentService {
 			
 			lt.i(lt.COMPONENT_EXTRA_FILE_DOWNLOADER, "Downloading file...");
 			
-			ReadableByteChannel rbc = Channels.newChannel(conn.getInputStream());
-			fos = new FileOutputStream(outputFile);
-			fos.getChannel().transferFrom(rbc, 0, 1024*32);
-			fos.flush();
+//			ReadableByteChannel rbc = Channels.newChannel(conn.getInputStream());		
+//			fos.getChannel().transferFrom(rbc, 0, 1024*32);
+//			fos.flush();
 			
-//			is = conn.getInputStream();
-//			byte[] buffer = new byte[1024*16]; // read in batches of 16K
-//	        int length;
-//	        while ((length = is.read(buffer)) > 0) {
-//		       fop.write(buffer, 0, length);
-//	        }
-//			
-//			fop.flush();
+			fos = new FileOutputStream(outputFile);
+			is = connection.getInputStream();
+			final byte[] buffer = new byte[1024*16]; // read in batches of 16K
+	        int length;
+	        while ((length = is.read(buffer)) != -1) {
+		       fos.write(buffer, 0, length);
+	        }
+			
+			fos.flush();
 			
 			lt.i(lt.COMPONENT_EXTRA_FILE_DOWNLOADER, "Extra file downloaded.");
 				
@@ -726,10 +754,7 @@ public class SaveService extends IntentService {
 			if (GrabUtility.maxRetryCount >= failCount) {
 				notifyError(null, "Failed to download: " + filename + ", retrying. Fail count: " + failCount );
 				lt.e(lt.COMPONENT_EXTRA_FILE_DOWNLOADER, "Error while getting extra file, waiting and retrying...");
-				try {
-					TimeUnit.SECONDS.sleep(3);
-				} catch (InterruptedException ex) {}
-				
+				tools.waitForInternet();
 				getExtraFile(urlToDownload, outputDir);
 				return;
 			} else {
@@ -740,26 +765,30 @@ public class SaveService extends IntentService {
 			
 			
 		} finally {
-			try {
-				if(conn != null) {
-					conn.disconnect();
+				if(connection != null) {
+					connection.disconnect();
 				}
 				if(is != null){
-					is.close();
-				}
-				if(in != null){
-					in.close();
+					try {
+						is.close();
+					} catch (IOException e) {
+						lt.e(lt.COMPONENT_EXTRA_FILE_DOWNLOADER,e + "while closing input stream!");
+						e.printStackTrace();
+					}
 				}
 				if(fos != null) {
-					fos.close();
+					try {
+						fos.close();
+					} catch (IOException e) {
+						lt.e(lt.COMPONENT_EXTRA_FILE_DOWNLOADER,e + "while closing output stream!");
+						e.printStackTrace();
+					}
 				}
-			} catch (IOException e) {
-				lt.e(lt.COMPONENT_EXTRA_FILE_DOWNLOADER,e + "while closing streams!");
-				e.printStackTrace();
-			}
 		}
 	}
 }
+
+
 
 /**
  * @author Pramod Khare & improved by Jonas Czech
@@ -1034,6 +1063,16 @@ class GrabUtility{
 		filename = fileNameReplacementPattern.matcher(filename).replaceAll("_");
 		
 		return filename;
+	}
+}
+
+class tools {
+	public static final void waitForInternet () {
+		try {
+			TimeUnit.SECONDS.sleep(3);
+		} catch (InterruptedException e) {
+				
+		}
 	}
 }
 
