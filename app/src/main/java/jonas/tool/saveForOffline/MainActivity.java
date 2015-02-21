@@ -297,7 +297,8 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 					TextView t = (TextView) layout.findViewById(R.id.rename_dialog_text);
 					if (gridAdapter.selectedViewsPositions.size() == 1) {
 						e.setText(gridAdapter.getPropertiesByPosition(gridAdapter.selectedViewsPositions.get(0), "title"));
-						//t.setText("Enter new title for :\r\n" + gridAdapter.getPropertiesByPosition(gridAdapter.selectedViewsPositions.get(0), "title"));
+						e.selectAll();
+					
 					} else {
 						
 						t.setText("Enter new title for these " + gridAdapter.selectedViewsPositions.size() + " saved pages :");

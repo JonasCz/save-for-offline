@@ -43,6 +43,7 @@ public class ViewActivity extends Activity
 		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
 		String ua = sharedPref.getString("user_agent", "mobile");
 		save_in_background = sharedPref.getBoolean("save_in_background", true);
+		boolean jsEnabled = sharedPref.getBoolean("viewer_enable_javascript", true);
 		
 		
 		registerForContextMenu(webview);
@@ -58,7 +59,7 @@ public class ViewActivity extends Activity
 		}
 		webview.getSettings().setLoadWithOverviewMode(true);
 		webview.getSettings().setUseWideViewPort(true);
-		webview.getSettings().setJavaScriptEnabled(true);
+		webview.getSettings().setJavaScriptEnabled(jsEnabled);
 		webview.getSettings().setBuiltInZoomControls(true);
 		webview.getSettings().setDisplayZoomControls(false);
 		webview.getSettings().setAllowFileAccess(true);

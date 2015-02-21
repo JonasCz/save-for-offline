@@ -26,18 +26,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jonas.tool.saveForOffline;
 
-import android.app.*;
-import android.content.*;
-import android.widget.*;
-import android.util.*;
-import android.webkit.*;
-import android.graphics.*;
-import java.io.*;
-import android.database.sqlite.*;
-import android.view.View.*;
-import android.os.*;
-import android.preference.*;
-import android.os.Process;
 import java.net.URL;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -52,9 +40,24 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.net.MalformedURLException;
 import org.jsoup.nodes.Entities;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.Channels;
 import java.util.concurrent.TimeUnit;
+import android.app.Notification;
+import android.content.Intent;
+import android.app.NotificationManager;
+import android.app.IntentService;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
+import android.database.sqlite.SQLiteDatabase;
+import android.content.ContentValues;
+import android.app.PendingIntent;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.IOException;
+import android.content.Context;
+import android.util.Log;
 
 public class SaveService extends IntentService {
 

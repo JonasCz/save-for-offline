@@ -113,7 +113,7 @@ public class ScreenshotService extends Service {
 		}
 	}
 	
-	//service related stuff below, its probably easyer to use intentService...
+	//service related stuff below, its probably easier to use intentService...
 
 	@Override
 	public void onCreate() {
