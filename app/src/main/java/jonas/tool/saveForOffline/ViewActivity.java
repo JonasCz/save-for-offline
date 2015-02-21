@@ -65,6 +65,7 @@ public class ViewActivity extends Activity
 		webview.getSettings().setAllowFileAccess(true);
 		webview.getSettings().setAllowFileAccessFromFileURLs(true);
 		webview.getSettings().setMediaPlaybackRequiresUserGesture(false);
+		webview.getSettings().setDefaultTextEncodingName("UTF-8");
 		
         
 		if (fileLocation.endsWith("html")) {
