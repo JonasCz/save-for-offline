@@ -10,6 +10,8 @@ import android.database.sqlite.*;
 import android.util.*;
 import java.io.*;
 import android.preference.*;
+import android.graphics.ColorMatrixColorFilter;
+import android.graphics.Paint;
 
 public class ViewActivity extends Activity
 {
@@ -44,6 +46,7 @@ public class ViewActivity extends Activity
 		String ua = sharedPref.getString("user_agent", "mobile");
 		save_in_background = sharedPref.getBoolean("save_in_background", true);
 		boolean jsEnabled = sharedPref.getBoolean("viewer_enable_javascript", true);
+		boolean invertedRendering = sharedPref.getBoolean("dark_mode", false);
 		
 		
 		registerForContextMenu(webview);
@@ -55,7 +58,20 @@ public class ViewActivity extends Activity
 		}
 		if (ua.equals("ipad")) {
 			webview.getSettings().setUserAgentString("todo:iPad ua");
-			
+		}
+		
+		//set up inverted rendering, aka. night mode.
+		if (invertedRendering) {
+			float[] mNegativeColorArray = { 
+				-1.0f, 0, 0, 0, 255, // red
+				0, -1.0f, 0, 0, 255, // green
+				0, 0, -1.0f, 0, 255, // blue
+				0, 0, 0, 1.0f, 0 // alpha
+			};
+			Paint mPaint = new Paint();
+			ColorMatrixColorFilter filterInvert = new ColorMatrixColorFilter(mNegativeColorArray);
+			mPaint.setColorFilter(filterInvert);
+			webview.setLayerType(View.LAYER_TYPE_HARDWARE, mPaint);
 		}
 		webview.getSettings().setLoadWithOverviewMode(true);
 		webview.getSettings().setUseWideViewPort(true);

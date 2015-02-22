@@ -46,6 +46,15 @@
 			android:entryValues="@array/layout_list_values"
 			android:dialogTitle="Choose" />
 		
+		<SwitchPreference 
+			android:key="dark_mode" 
+			android:defaultValue="false"
+			android:switchTextOn="On"
+			android:switchTextOff="Off"
+			android:title="Night mode" 
+			android:summary="Use a dark theme, and also use inverted rendering in the viewer (Black becomes white and vice versa)"/>
+		
+		
 		<!--<ListPreference
 			android:key="default_sort_order"
 			android:title="Sort saved pages list by"
