@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_height="match_parent"
+	android:layout_width="match_parent"
+	android:orientation="vertical">
+
+	<GridView
+		xmlns:tools="http://schemas.android.com/tools"
+		android:id="@+id/List"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:columnWidth="200dp"
+		android:horizontalSpacing="5dp"
+		android:numColumns="auto_fit"
+		android:stretchMode="columnWidth"
+		android:verticalSpacing="5dp"
+		/>
+
+	<TextView
+		android:layout_height="wrap_content"
+		android:text="No Saved Pages"
+		android:textAppearance="?android:attr/textAppearanceMedium"
+		android:layout_width="match_parent"
+		android:id="@+id/textNoSavedPages"
+		android:layout_gravity="center_horizontal"
+		android:paddingTop="48dp"
+		android:gravity="center_horizontal"/>
+
+	<TextView
+		android:layout_height="wrap_content"
+		android:text="To save a webpage, choose 'Share' in your web browser, and then choose 'Save For Offline'."
+		android:textAppearance="?android:attr/textAppearanceSmall"
+		android:layout_width="match_parent"
+		android:id="@+id/how_to_text"
+		android:layout_gravity="center_horizontal"
+		android:gravity="center_horizontal"/>
+
+</LinearLayout>
+
