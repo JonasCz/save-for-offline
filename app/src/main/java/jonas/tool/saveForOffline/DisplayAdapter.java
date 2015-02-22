@@ -40,6 +40,7 @@ public class DisplayAdapter extends BaseAdapter
 	private String sqlStatement;
 	
 	public int list_layout_type = 1;
+	private boolean darkMode;
 	
 	public ArrayList<Integer> selectedViewsPositions = new ArrayList<Integer>();
 	
@@ -77,8 +78,8 @@ public class DisplayAdapter extends BaseAdapter
 		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(mContext);
 		
 		list_layout_type = Integer.parseInt(sharedPref.getString("layout" , "1"));
+		darkMode = sharedPref.getBoolean("dark_mode", false);
 	
-		
 		refreshData(null, 1, false);
 		
 		placeHolder = BitmapFactory.decodeResource(mContext.getResources(), R.drawable.placeholder);
@@ -113,12 +114,10 @@ public class DisplayAdapter extends BaseAdapter
 	}
 
 	public int getCount() {
-		// TODO Auto-generated method stub
 		return dbCursor.getCount();
 	}
 
 	public Object getItem(int position) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 	
@@ -173,7 +172,13 @@ public class DisplayAdapter extends BaseAdapter
 		
 		if (selectedViewsPositions.contains(pos)) {
 			convertView.setBackgroundColor(Color.parseColor("#FFC107"));
-		} else if (convertView != null) {convertView.setBackgroundColor(Color.parseColor("#E2E2E2"));}
+		} else if (convertView != null) {
+			if (darkMode) {
+				convertView.setBackgroundColor(Color.BLACK);
+			} else {
+				convertView.setBackgroundColor(Color.parseColor("#E2E2E2"));
+			}
+		}
 		
 		if (convertView == null) {
 			layoutInflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -184,15 +189,29 @@ public class DisplayAdapter extends BaseAdapter
 				case 5: convertView = layoutInflater.inflate(R.layout.listcell_list_details_small, null); break;
 				default: convertView = layoutInflater.inflate(R.layout.listcell_default, null);
 			}
-			
 			mHolder = new Holder();
-			if (list_layout_type == 4 || list_layout_type == 5) {
-				mHolder.txt_date = (TextView) convertView.findViewById(R.id.txt_date);
+			if (darkMode) {
+				convertView.setBackgroundColor(Color.BLACK);
+				if (list_layout_type == 4 || list_layout_type == 5) {
+					mHolder.txt_date = (TextView) convertView.findViewById(R.id.txt_date);
+					mHolder.txt_date.setTextColor(Color.WHITE);
+				}
+				mHolder.txt_id = (TextView) convertView.findViewById(R.id.txt_id);
+				mHolder.txt_filelocation = (TextView) convertView.findViewById(R.id.txt_fileLocation);
+				mHolder.txt_orig_url = (TextView) convertView.findViewById(R.id.txt_orig_url);
+				mHolder.txt_orig_url.setTextColor(Color.WHITE);
+				mHolder.txt_title = (TextView) convertView.findViewById(R.id.txt_title);
+				mHolder.txt_title.setTextColor(Color.WHITE);
+			} else {
+				if (list_layout_type == 4 || list_layout_type == 5) {
+					mHolder.txt_date = (TextView) convertView.findViewById(R.id.txt_date);
+				}
+				mHolder.txt_id = (TextView) convertView.findViewById(R.id.txt_id);
+				mHolder.txt_filelocation = (TextView) convertView.findViewById(R.id.txt_fileLocation);
+				mHolder.txt_orig_url = (TextView) convertView.findViewById(R.id.txt_orig_url);
+				mHolder.txt_title = (TextView) convertView.findViewById(R.id.txt_title);
 			}
-			mHolder.txt_id = (TextView) convertView.findViewById(R.id.txt_id);
-			mHolder.txt_filelocation = (TextView) convertView.findViewById(R.id.txt_fileLocation);
-			mHolder.txt_orig_url = (TextView) convertView.findViewById(R.id.txt_orig_url);
-			mHolder.txt_title = (TextView) convertView.findViewById(R.id.txt_title);
+			
 			if (list_layout_type != 5) {
 				mHolder.listimage = (ImageView) convertView.findViewById(R.id.listimage);
 			}

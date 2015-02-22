@@ -23,13 +23,15 @@ public class Preferences extends PreferenceActivity implements OnSharedPreferenc
 	public void onSharedPreferenceChanged(SharedPreferences preferences, String key) {
 		if (!preferences.getString("layout" , "1").equals(list_appearance)) {
 			setResult(RESULT_FIRST_USER);
+		} else if (key.equals("dark_mode")) {
+			setResult(RESULT_FIRST_USER);
 		} else { setResult(RESULT_OK);}
 
 		if (key.equals("save_in_background") && preferences.getBoolean("save_in_background" , true) == false) {
 			
 			Preference advancedSavingOptions = getPreferenceScreen().findPreference("saving_advanced_opts");
 			advancedSavingOptions.setEnabled(false);
-			advancedSavingOptions.setSummary("Theese options are only available if 'Save in background' is enabled");
+			advancedSavingOptions.setSummary("These options are only available if 'Save in background' is enabled");
 			
 			AlertDialog.Builder build = new AlertDialog.Builder(Preferences.this);
 			build.setTitle("Warning!");

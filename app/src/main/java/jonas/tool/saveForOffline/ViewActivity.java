@@ -22,6 +22,7 @@ public class ViewActivity extends Activity
 	private WebView.HitTestResult result;
 	
 	private boolean save_in_background;
+	private boolean invertedRendering;
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState)
@@ -46,7 +47,7 @@ public class ViewActivity extends Activity
 		String ua = sharedPref.getString("user_agent", "mobile");
 		save_in_background = sharedPref.getBoolean("save_in_background", true);
 		boolean jsEnabled = sharedPref.getBoolean("viewer_enable_javascript", true);
-		boolean invertedRendering = sharedPref.getBoolean("dark_mode", false);
+		invertedRendering = sharedPref.getBoolean("dark_mode", false);
 		
 		
 		registerForContextMenu(webview);
@@ -60,19 +61,7 @@ public class ViewActivity extends Activity
 			webview.getSettings().setUserAgentString("todo:iPad ua");
 		}
 		
-		//set up inverted rendering, aka. night mode.
-		if (invertedRendering) {
-			float[] mNegativeColorArray = { 
-				-1.0f, 0, 0, 0, 255, // red
-				0, -1.0f, 0, 0, 255, // green
-				0, 0, -1.0f, 0, 255, // blue
-				0, 0, 0, 1.0f, 0 // alpha
-			};
-			Paint mPaint = new Paint();
-			ColorMatrixColorFilter filterInvert = new ColorMatrixColorFilter(mNegativeColorArray);
-			mPaint.setColorFilter(filterInvert);
-			webview.setLayerType(View.LAYER_TYPE_HARDWARE, mPaint);
-		}
+		
 		webview.getSettings().setLoadWithOverviewMode(true);
 		webview.getSettings().setUseWideViewPort(true);
 		webview.getSettings().setJavaScriptEnabled(jsEnabled);
@@ -108,6 +97,24 @@ public class ViewActivity extends Activity
 			
 		} else loadWebView();
     }
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		//set up inverted rendering, aka. night mode.
+		if (invertedRendering) {
+			float[] mNegativeColorArray = { 
+				-1.0f, 0, 0, 0, 255, // red
+				0, -1.0f, 0, 0, 255, // green
+				0, 0, -1.0f, 0, 255, // blue
+				0, 0, 0, 1.0f, 0 // alpha
+			};
+			Paint mPaint = new Paint();
+			ColorMatrixColorFilter filterInvert = new ColorMatrixColorFilter(mNegativeColorArray);
+			mPaint.setColorFilter(filterInvert);
+			webview.setLayerType(View.LAYER_TYPE_HARDWARE, mPaint);
+		}
+	}
 
 
 	private void loadWebView()
