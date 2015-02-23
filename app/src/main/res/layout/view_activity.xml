@@ -1,7 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<WebView
+<LinearLayout
 	xmlns:android="http://schemas.android.com/apk/res/android"
-	android:id="@+id/webview"
+	android:layout_height="match_parent"
 	android:layout_width="match_parent"
-	android:layout_height="match_parent"/>
+	android:orientation="vertical">
+
+	<TextView
+		android:layout_height="wrap_content"
+		android:text="Loading..."
+		android:textAppearance="?android:attr/textAppearanceMedium"
+		android:layout_width="match_parent"
+		android:gravity="center_horizontal"
+		android:paddingTop="48dp"
+		android:id="@+id/view_activity_loading_text"
+		android:visibility="gone"/>
+
+	<WebView
+		android:id="@+id/webview"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"/>
+
+</LinearLayout>
 

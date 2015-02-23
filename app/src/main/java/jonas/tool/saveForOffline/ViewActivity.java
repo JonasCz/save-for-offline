@@ -19,6 +19,7 @@ public class ViewActivity extends Activity
 	private String title;
 	private String fileLocation;
 	private WebView webview;
+	private TextView loadingText;
 	private WebView.HitTestResult result;
 	
 	private boolean save_in_background;
@@ -41,7 +42,8 @@ public class ViewActivity extends Activity
 		fileLocation = incomingIntent.getStringExtra("fileLocation");
 		
 		setProgressBarIndeterminateVisibility(true);
-		
+
+		loadingText =(TextView) findViewById(R.id.view_activity_loading_text);
 		webview = (WebView) findViewById(R.id.webview);
 		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
 		String ua = sharedPref.getString("user_agent", "mobile");
@@ -79,6 +81,7 @@ public class ViewActivity extends Activity
 
 					@Override
 					public void onPageFinished(WebView view, String url) {
+					//	loadingText.setVisibility(View.GONE);
 						setProgressBarIndeterminateVisibility(false);
 
 					}
@@ -91,6 +94,7 @@ public class ViewActivity extends Activity
 					@Override
 					public void onPageFinished(WebView view, String url) {
 						setProgressBarIndeterminateVisibility(false);
+					//	loadingText.setVisibility(View.GONE);
 
 					}
 				});
@@ -143,6 +147,7 @@ public class ViewActivity extends Activity
         
         // Any other code we need to execute after loading a page from a WebArchive...
 		setProgressBarIndeterminateVisibility(false);
+	//	loadingText.setVisibility(View.GONE);
     }
 	
 
