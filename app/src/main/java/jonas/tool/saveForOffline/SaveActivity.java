@@ -11,6 +11,7 @@ import android.database.sqlite.*;
 import android.transition.*;
 import android.preference.*;
 import android.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class SaveActivity extends Activity
 {
@@ -44,7 +45,7 @@ public class SaveActivity extends Activity
 		setContentView(R.layout.save_activity);
 		//Window window = getWindow();
 		
-		//window.setTitle("Save For Offline: Saving...");
+		getWindow().setTitle("Save For Offline: Saving...");
 		
 		
 		
@@ -174,7 +175,11 @@ public class SaveActivity extends Activity
 			*even though it is not. So wait some time to let it
 			*load and do this in an asyncTask in order not to freeze the ui
 			*/
-			synchronized(this){try{wait(250);}catch(InterruptedException e){}}
+			try {
+				TimeUnit.MILLISECONDS.sleep(300);
+			} catch (InterruptedException e) {
+
+			}
 			
 			Picture mPicture = webview.capturePicture();
 			Bitmap b = Bitmap.createBitmap(webview.getWidth(), webview.getHeight(), Bitmap.Config.ARGB_8888);
@@ -187,7 +192,6 @@ public class SaveActivity extends Activity
 
 			File file = new File (thumbnail);
 			OutputStream out;
-
 
 			try
 			{

@@ -58,8 +58,15 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import android.content.Context;
 import android.util.Log;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.os.HandlerThread;
+import android.os.IBinder;
+import android.app.Service;
+import android.os.Process;
 
-public class SaveService extends IntentService {
+public class SaveService extends Service {
 
 	private String destinationDirectory;
 	private String thumbnail;
@@ -76,90 +83,154 @@ public class SaveService extends IntentService {
 	
 	private int waitingIntentCount = 0;
 	
-	public SaveService () {
-		super("SaveService");
+	private boolean shouldCancel = false;
+	
+	private Looper mServiceLooper;
+	private ServiceHandler mServiceHandler;
+	private Message msg;
+	
+	@Override
+	public void onCreate() {
+
+		HandlerThread thread = new HandlerThread("ServiceStartArguments", Process.THREAD_PRIORITY_BACKGROUND);
+		thread.start();
+
+		// Get the HandlerThread's Looper and use it for our Handler 
+		mServiceLooper = thread.getLooper();
+
+		mServiceHandler = new ServiceHandler(mServiceLooper);
 	}
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
+		
+		if (intent.getBooleanExtra("shouldCancel", false)) {
+			shouldCancel = true;
+			mBuilder
+				.setContentText("Please wait...")
+				.setContentTitle("Cancelling...")
+				.setAutoCancel(true)
+				.setOngoing(false)
+				.setProgress(0,0,false);
+			mNotificationManager.notify(notification_id, mBuilder.build());
+			return 0;
+			
+		} else {
+		
 		waitingIntentCount++;
-		return super.onStartCommand(intent, flags, startId);
+
+		// For each start request, send a message to start a job and deliver the
+		// start ID so we know which request we're stopping when we finish the job
+		msg = mServiceHandler.obtainMessage();
+		msg.arg1 = startId;
+		msg.obj = intent;
+		mServiceHandler.sendMessage(msg);
+
+		return START_NOT_STICKY;
+		}
 	}
-	
 
 	@Override
-	public void onHandleIntent(Intent intent) {
-		waitingIntentCount--;
-		wasAddedToDb = false;
-		
-		mBuilder = new Notification.Builder(SaveService.this)
-			.setContentTitle("Saving webpage...")
-			.setTicker("Saving webpage...")
-			.setSmallIcon(android.R.drawable.stat_sys_download)
-			.setProgress(0,0, true)
-			.setOngoing(true)
-			.setOnlyAlertOnce(true)
-			.setPriority(Notification.PRIORITY_HIGH)
-			.setContentText("Save in progress: getting ready...");
+	public IBinder onBind(Intent intent) {
+		// We don't provide binding, so return null
+		return null;
+	}
+
+	private final class ServiceHandler extends Handler {
+		public ServiceHandler(Looper looper) {
+			super(looper);
+		}
+		@Override
+		public void handleMessage(final Message msg) {
+			shouldCancel = false;
+			Intent intent = (Intent) msg.obj;
+			if (intent.getBooleanExtra("shouldCancel", false)) {
+				return;
+			}
+			waitingIntentCount--;
+			wasAddedToDb = false;
+
+			Intent notificationIntent = new Intent(SaveService.this, SaveService.class);
+			notificationIntent.putExtra("shouldCancel", true);
+			PendingIntent pendingIntent = PendingIntent.getService(SaveService.this, 0, notificationIntent, 0);
+
+
+			mBuilder = new Notification.Builder(SaveService.this)
+				.setContentTitle("Saving webpage...")
+				.setTicker("Saving webpage...")
+				.setSmallIcon(android.R.drawable.stat_sys_download)
+				.setProgress(0, 0, true)
+				.setOngoing(true)
+				.setOnlyAlertOnce(true)
+				.setPriority(Notification.PRIORITY_HIGH)
+				.setContentText("Save in progress: getting ready...")
+				.addAction(R.drawable.ic_action_discard, "Cancel current", pendingIntent);
+
+			mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+			mNotificationManager.notify(notification_id, mBuilder.build());
+
+			SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(SaveService.this);
+			String ua = sharedPref.getString("user_agent", "mobile");
+
+			lt.shouldLogDebug = sharedPref.getBoolean("enable_logging", false);
+			lt.shouldLogErrors = sharedPref.getBoolean("enable_logging_error", true);
+
+			GrabUtility.makeLinksAbsolute = sharedPref.getBoolean("make_links_absolute", true);
+			GrabUtility.maxRetryCount = Integer.parseInt(sharedPref.getString("max_number_of_retries", "5"));
+			GrabUtility.saveFrames = sharedPref.getBoolean("save_frames", true);
+			GrabUtility.saveImages = sharedPref.getBoolean("save_images", true);
+			GrabUtility.saveOther = sharedPref.getBoolean("save_other", true);
+			GrabUtility.saveScripts = sharedPref.getBoolean("save_scripts", true);
+			GrabUtility.saveVideo = sharedPref.getBoolean("save_video", true);
+
+			if (ua.equals("desktop")) {
+				uaString = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.517 Safari/537.36";
+
+			} else if (ua.equals("ipad")) {
+				uaString = "iPad ipad safari";
+
+			} else {
+				uaString = "Mozilla/5.0 (Linux; U; Android 4.2.2; en-us; Phone Build/IML74K) AppleWebkit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30";
+			}
+
+
+
+			destinationDirectory = DirectoryHelper.getUnpackedDir();
+			thumbnail = destinationDirectory + "saveForOffline_thumbnail.png";
+
+			origurl = intent.getStringExtra("origurl");
+
+			try {
+				grabPage(origurl, destinationDirectory);
+			} catch (Exception e) {
+				lt.e("Exception in onHandeIntent, returning!");
+				e.printStackTrace();
+				//if we crash, delete all files saved so far
+				File file = new File(destinationDirectory);
+				DirectoryHelper.deleteDirectory(file);
+				return;
+			}
 			
-		mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-		mNotificationManager.notify(notification_id, mBuilder.build());
-		
-		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(SaveService.this);
-		String ua = sharedPref.getString("user_agent", "mobile");
-		
-		lt.shouldLogDebug = sharedPref.getBoolean("enable_logging", false);
-		lt.shouldLogErrors = sharedPref.getBoolean("enable_logging_error", true);
-		
-		GrabUtility.makeLinksAbsolute = sharedPref.getBoolean("make_links_absolute", true);
-		GrabUtility.maxRetryCount = Integer.parseInt(sharedPref.getString("max_number_of_retries", "5"));
-		GrabUtility.saveFrames = sharedPref.getBoolean("save_frames", true);
-		GrabUtility.saveImages = sharedPref.getBoolean("save_images", true);
-		GrabUtility.saveOther = sharedPref.getBoolean("save_other", true);
-		GrabUtility.saveScripts = sharedPref.getBoolean("save_scripts", true);
-		GrabUtility.saveVideo = sharedPref.getBoolean("save_video", true);
+			if (shouldCancel) {
+				mNotificationManager.cancelAll();
+				File file = new File(destinationDirectory);
+				DirectoryHelper.deleteDirectory(file);
+				return;
+			}
+			notifyProgress("Adding to list...", 100, 97, false);
 
-		if (ua.equals("desktop")) {
-			uaString = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.517 Safari/537.36";
+			addToDb();
 
-		} else if (ua.equals("ipad")) {
-			uaString = "iPad ipad safari";
+			Intent i = new Intent(SaveService.this, ScreenshotService.class);
+			i.putExtra("origurl", "file://" + destinationDirectory + "index.html");
+			i.putExtra("thumbnail", thumbnail);
+			startService(i);
 
-		} else {
-			uaString = "Mozilla/5.0 (Linux; U; Android 4.2.2; en-us; Phone Build/IML74K) AppleWebkit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30";
+			notifyFinished();
+
+			lt.i("Finished");
 		}
 
-		
-	
-		destinationDirectory = DirectoryHelper.getUnpackedDir();
-		thumbnail = destinationDirectory + "saveForOffline_thumbnail.png";
-		
-		origurl = intent.getStringExtra("origurl");
-		
-		try {
-			grabPage(origurl, destinationDirectory);
-		} catch (Exception e) {
-			lt.e("Exception in onHandeIntent, returning!");
-			e.printStackTrace();
-			//if we crash, delete all files saved so far
-			File file = new File(destinationDirectory);
-			DirectoryHelper.deleteDirectory(file);
-			return;
-		}
-		
-		notifyProgress("Adding to list...", 100, 97, false);
-		
-		addToDb();
-		
-		Intent i = new Intent(this, ScreenshotService.class);
-		i.putExtra("origurl", "file://" + destinationDirectory + "index.html");
-		i.putExtra("thumbnail", thumbnail);
-		startService(i);
-		
-		notifyFinished();
-		
-		lt.i("Finished");
-		
 	}
 
 	private void addToDb() {
@@ -292,18 +363,23 @@ public class SaveService extends IntentService {
 		downloadHtmlAndParseLinks(url, outputDirPath, false);
 		failCount = 0;
 		
+		if (shouldCancel) return;
+		
 		//download and parse html frames
 		lt.i("Number of HTML frames to download: " + GrabUtility.extraCssToGrab.size());
 		for (String urlToDownload: GrabUtility.framesToGrab) {
 			downloadHtmlAndParseLinks(urlToDownload, outputDirPath, true);
+			if (shouldCancel) return;
 			lt.i("--");
 			failCount = 0;
 		}
 		lt.i("Finished download of HTML frames.");
 		
+		
 		//download and parse css files
 		lt.i("Number of CSS files to download: " + GrabUtility.extraCssToGrab.size());
 		for (String urlToDownload: GrabUtility.cssToGrab) {
+			if (shouldCancel) return;
 			downloadCssAndParseLinks(urlToDownload, outputDirPath);
 			lt.i("--");
 			failCount = 0;	
@@ -314,6 +390,7 @@ public class SaveService extends IntentService {
 		//todo : make this recursive
 		lt.i("Number of extra CSS files to download: " + GrabUtility.extraCssToGrab.size());
 		for (String urlToDownload: GrabUtility.extraCssToGrab) {
+			if (shouldCancel) return;
 			downloadCssAndParseLinks(urlToDownload, outputDirPath);
 			lt.i("--");
 			failCount = 0;
@@ -323,6 +400,7 @@ public class SaveService extends IntentService {
 		//download extra files, such as images / scripts
 		lt.i("Number of files to download: " + GrabUtility.filesToGrab.size());
 		for (String urlToDownload: GrabUtility.filesToGrab) {
+			if (shouldCancel) return;
 			notifyProgress("Saving file: " + urlToDownload.substring(urlToDownload.lastIndexOf("/") + 1), GrabUtility.filesToGrab.size(), GrabUtility.filesToGrab.indexOf(urlToDownload), false);
 			getExtraFile(urlToDownload, outputDir);
 			lt.i("--");		

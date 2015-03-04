@@ -30,6 +30,10 @@ public class ViewActivity extends Activity
 	{
 		super.onCreate(savedInstanceState);
 		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
+		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+		if (sharedPref.getBoolean("dark_mode", false)) {
+			setTheme(android.R.style.Theme_Holo);
+		}
 		setContentView(R.layout.view_activity);
 		
 		
@@ -45,7 +49,7 @@ public class ViewActivity extends Activity
 
 		loadingText =(TextView) findViewById(R.id.view_activity_loading_text);
 		webview = (WebView) findViewById(R.id.webview);
-		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+		
 		String ua = sharedPref.getString("user_agent", "mobile");
 		save_in_background = sharedPref.getBoolean("save_in_background", true);
 		boolean jsEnabled = sharedPref.getBoolean("viewer_enable_javascript", true);

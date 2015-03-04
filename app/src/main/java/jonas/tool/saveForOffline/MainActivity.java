@@ -55,10 +55,14 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.main);
-		//initialize the preferences
 		PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+		if (sharedPref.getBoolean("dark_mode", false)) {
+			setTheme(android.R.style.Theme_Holo);
+		}
+		setContentView(R.layout.main);
+		//initialize the preferences
+		
 		mainGrid = (GridView) findViewById(R.id.List);
 
 		mainGrid.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE_MODAL);

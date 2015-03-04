@@ -13,7 +13,7 @@ import android.os.Process;
 import android.preference.PreferenceManager;
 import java.util.concurrent.TimeUnit;
 
-//this is an example of how to take a screenshot in a background service
+//this is an example of how to take a screenshot of a webpage in a background service
 //not very elegant, but it works (for me anyway)
 //author: jonasCz (http://github.com/jonasCz)
 
