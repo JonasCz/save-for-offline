@@ -23,7 +23,6 @@
         <item name="android:actionBarItemBackground">@drawable/selectable_background_theme_main_yellow</item>
         <item name="android:popupMenuStyle">@style/PopupMenu.Theme_main_yellow</item>
         <item name="android:dropDownListViewStyle">@style/DropDownListView.Theme_main_yellow</item>
-        <item name="android:actionBarTabStyle">@style/ActionBarTabStyle.Theme_main_yellow</item>
         <item name="android:actionDropDownStyle">@style/DropDownNav.Theme_main_yellow</item>
         <item name="android:actionBarStyle">@style/ActionBar.Solid.Theme_main_yellow</item>
 		<item name="android:actionModeStyle">@style/ActionBar.Solid.Theme_main_yellow</item>
@@ -75,21 +74,12 @@
         <item name="android:progressBarStyle">@style/ProgressBar.Theme_main_yellow</item>
     </style>
 
-    <style name="ActionBar.Transparent.Theme_main_yellow" parent="@android:style/Widget.Holo.Light.ActionBar">
-        <item name="android:background">@drawable/ab_transparent_theme_main_yellow</item>
-        <item name="android:progressBarStyle">@style/ProgressBar.Theme_main_yellow</item>
-    </style>
-
     <style name="PopupMenu.Theme_main_yellow" parent="@android:style/Widget.Holo.Light.ListPopupWindow">
         <item name="android:popupBackground">@drawable/menu_dropdown_panel_theme_main_yellow</item>	
     </style>
 
     <style name="DropDownListView.Theme_main_yellow" parent="@android:style/Widget.Holo.Light.ListView.DropDown">
         <item name="android:listSelector">@drawable/selectable_background_theme_main_yellow</item>
-    </style>
-
-    <style name="ActionBarTabStyle.Theme_main_yellow" parent="@android:style/Widget.Holo.Light.ActionBar.TabView">
-        <item name="android:background">@drawable/tab_indicator_ab_theme_main_yellow</item>
     </style>
 
     <style name="DropDownNav.Theme_main_yellow" parent="@android:style/Widget.Holo.Light.Spinner">
@@ -106,10 +96,5 @@
         <item name="android:background">@drawable/btn_cab_done_theme_main_yellow</item>
     </style>
 
-    <!-- this style is only referenced in a Light.DarkActionBar based theme -->
-    <style name="Theme.Theme_main_yellow.Widget" parent="@android:style/Theme.Holo">
-        <item name="android:popupMenuStyle">@style/PopupMenu.Theme_main_yellow</item>
-        <item name="android:dropDownListViewStyle">@style/DropDownListView.Theme_main_yellow</item>
-    </style>
-
+    
 </resources>
