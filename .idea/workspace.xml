@@ -23,17 +23,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="166219c6-4f11-496a-be3d-d9ffc94c9808" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/.name" afterPath="$PROJECT_DIR$/.idea/.name" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/SaveForOffline.iml" afterPath="$PROJECT_DIR$/SaveForOffline.iml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/src/main/java/jonas/tool/saveForOffline/SaveService.java" afterPath="$PROJECT_DIR$/app/src/main/java/jonas/tool/saveForOffline/SaveService.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/app.iml" afterPath="$PROJECT_DIR$/app/app.iml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/build.gradle" afterPath="$PROJECT_DIR$/build.gradle" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/build.gradle" afterPath="$PROJECT_DIR$/app/build.gradle" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.properties" afterPath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.properties" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/gradle.xml" afterPath="$PROJECT_DIR$/.idea/gradle.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/misc.xml" afterPath="$PROJECT_DIR$/.idea/misc.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/modules.xml" afterPath="$PROJECT_DIR$/.idea/modules.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/vcs.xml" afterPath="$PROJECT_DIR$/.idea/vcs.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/src/main/res/xml/preferences.xml" afterPath="$PROJECT_DIR$/app/src/main/res/xml/preferences.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="My Application.iws" />
@@ -73,19 +65,29 @@
       <file leaf-file-name="SaveService.java" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/app/src/main/java/jonas/tool/saveForOffline/SaveService.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.17224081" vertical-offset="2837" max-vertical-offset="16920">
-              <caret line="284" column="37" selection-start-line="284" selection-start-column="37" selection-end-line="284" selection-end-column="37" />
+            <state vertical-scroll-proportion="-1.6053512" vertical-offset="3015" max-vertical-offset="17325">
+              <caret line="176" column="76" selection-start-line="176" selection-start-column="75" selection-end-line="176" selection-end-column="99" />
               <folding>
-                <element signature="e#0#38671#0" expanded="true" />
-                <element signature="imports" expanded="true" />
-                <element signature="e#4071#4072#0" expanded="true" />
-                <element signature="e#4093#4094#0" expanded="true" />
-                <element signature="method#handleMessage#0;class#ServiceHandler#0;class#SaveService#0" expanded="false" />
-                <element signature="e#28464#28472#0" expanded="true" />
-                <element signature="e#28587#28595#0" expanded="true" />
-                <element signature="e#28710#28718#0" expanded="true" />
-                <element signature="e#28815#28823#0" expanded="true" />
+                <element signature="e#0#39066#0" expanded="true" />
+                <element signature="e#4140#4141#0" expanded="true" />
+                <element signature="e#4162#4163#0" expanded="true" />
+                <element signature="method#getLastIdFromDb#0;class#SaveService#0" expanded="false" />
+                <element signature="method#addToDb#0;class#SaveService#0" expanded="false" />
+                <element signature="e#28859#28867#0" expanded="true" />
+                <element signature="e#28982#28990#0" expanded="true" />
+                <element signature="e#29105#29113#0" expanded="true" />
+                <element signature="e#29210#29218#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="preferences.xml" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/app/src/main/res/xml/preferences.xml">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.0" vertical-offset="495" max-vertical-offset="2940">
+              <caret line="60" column="68" selection-start-line="60" selection-start-column="68" selection-end-line="60" selection-end-column="68" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -1078,6 +1080,7 @@
         <option value="$PROJECT_DIR$/app/src/main/res/layout/main.xml" />
         <option value="$PROJECT_DIR$/app/build.gradle" />
         <option value="$PROJECT_DIR$/app/src/main/java/jonas/tool/saveForOffline/SaveService.java" />
+        <option value="$PROJECT_DIR$/app/src/main/res/xml/preferences.xml" />
       </list>
     </option>
   </component>
@@ -1130,6 +1133,28 @@
               <option name="myItemId" value="app" />
               <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidModuleNode" />
             </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="res" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidResFolderNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="xml" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidResFolderTypeNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="SaveForOffline" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="app" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidModuleNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="res" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidResFolderNode" />
+            </PATH_ELEMENT>
           </PATH>
           <PATH>
             <PATH_ELEMENT>
@@ -1147,6 +1172,16 @@
             <PATH_ELEMENT>
               <option name="myItemId" value="saveForOffline" />
               <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidPsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="SaveForOffline" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="app" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidModuleNode" />
             </PATH_ELEMENT>
           </PATH>
         </subPane>
@@ -1425,6 +1460,11 @@
       <created>1404820975431</created>
       <updated>1404820975431</updated>
     </task>
+    <task id="LOCAL-00001" summary="Fixed various bits and pieces.">
+      <created>1425742812119</created>
+      <updated>1425742812119</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -1450,7 +1490,7 @@
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.2003231" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.2003231" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32729805" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Memory Monitor" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="8" side_tool="true" content_ui="tabs" />
       <window_info id="Documentation" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="FLOATING" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" x="91" y="91" width="1258" height="670" />
@@ -1478,6 +1518,8 @@
     <option name="myTodoPanelSettings">
       <TodoPanelSettings />
     </option>
+    <MESSAGE value="Fixed various bits and pieces." />
+    <option name="LAST_COMMIT_MESSAGE" value="Fixed various bits and pieces." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -1501,15 +1543,15 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="13151" max-vertical-offset="17415">
           <caret line="927" column="24" selection-start-line="927" selection-start-column="24" selection-end-line="927" selection-end-column="24" />
           <folding>
-            <element signature="e#0#38671#0" expanded="true" />
-            <element signature="imports" expanded="true" />
-            <element signature="e#4071#4072#0" expanded="true" />
-            <element signature="e#4093#4094#0" expanded="true" />
-            <element signature="method#handleMessage#0;class#ServiceHandler#0;class#SaveService#0" expanded="false" />
-            <element signature="e#28464#28472#0" expanded="true" />
-            <element signature="e#28587#28595#0" expanded="true" />
-            <element signature="e#28710#28718#0" expanded="true" />
-            <element signature="e#28815#28823#0" expanded="true" />
+            <element signature="e#0#39066#0" expanded="true" />
+            <element signature="e#4140#4141#0" expanded="true" />
+            <element signature="e#4162#4163#0" expanded="true" />
+            <element signature="method#getLastIdFromDb#0;class#SaveService#0" expanded="false" />
+            <element signature="method#addToDb#0;class#SaveService#0" expanded="false" />
+            <element signature="e#28859#28867#0" expanded="true" />
+            <element signature="e#28982#28990#0" expanded="true" />
+            <element signature="e#29105#29113#0" expanded="true" />
+            <element signature="e#29210#29218#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1684,20 +1726,28 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/app/src/main/res/xml/preferences.xml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="495" max-vertical-offset="2940">
+          <caret line="60" column="68" selection-start-line="60" selection-start-column="68" selection-end-line="60" selection-end-column="68" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/app/src/main/java/jonas/tool/saveForOffline/SaveService.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.17224081" vertical-offset="2837" max-vertical-offset="16920">
-          <caret line="284" column="37" selection-start-line="284" selection-start-column="37" selection-end-line="284" selection-end-column="37" />
+        <state vertical-scroll-proportion="-1.6053512" vertical-offset="3015" max-vertical-offset="17325">
+          <caret line="176" column="76" selection-start-line="176" selection-start-column="75" selection-end-line="176" selection-end-column="99" />
           <folding>
-            <element signature="e#0#38671#0" expanded="true" />
-            <element signature="imports" expanded="true" />
-            <element signature="e#4071#4072#0" expanded="true" />
-            <element signature="e#4093#4094#0" expanded="true" />
-            <element signature="method#handleMessage#0;class#ServiceHandler#0;class#SaveService#0" expanded="false" />
-            <element signature="e#28464#28472#0" expanded="true" />
-            <element signature="e#28587#28595#0" expanded="true" />
-            <element signature="e#28710#28718#0" expanded="true" />
-            <element signature="e#28815#28823#0" expanded="true" />
+            <element signature="e#0#39066#0" expanded="true" />
+            <element signature="e#4140#4141#0" expanded="true" />
+            <element signature="e#4162#4163#0" expanded="true" />
+            <element signature="method#getLastIdFromDb#0;class#SaveService#0" expanded="false" />
+            <element signature="method#addToDb#0;class#SaveService#0" expanded="false" />
+            <element signature="e#28859#28867#0" expanded="true" />
+            <element signature="e#28982#28990#0" expanded="true" />
+            <element signature="e#29105#29113#0" expanded="true" />
+            <element signature="e#29210#29218#0" expanded="true" />
           </folding>
         </state>
       </provider>

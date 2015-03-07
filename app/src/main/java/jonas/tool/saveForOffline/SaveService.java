@@ -89,8 +89,9 @@ public class SaveService extends Service {
 	private Looper mServiceLooper;
 	private ServiceHandler mServiceHandler;
 	private Message msg;
-	
-	@Override
+    private boolean shouldGoToMainListOnNotificationClick = false;
+
+    @Override
 	public void onCreate() {
 
 		HandlerThread thread = new HandlerThread("ServiceStartArguments", Process.THREAD_PRIORITY_BACKGROUND);
@@ -172,6 +173,8 @@ public class SaveService extends Service {
 
 			SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(SaveService.this);
 			String ua = sharedPref.getString("user_agent", "mobile");
+
+            shouldGoToMainListOnNotificationClick = sharedPref.getBoolean("go_to_main_list_on_click", false);
 
 			lt.shouldLogDebug = sharedPref.getBoolean("enable_logging", false);
 			lt.shouldLogErrors = sharedPref.getBoolean("enable_logging_error", true);
@@ -270,15 +273,22 @@ public class SaveService extends Service {
 	}
 	
 	private void notifyFinished () {
-		
-		Intent notificationIntent = new Intent(this, ViewActivity.class);
-        notificationIntent.putExtra("orig_url", origurl);
-        notificationIntent.putExtra("title", GrabUtility.title);
-        notificationIntent.putExtra("id", getLastIdFromDb());
-        notificationIntent.putExtra("thumbnailLocation", "file://" + destinationDirectory + "index.html");
-        notificationIntent.putExtra("fileLocation", destinationDirectory + "index.html");
 
-		PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+        Intent notificationIntent;
+
+        if (shouldGoToMainListOnNotificationClick) {
+            notificationIntent = new Intent(this, MainActivity.class);
+        } else {
+            notificationIntent = new Intent(this, ViewActivity.class);
+            notificationIntent.putExtra("orig_url", origurl);
+            notificationIntent.putExtra("title", GrabUtility.title);
+            notificationIntent.putExtra("id", getLastIdFromDb());
+            notificationIntent.putExtra("thumbnailLocation", "file://" + destinationDirectory + "index.html");
+            notificationIntent.putExtra("fileLocation", destinationDirectory + "index.html");
+        }
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+
 		mBuilder
 			.setContentTitle("Save completed.")
 			.setTicker("Saved: " + GrabUtility.title)

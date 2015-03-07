@@ -13,12 +13,11 @@ android {
     }
     buildTypes {
         release {
-            runProguard false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+
         }
     }
 }
 
 dependencies {
-	 compile "org.jsoup:jsoup:1.8.1"
+	 compile fileTree(dir: 'libs', include: ['*.jar'])
 }

@@ -53,6 +53,12 @@
 			android:switchTextOff="Off"
 			android:title="Night mode" 
 			android:summary="Use a dark theme, and also use inverted rendering in the viewer (Black becomes white and vice versa)"/>
+
+        <CheckBoxPreference
+            android:key="go_to_main_list_on_click"
+            android:defaultValue="false"
+            android:title="Go to main list when 'Save completed' notification tapped"
+            android:summary="Otherwise, view the saved page directly"/>
 		
 		
 		<!--<ListPreference
