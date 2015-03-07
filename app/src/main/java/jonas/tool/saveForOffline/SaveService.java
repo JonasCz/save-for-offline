@@ -46,6 +46,7 @@ import android.content.Intent;
 import android.app.NotificationManager;
 import android.app.IntentService;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.preference.PreferenceManager;
 import android.database.sqlite.SQLiteDatabase;
 import android.content.ContentValues;
@@ -233,6 +234,14 @@ public class SaveService extends Service {
 
 	}
 
+    private String getLastIdFromDb () {
+        DbHelper mHelper = new DbHelper(SaveService.this);
+        SQLiteDatabase dataBase = mHelper.getWritableDatabase();
+        String sqlStatement = "SELECT * FROM " + DbHelper.TABLE_NAME + " ORDER BY " + DbHelper.KEY_ID + " DESC";
+        Cursor cursor = dataBase.rawQuery(sqlStatement, null);
+        cursor.moveToFirst();
+        return cursor.getString(cursor.getColumnIndexOrThrow(DbHelper.KEY_ID));
+    }
 	private void addToDb() {
 
 		//dont want to put it in the database multiple times
@@ -240,8 +249,8 @@ public class SaveService extends Service {
 		
 		lt.i("Adding to db...");
 
-		DbHelper mHelper = new DbHelper(SaveService.this);
-		SQLiteDatabase dataBase = mHelper.getWritableDatabase();
+        DbHelper mHelper = new DbHelper(SaveService.this);
+        SQLiteDatabase dataBase = mHelper.getWritableDatabase();
 		ContentValues values=new ContentValues();
 
 		
@@ -262,9 +271,14 @@ public class SaveService extends Service {
 	
 	private void notifyFinished () {
 		
-		Intent notificationIntent = new Intent(this, MainActivity.class);
+		Intent notificationIntent = new Intent(this, ViewActivity.class);
+        notificationIntent.putExtra("orig_url", origurl);
+        notificationIntent.putExtra("title", GrabUtility.title);
+        notificationIntent.putExtra("id", getLastIdFromDb());
+        notificationIntent.putExtra("thumbnailLocation", "file://" + destinationDirectory + "index.html");
+        notificationIntent.putExtra("fileLocation", destinationDirectory + "index.html");
+
 		PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
-		
 		mBuilder
 			.setContentTitle("Save completed.")
 			.setTicker("Saved: " + GrabUtility.title)
