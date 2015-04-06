@@ -205,8 +205,6 @@ public class SaveService extends Service {
             thumbnail = destinationDirectory + "saveForOffline_thumbnail.png";
 
             origurl = intent.getStringExtra("origurl");
-
-
             grabPage(origurl, destinationDirectory);
 
             if (shouldCancel) {
@@ -355,91 +353,67 @@ public class SaveService extends Service {
         GrabUtility.extraCssToGrab.clear();
         GrabUtility.title = "";
 
-        if (url == null || outputDirPath == null) {
-            notifyError("Page not saved", "There was an internal error, this is a bug, so please report it.");
-            throw new IllegalArgumentException();
-        }
+
         if (!url.startsWith("http")) {
             if (url.startsWith("file://")) {
                 notifyError("Bad url", "Cannot save local files. URL must not start with file://");
             } else {
                 notifyError("Bad url", "URL to save must start with http:// or https://");
             }
-            throw new IllegalArgumentException("URL does not have valid protocol part. Must start with http:// or https://");
+            throw new IllegalStateException("URL does not have valid protocol part. Must start with http:// or https://");
         }
 
         File outputDir = new File(outputDirPath);
 
-        if (outputDir.exists() && outputDir.isFile()) {
-            System.out.println("output directory path is wrong, please provide some directory path");
-            return;
-        } else if (!outputDir.exists()) {
-            outputDir.mkdirs();
+        if (!outputDir.exists()) {
+            if (outputDir.mkdirs() == false) {
+                notifyError("Can't save", "SDcard not writable / available");
+                throw new IllegalStateException("SDcard not writable / available");
+
+            }
         }
 
         //download main html and parse -- isExtra parameter should be false
-        lt.i("Download of main HTML...");
         downloadHtmlAndParseLinks(url, outputDirPath, false);
-        failCount = 0;
-
         if (shouldCancel) return;
 
         //download and parse html frames
-        lt.i("Number of HTML frames to download: " + GrabUtility.framesToGrab.size());
-
         //don't change this!
         for (int i = 0; i < GrabUtility.framesToGrab.size(); i++) {
-            lt.i("Started download of 1 frame");
             downloadHtmlAndParseLinks(GrabUtility.framesToGrab.get(i), outputDirPath, true);
             if (shouldCancel) return;
-            lt.i("Finished download of 1 frame");
 
         }
-        lt.i("Finished download of HTML frames.");
-
 
         //download and parse css files
-        lt.i("Number of CSS files to download: " + GrabUtility.cssToGrab.size());
         for (String urlToDownload : GrabUtility.cssToGrab) {
             if (shouldCancel) return;
-            downloadCssAndParseLinks(urlToDownload, outputDirPath);
-            lt.i("--");
-            failCount = 0;
+            downloadCssAndParse(urlToDownload, outputDirPath);
         }
-        lt.i("Finished download of CSS files.");
 
         //download and parse extra css files
         //todo : make this recursive
-        lt.i("Number of extra CSS files to download: " + GrabUtility.extraCssToGrab.size());
         for (String urlToDownload : GrabUtility.extraCssToGrab) {
             if (shouldCancel) return;
-            downloadCssAndParseLinks(urlToDownload, outputDirPath);
-            lt.i("--");
+            downloadCssAndParse(urlToDownload, outputDirPath);
         }
-        lt.i("Finished download of extra CSS files.");
 
         //download extra files, such as images / scripts
         ExecutorService pool = Executors.newFixedThreadPool(10);
-        lt.i("Number of files to download: " + GrabUtility.filesToGrab.size());
+
         for (String urlToDownload : GrabUtility.filesToGrab) {
             if (shouldCancel) return;
             notifyProgress("Saving file: " + urlToDownload.substring(urlToDownload.lastIndexOf("/") + 1), GrabUtility.filesToGrab.size(), GrabUtility.filesToGrab.indexOf(urlToDownload), false);
             pool.submit(new DownloadTask(urlToDownload, outputDir));
-            lt.i("--");
-            failCount = 0;
-
         }
 
         pool.shutdown();
+
         try {
             pool.awaitTermination(5, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-
-        lt.i("Finished download of extra files.");
-        lt.i("Finished downloading HTML page.");
-
     }
 
     private void downloadHtmlAndParseLinks(final String url, final String outputDir, final boolean isExtra) {
@@ -472,8 +446,8 @@ public class SaveService extends Service {
         }
     }
 
-    private void downloadCssAndParseLinks(final String url, final String outputDir) {
-        //todo: one method for saving & parsing both html & css, as they are very similar
+    private void downloadCssAndParse(final String url, final String outputDir) {
+
         FileOutputStream fos = null;
 
         String filename = GrabUtility.getFileName(url);
@@ -499,21 +473,15 @@ public class SaveService extends Service {
     private static class DownloadTask implements Runnable {
 
         private String url;
-        private File toPath;
+        private File outputDir;
 
         public DownloadTask(String url, File toPath) {
             this.url = url;
-            this.toPath = toPath;
+            this.outputDir = toPath;
         }
 
         @Override
         public void run() {
-
-            downloadFile(url, toPath);
-        }
-
-        private void downloadFile(final String url, final File outputDir) {
-
             String filename = GrabUtility.getFileName(url);
             File outputFile = new File(outputDir, filename);
             if (outputFile.exists()) {
@@ -544,7 +512,6 @@ public class SaveService extends Service {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
         }
     }
 
@@ -614,6 +581,7 @@ class GrabUtility{
 		URL fromHTMLPageUrl;
 		boolean noBaseUrl = false;
 		try {
+            //todo: fixme
 			fromHTMLPageUrl = new URL(baseUrl);
 			noBaseUrl = false;
 			lt.e(lt.COMPONENT_HTML_PARSER, "Setting base url");
@@ -636,7 +604,7 @@ class GrabUtility{
 			
 			parsedHtml.outputSettings().escapeMode(Entities.EscapeMode.extended);
 
-			if (title == "") {
+			if (title.equals("")) {
 				title = parsedHtml.title();
 				lt.i(lt.COMPONENT_HTML_PARSER, "Got title");
 			}
@@ -802,6 +770,7 @@ class GrabUtility{
 		lt.i(lt.COMPONENT_CSS_PARSER, "Found " + count + " URLs in CSS");
 		
 		// find css linked with @import  -  needs testing
+        //todo: test this
 		String importString = "@(import\\s*['\"])()([^ '\"]*)";
 		pattern = Pattern.compile(importString); 
 		matcher = pattern.matcher(cssToParse);
@@ -823,6 +792,7 @@ class GrabUtility{
 		return cssToParse;
 	}
 
+    //todo:make sure this is not used inapropriately.
 	public static final void addLinkToList(String link) {
 		if (!filesToGrab.contains(link)) {
 			filesToGrab.add(link);		

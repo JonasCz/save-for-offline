@@ -115,6 +115,7 @@
 			<PreferenceCategory
 				android:title="Error handling">
 				<ListPreference
+                    android:enabled="false"
 					android:key="max_number_of_retries"
 					android:title="Maximum number of retries"
 					android:defaultValue="5"
