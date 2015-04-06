@@ -26,218 +26,212 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jonas.tool.saveForOffline;
 
-import java.net.URL;
-import java.util.List;
-import java.util.StringTokenizer;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.net.HttpURLConnection;
-import org.jsoup.nodes.Document;
-import org.jsoup.Jsoup;
-import org.jsoup.select.Elements;
-import org.jsoup.nodes.Element;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
-import java.net.MalformedURLException;
-import org.jsoup.nodes.Entities;
-import java.util.concurrent.TimeUnit;
 import android.app.Notification;
-import android.content.Intent;
 import android.app.NotificationManager;
-import android.app.IntentService;
+import android.app.PendingIntent;
+import android.app.Service;
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.preference.PreferenceManager;
 import android.database.sqlite.SQLiteDatabase;
-import android.content.ContentValues;
-import android.app.PendingIntent;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.IOException;
-import android.content.Context;
-import android.util.Log;
 import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
 import android.os.HandlerThread;
 import android.os.IBinder;
-import android.app.Service;
+import android.os.Looper;
+import android.os.Message;
 import android.os.Process;
+import android.preference.PreferenceManager;
+import android.util.Log;
+
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.Response;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Entities;
+import org.jsoup.select.Elements;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class SaveService extends Service {
 
-	private String destinationDirectory;
-	private String thumbnail;
-	private String origurl;
-	
-	private String uaString;
-	private boolean wasAddedToDb = false;
-	
-	private int failCount = 0;
+    private String destinationDirectory;
+    private String thumbnail;
+    private String origurl;
 
-	private int notification_id = 1;
-	private Notification.Builder mBuilder;
-	private NotificationManager mNotificationManager;
-	
-	private int waitingIntentCount = 0;
-	
-	private boolean shouldCancel = false;
-	
-	private Looper mServiceLooper;
-	private ServiceHandler mServiceHandler;
-	private Message msg;
+    private String uaString;
+    private boolean wasAddedToDb = false;
+
+    private int failCount = 0;
+
+    private int notification_id = 1;
+    private Notification.Builder mBuilder;
+    private NotificationManager mNotificationManager;
+
+    private int waitingIntentCount = 0;
+
+    private boolean shouldCancel = false;
+
+    private Looper mServiceLooper;
+    private ServiceHandler mServiceHandler;
+    private Message msg;
     private boolean shouldGoToMainListOnNotificationClick = false;
 
     @Override
-	public void onCreate() {
+    public void onCreate() {
 
-		HandlerThread thread = new HandlerThread("ServiceStartArguments", Process.THREAD_PRIORITY_BACKGROUND);
-		thread.start();
+        HandlerThread thread = new HandlerThread("ServiceStartArguments", Process.THREAD_PRIORITY_BACKGROUND);
+        thread.start();
 
-		// Get the HandlerThread's Looper and use it for our Handler 
-		mServiceLooper = thread.getLooper();
+        // Get the HandlerThread's Looper and use it for our Handler
+        mServiceLooper = thread.getLooper();
 
-		mServiceHandler = new ServiceHandler(mServiceLooper);
-	}
+        mServiceHandler = new ServiceHandler(mServiceLooper);
+    }
 
-	@Override
-	public int onStartCommand(Intent intent, int flags, int startId) {
-		
-		if (intent.getBooleanExtra("shouldCancel", false)) {
-			shouldCancel = true;
-			mBuilder
-				.setContentText("Please wait...")
-				.setContentTitle("Cancelling...")
-				.setAutoCancel(true)
-				.setOngoing(false)
-				.setProgress(0,0,false);
-			mNotificationManager.notify(notification_id, mBuilder.build());
-			return 0;
-			
-		} else {
-		
-		waitingIntentCount++;
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
 
-		// For each start request, send a message to start a job and deliver the
-		// start ID so we know which request we're stopping when we finish the job
-		msg = mServiceHandler.obtainMessage();
-		msg.arg1 = startId;
-		msg.obj = intent;
-		mServiceHandler.sendMessage(msg);
+        if (intent.getBooleanExtra("shouldCancel", false)) {
+            shouldCancel = true;
+            mBuilder
+                    .setContentText("Please wait...")
+                    .setContentTitle("Cancelling...")
+                    .setAutoCancel(true)
+                    .setOngoing(false)
+                    .setProgress(0, 0, false);
+            mNotificationManager.notify(notification_id, mBuilder.build());
+            return 0;
 
-		return START_NOT_STICKY;
-		}
-	}
+        } else {
 
-	@Override
-	public IBinder onBind(Intent intent) {
-		// We don't provide binding, so return null
-		return null;
-	}
+            waitingIntentCount++;
 
-	private final class ServiceHandler extends Handler {
-		public ServiceHandler(Looper looper) {
-			super(looper);
-		}
-		@Override
-		public void handleMessage(final Message msg) {
-			shouldCancel = false;
-			Intent intent = (Intent) msg.obj;
-			if (intent.getBooleanExtra("shouldCancel", false)) {
-				return;
-			}
-			waitingIntentCount--;
-			wasAddedToDb = false;
+            // For each start request, send a message to start a job and deliver the
+            // start ID so we know which request we're stopping when we finish the job
+            msg = mServiceHandler.obtainMessage();
+            msg.arg1 = startId;
+            msg.obj = intent;
+            mServiceHandler.sendMessage(msg);
 
-			Intent notificationIntent = new Intent(SaveService.this, SaveService.class);
-			notificationIntent.putExtra("shouldCancel", true);
-			PendingIntent pendingIntent = PendingIntent.getService(SaveService.this, 0, notificationIntent, 0);
+            return START_NOT_STICKY;
+        }
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        // We don't provide binding, so return null
+        return null;
+    }
+
+    private final class ServiceHandler extends Handler {
+        public ServiceHandler(Looper looper) {
+            super(looper);
+        }
+
+        @Override
+        public void handleMessage(final Message msg) {
+            shouldCancel = false;
+            Intent intent = (Intent) msg.obj;
+            if (intent.getBooleanExtra("shouldCancel", false)) {
+                return;
+            }
+            waitingIntentCount--;
+            wasAddedToDb = false;
+
+            Intent notificationIntent = new Intent(SaveService.this, SaveService.class);
+            notificationIntent.putExtra("shouldCancel", true);
+            PendingIntent pendingIntent = PendingIntent.getService(SaveService.this, 0, notificationIntent, 0);
 
 
-			mBuilder = new Notification.Builder(SaveService.this)
-				.setContentTitle("Saving webpage...")
-				.setTicker("Saving webpage...")
-				.setSmallIcon(android.R.drawable.stat_sys_download)
-				.setProgress(0, 0, true)
-				.setOngoing(true)
-				.setOnlyAlertOnce(true)
-				.setPriority(Notification.PRIORITY_HIGH)
-				.setContentText("Save in progress: getting ready...")
-				.addAction(R.drawable.ic_action_discard, "Cancel current", pendingIntent);
+            mBuilder = new Notification.Builder(SaveService.this)
+                    .setContentTitle("Saving webpage...")
+                    .setTicker("Saving webpage...")
+                    .setSmallIcon(android.R.drawable.stat_sys_download)
+                    .setProgress(0, 0, true)
+                    .setOngoing(true)
+                    .setOnlyAlertOnce(true)
+                    .setPriority(Notification.PRIORITY_HIGH)
+                    .setContentText("Save in progress: getting ready...")
+                    .addAction(R.drawable.ic_action_discard, "Cancel current", pendingIntent);
 
-			mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-			mNotificationManager.notify(notification_id, mBuilder.build());
+            mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            mNotificationManager.notify(notification_id, mBuilder.build());
 
-			SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(SaveService.this);
-			String ua = sharedPref.getString("user_agent", "mobile");
+            SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(SaveService.this);
+            String ua = sharedPref.getString("user_agent", "mobile");
 
             shouldGoToMainListOnNotificationClick = sharedPref.getBoolean("go_to_main_list_on_click", false);
 
-			lt.shouldLogDebug = sharedPref.getBoolean("enable_logging", false);
-			lt.shouldLogErrors = sharedPref.getBoolean("enable_logging_error", true);
+            lt.shouldLogDebug = sharedPref.getBoolean("enable_logging", false);
+            lt.shouldLogErrors = sharedPref.getBoolean("enable_logging_error", true);
 
-			GrabUtility.makeLinksAbsolute = sharedPref.getBoolean("make_links_absolute", true);
-			GrabUtility.maxRetryCount = Integer.parseInt(sharedPref.getString("max_number_of_retries", "5"));
-			GrabUtility.saveFrames = sharedPref.getBoolean("save_frames", true);
-			GrabUtility.saveImages = sharedPref.getBoolean("save_images", true);
-			GrabUtility.saveOther = sharedPref.getBoolean("save_other", true);
-			GrabUtility.saveScripts = sharedPref.getBoolean("save_scripts", true);
-			GrabUtility.saveVideo = sharedPref.getBoolean("save_video", true);
+            GrabUtility.makeLinksAbsolute = sharedPref.getBoolean("make_links_absolute", true);
+            GrabUtility.maxRetryCount = Integer.parseInt(sharedPref.getString("max_number_of_retries", "5"));
+            GrabUtility.saveFrames = sharedPref.getBoolean("save_frames", true);
+            GrabUtility.saveImages = sharedPref.getBoolean("save_images", true);
+            GrabUtility.saveOther = sharedPref.getBoolean("save_other", true);
+            GrabUtility.saveScripts = sharedPref.getBoolean("save_scripts", true);
+            GrabUtility.saveVideo = sharedPref.getBoolean("save_video", true);
 
-			if (ua.equals("desktop")) {
-				uaString = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.517 Safari/537.36";
+            if (ua.equals("desktop")) {
+                uaString = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.517 Safari/537.36";
 
-			} else if (ua.equals("ipad")) {
-				uaString = "iPad ipad safari";
+            } else if (ua.equals("ipad")) {
+                uaString = "iPad ipad safari";
 
-			} else {
-				uaString = "Mozilla/5.0 (Linux; U; Android 4.2.2; en-us; Phone Build/IML74K) AppleWebkit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30";
-			}
+            } else {
+                uaString = "Mozilla/5.0 (Linux; U; Android 4.2.2; en-us; Phone Build/IML74K) AppleWebkit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30";
+            }
 
 
+            destinationDirectory = DirectoryHelper.getUnpackedDir();
+            thumbnail = destinationDirectory + "saveForOffline_thumbnail.png";
 
-			destinationDirectory = DirectoryHelper.getUnpackedDir();
-			thumbnail = destinationDirectory + "saveForOffline_thumbnail.png";
+            origurl = intent.getStringExtra("origurl");
 
-			origurl = intent.getStringExtra("origurl");
 
-			try {
-				grabPage(origurl, destinationDirectory);
-			} catch (Exception e) {
-				lt.e("Exception in onHandeIntent, returning!");
-				e.printStackTrace();
-				//if we crash, delete all files saved so far
-				File file = new File(destinationDirectory);
-				DirectoryHelper.deleteDirectory(file);
-				return;
-			}
-			
-			if (shouldCancel) {
-				mNotificationManager.cancelAll();
-				File file = new File(destinationDirectory);
-				DirectoryHelper.deleteDirectory(file);
-				return;
-			}
-			notifyProgress("Adding to list...", 100, 97, false);
+            grabPage(origurl, destinationDirectory);
 
-			addToDb();
+            if (shouldCancel) {
+                mNotificationManager.cancelAll();
+                File file = new File(destinationDirectory);
+                DirectoryHelper.deleteDirectory(file);
+                return;
+            }
+            notifyProgress("Adding to list...", 100, 97, false);
 
-			Intent i = new Intent(SaveService.this, ScreenshotService.class);
-			i.putExtra("origurl", "file://" + destinationDirectory + "index.html");
-			i.putExtra("thumbnail", thumbnail);
-			startService(i);
+            addToDb();
 
-			notifyFinished();
+            Intent i = new Intent(SaveService.this, ScreenshotService.class);
+            i.putExtra("origurl", "file://" + destinationDirectory + "index.html");
+            i.putExtra("thumbnail", thumbnail);
+            startService(i);
 
-			lt.i("Finished");
-		}
+            notifyFinished();
 
-	}
+            lt.i("Finished");
+        }
 
-    private String getLastIdFromDb () {
+    }
+
+    private String getLastIdFromDb() {
         DbHelper mHelper = new DbHelper(SaveService.this);
         SQLiteDatabase dataBase = mHelper.getWritableDatabase();
         String sqlStatement = "SELECT * FROM " + DbHelper.TABLE_NAME + " ORDER BY " + DbHelper.KEY_ID + " DESC";
@@ -245,34 +239,35 @@ public class SaveService extends Service {
         cursor.moveToFirst();
         return cursor.getString(cursor.getColumnIndexOrThrow(DbHelper.KEY_ID));
     }
-	private void addToDb() {
 
-		//dont want to put it in the database multiple times
-		if (wasAddedToDb) return;
-		
-		lt.i("Adding to db...");
+    private void addToDb() {
+
+        //dont want to put it in the database multiple times
+        if (wasAddedToDb) return;
+
+        lt.i("Adding to db...");
 
         DbHelper mHelper = new DbHelper(SaveService.this);
         SQLiteDatabase dataBase = mHelper.getWritableDatabase();
-		ContentValues values=new ContentValues();
+        ContentValues values = new ContentValues();
 
-		
-		values.put(DbHelper.KEY_FILE_LOCATION, destinationDirectory + "index.html");
 
-		values.put(DbHelper.KEY_TITLE, GrabUtility.title);
-		values.put(DbHelper.KEY_THUMBNAIL, thumbnail);
-		values.put(DbHelper.KEY_ORIG_URL, origurl);
+        values.put(DbHelper.KEY_FILE_LOCATION, destinationDirectory + "index.html");
 
-		//insert data into database
-		dataBase.insert(DbHelper.TABLE_NAME, null, values);
+        values.put(DbHelper.KEY_TITLE, GrabUtility.title);
+        values.put(DbHelper.KEY_THUMBNAIL, thumbnail);
+        values.put(DbHelper.KEY_ORIG_URL, origurl);
 
-		//close database
-		dataBase.close();
+        //insert data into database
+        dataBase.insert(DbHelper.TABLE_NAME, null, values);
 
-		wasAddedToDb = true;
-	}
-	
-	private void notifyFinished () {
+        //close database
+        dataBase.close();
+
+        wasAddedToDb = true;
+    }
+
+    private void notifyFinished() {
 
         Intent notificationIntent;
 
@@ -289,608 +284,299 @@ public class SaveService extends Service {
 
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
 
-		mBuilder
-			.setContentTitle("Save completed.")
-			.setTicker("Saved: " + GrabUtility.title)
-			.setSmallIcon(R.drawable.ic_notify_save)
-			.setOngoing(false)
-			.setProgress(0,0,false)
-			.setOnlyAlertOnce(false)
-			.setContentIntent(pendingIntent)
-			.setAutoCancel(true)
-			.setPriority(Notification.PRIORITY_LOW)
-			.setContentText(GrabUtility.title);
-		mNotificationManager.notify(notification_id, mBuilder.build());
-	}
-	
-	
-	private void notifyProgress(String filename, int maxProgress, int progress, boolean indeterminate) {
-		//progress updates are sent here
-		if (waitingIntentCount == 0) {
-			mBuilder
-				.setContentTitle("Saving webpage...")
-				.setContentText(filename)
-				.setProgress(maxProgress, progress, indeterminate);
-		} else {
-			int intentCount = waitingIntentCount + 1;
-			mBuilder
-				.setContentTitle("Saving " + intentCount + " webpages...")
-				.setContentText(filename)
-				.setProgress(maxProgress, progress, indeterminate);
-		}
-		
-		mNotificationManager.notify(notification_id, mBuilder.build());
-	}
+        mBuilder
+                .setContentTitle("Save completed.")
+                .setTicker("Saved: " + GrabUtility.title)
+                .setSmallIcon(R.drawable.ic_notify_save)
+                .setOngoing(false)
+                .setProgress(0, 0, false)
+                .setOnlyAlertOnce(false)
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true)
+                .setPriority(Notification.PRIORITY_LOW)
+                .setContentText(GrabUtility.title);
+        mNotificationManager.notify(notification_id, mBuilder.build());
+    }
 
 
-	private void notifyError(String message, String extraMessage) {
-		//if message == null, we can't continue
-		//otherwise, the error is not fatal and we can continue anyway
-		//this tells the user if this is so
-		if (message != null) {
-			Intent notificationIntent = new Intent(this, SaveService.class);
-			notificationIntent.putExtra("origurl", origurl);
-			PendingIntent pendingIntent = PendingIntent.getService(this, 0, notificationIntent, 0);
-			
-			mBuilder
-				.setContentText(extraMessage)
-				.setOnlyAlertOnce(false)
-				.setTicker("Could not save page!")
-				.setSmallIcon(android.R.drawable.stat_sys_warning)
-				.setContentTitle(message + " Tap to retry.")
-				.setContentIntent(pendingIntent)
-				.setAutoCancel(true)
-				.setOngoing(false)
-				.setProgress(0,0,false);
+    private void notifyProgress(String filename, int maxProgress, int progress, boolean indeterminate) {
+        //progress updates are sent here
+        if (waitingIntentCount == 0) {
+            mBuilder
+                    .setContentTitle("Saving webpage...")
+                    .setContentText(filename)
+                    .setProgress(maxProgress, progress, indeterminate);
+        } else {
+            int intentCount = waitingIntentCount + 1;
+            mBuilder
+                    .setContentTitle("Saving " + intentCount + " webpages...")
+                    .setContentText(filename)
+                    .setProgress(maxProgress, progress, indeterminate);
+        }
 
-		} else {
-			mBuilder
-				.setContentText(extraMessage);
-		}
-		mNotificationManager.notify(notification_id, mBuilder.build());
+        mNotificationManager.notify(notification_id, mBuilder.build());
+    }
 
 
-	}
-	
-	private void grabPage(String url, String outputDirPath) throws Exception {
+    private void notifyError(String message, String extraMessage) {
+        //if message == null, we can't continue
+        //otherwise, the error is not fatal and we can continue anyway
+        //this tells the user if this is so
+        if (message != null) {
+            Intent notificationIntent = new Intent(this, SaveService.class);
+            notificationIntent.putExtra("origurl", origurl);
+            PendingIntent pendingIntent = PendingIntent.getService(this, 0, notificationIntent, 0);
 
-		GrabUtility.filesToGrab.clear();
-		GrabUtility.framesToGrab.clear();
-		GrabUtility.cssToGrab.clear();
-		GrabUtility.extraCssToGrab.clear();
-		GrabUtility.title = "";
-		
-        if(url == null || outputDirPath == null){
-        	notifyError("Page not saved", "There was an internal error, this is a bug, so please report it.");
-	        throw new IllegalArgumentException();
-		}
-		if(!url.startsWith("http")){
-			if (url.startsWith("file://")) {
-				notifyError("Bad url","Cannot save local files. URL must not start with file://");
-			} else {
-				notifyError("Bad url","URL to save must start with http:// or https://");
-			}
-			throw new IllegalArgumentException("URL does not have valid protocol part. Must start with http:// or https://");
-		}
-		
-		File outputDir = new File(outputDirPath);
-		
-		if(outputDir.exists() && outputDir.isFile()){
-			System.out.println("output directory path is wrong, please provide some directory path");
-			return;
-		} else if (!outputDir.exists()){
-			outputDir.mkdirs();
-		}
-		
-		//download main html and parse -- isExtra parameter should be false
-		lt.i("Download of main HTML...");
-		downloadHtmlAndParseLinks(url, outputDirPath, false);
-		failCount = 0;
-		
-		if (shouldCancel) return;
-		
-		//download and parse html frames
-		lt.i("Number of HTML frames to download: " + GrabUtility.extraCssToGrab.size());
-		for (String urlToDownload: GrabUtility.framesToGrab) {
-			downloadHtmlAndParseLinks(urlToDownload, outputDirPath, true);
-			if (shouldCancel) return;
-			lt.i("--");
-			failCount = 0;
-		}
-		lt.i("Finished download of HTML frames.");
-		
-		
-		//download and parse css files
-		lt.i("Number of CSS files to download: " + GrabUtility.extraCssToGrab.size());
-		for (String urlToDownload: GrabUtility.cssToGrab) {
-			if (shouldCancel) return;
-			downloadCssAndParseLinks(urlToDownload, outputDirPath);
-			lt.i("--");
-			failCount = 0;	
-		}
-		lt.i("Finished download of CSS files.");
-		
-		//download and parse extra css files
-		//todo : make this recursive
-		lt.i("Number of extra CSS files to download: " + GrabUtility.extraCssToGrab.size());
-		for (String urlToDownload: GrabUtility.extraCssToGrab) {
-			if (shouldCancel) return;
-			downloadCssAndParseLinks(urlToDownload, outputDirPath);
-			lt.i("--");
-			failCount = 0;
-		}
-		lt.i("Finished download of extra CSS files.");
+            mBuilder
+                    .setContentText(extraMessage)
+                    .setOnlyAlertOnce(false)
+                    .setTicker("Could not save page!")
+                    .setSmallIcon(android.R.drawable.stat_sys_warning)
+                    .setContentTitle(message + " Tap to retry.")
+                    .setContentIntent(pendingIntent)
+                    .setAutoCancel(true)
+                    .setOngoing(false)
+                    .setProgress(0, 0, false);
 
-		//download extra files, such as images / scripts
-		lt.i("Number of files to download: " + GrabUtility.filesToGrab.size());
-		for (String urlToDownload: GrabUtility.filesToGrab) {
-			if (shouldCancel) return;
-			notifyProgress("Saving file: " + urlToDownload.substring(urlToDownload.lastIndexOf("/") + 1), GrabUtility.filesToGrab.size(), GrabUtility.filesToGrab.indexOf(urlToDownload), false);
-			getExtraFile(urlToDownload, outputDir);
-			lt.i("--");		
-			failCount = 0;
-	
-		}
-		
-		lt.i("Finished download of extra files.");
-		lt.i("Finished downloading HTML page.");
+        } else {
+            mBuilder
+                    .setContentText(extraMessage);
+        }
+        mNotificationManager.notify(notification_id, mBuilder.build());
 
-	}
-	
-	private void downloadHtmlAndParseLinks (final String url, final String outputDir, final boolean isExtra) throws IOException {
-		//isExtra should be true when saving a html frame file.
-		FileOutputStream fop = null;
-		BufferedReader in = null;
-		HttpURLConnection conn = null;
-		File outputFile = null;
-		InputStream is = null;
-		String filename;
-		
-		if (isExtra) {
-			filename = GrabUtility.getFileName(url);
-		} else {
-			filename = "index.html";
-		}
-		
-		if (isExtra) {
-			notifyProgress("Downloading extra HTML file", 100, 5, true);
-		} else {
-			notifyProgress("Downloading main HTML file", 100, 5, true);
-		}
-	
-		try {
-			
-			String baseUrl;
-			if(url.endsWith("/")){
-				baseUrl = url + "index.html";
-			} else {
-				baseUrl = url;
-			}
-			
-			URL obj = new URL(url);
-			
-			//Output file name
-			outputFile = new File(outputDir, filename);
 
-			conn = (HttpURLConnection) obj.openConnection();
-			conn.setReadTimeout(5000);
-			conn.addRequestProperty("User-Agent", uaString);
+    }
 
-			boolean redirect = false;
+    private void grabPage(String url, String outputDirPath) {
 
-			// normally, 3xx is redirect
-			int status = conn.getResponseCode();
-			System.out.println(status);
-			if (status != HttpURLConnection.HTTP_OK) {
-				if (status == HttpURLConnection.HTTP_MOVED_TEMP
-					|| status == HttpURLConnection.HTTP_MOVED_PERM
-					|| status == HttpURLConnection.HTTP_SEE_OTHER){
-					redirect = true;
-//				} else if (status == HttpURLConnection.HTTP_UNAUTHORIZED ||
-//						   status == HttpURLConnection.HTTP_ACCEPTED ||
-//						   status == HttpURLConnection.HTTP_CREATED ||
-//						   status == HttpURLConnection.HTTP_NOT_FOUND ||
-//						   status == HttpURLConnection.HTTP_FORBIDDEN)
-//							{
-//								notifyError(null, "Possibe error. HTTP status code: " + status);
-//							   
-//				} else {
-//					if (isExtra) {
-//						notifyError(null, "Failed to download extra HTML file. HTTP status code: " + status);
-//						return;
-//					} else {
-//						notifyError("Could not save page", "Failed to download main HTML file. HTTP status code: " + status);
-//						throw new IOException("HTTP status not ok. status: " + status);
-//					}
-					
-				}
-			}
+        GrabUtility.filesToGrab.clear();
+        GrabUtility.framesToGrab.clear();
+        GrabUtility.cssToGrab.clear();
+        GrabUtility.extraCssToGrab.clear();
+        GrabUtility.title = "";
 
-			if (redirect) {
-				// get redirect url from "location" header field
-				String newUrl = conn.getHeaderField("Location");
-				
-				// get the cookie if need, for login
-				String cookies = conn.getHeaderField("Set-Cookie");
+        if (url == null || outputDirPath == null) {
+            notifyError("Page not saved", "There was an internal error, this is a bug, so please report it.");
+            throw new IllegalArgumentException();
+        }
+        if (!url.startsWith("http")) {
+            if (url.startsWith("file://")) {
+                notifyError("Bad url", "Cannot save local files. URL must not start with file://");
+            } else {
+                notifyError("Bad url", "URL to save must start with http:// or https://");
+            }
+            throw new IllegalArgumentException("URL does not have valid protocol part. Must start with http:// or https://");
+        }
 
-				// open the new connnection again
-				obj =  new URL(newUrl);
-				conn = (HttpURLConnection) obj.openConnection();
-				conn.setRequestProperty("Cookie", cookies);
-				conn.addRequestProperty("User-Agent", uaString);
-			}
+        File outputDir = new File(outputDirPath);
 
-			// if file doesn't exists, then create it
-			if (!outputFile.exists()) {
-				outputFile.createNewFile();
-			}
-			// can we write this file
-			if(!outputFile.canWrite()){
-				if (isExtra) {
-					notifyError("Could not save page", "Cannot write to file - "+outputFile.getAbsolutePath());
-					System.out.println("Cannot write to file - "+outputFile.getAbsolutePath());
-					return;
-				} else {
-					notifyError("Could not save page", "Cannot write to file - "+outputFile.getAbsolutePath());
-					System.out.println("Cannot write to file - "+outputFile.getAbsolutePath());
-					throw new IOException("Cannont write to file");
-				}
-			}
-			
-			in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-			
-			String inputLine;
-			StringBuilder strResponse = new StringBuilder();
-			// append whole response into single string, save it into a file on storage
-			// if its of type html then parse it and get all css and images and javascript files
-			// and add them to filesToGrab list
-			while ((inputLine = in.readLine()) != null) {
-				strResponse.append(inputLine);
-				strResponse.append("\r\n");
-			}
-			
-			if (isExtra) {
-				notifyProgress("Processing extra HTML file", 100, 5, true);
-			} else {
-				notifyProgress("Processing main HTML file", 100, 5, true);
-			}
-			
-			String htmlContent = strResponse.toString();
-			htmlContent = GrabUtility.parseHtmlForLinks(htmlContent, baseUrl);
-			outputFile = new File(outputDir, filename);
+        if (outputDir.exists() && outputDir.isFile()) {
+            System.out.println("output directory path is wrong, please provide some directory path");
+            return;
+        } else if (!outputDir.exists()) {
+            outputDir.mkdirs();
+        }
 
-			fop = new FileOutputStream(outputFile);
-			fop.write(htmlContent.getBytes());
-			fop.flush();
-		
-			
-			failCount = 0;
-		} catch (Exception e) {
-			e.printStackTrace();
-			failCount++;
+        //download main html and parse -- isExtra parameter should be false
+        lt.i("Download of main HTML...");
+        downloadHtmlAndParseLinks(url, outputDirPath, false);
+        failCount = 0;
 
-			if (isExtra) {
-				if (GrabUtility.maxRetryCount >= failCount) {
-					notifyError(null, "Failed to download extra HTML file, retrying. Fail count: " + failCount );
-					tools.waitForInternet();
-					downloadHtmlAndParseLinks(url, outputDir, isExtra);
-				} else {
-					notifyError(null, "Failed to download extra HTML file.");
-					return;
-				}
-			} else {
-				if (GrabUtility.maxRetryCount >= failCount) {
-					notifyError(null, "Failed to download main HTML file, retrying. Fail count: " + failCount );
-					tools.waitForInternet();
-					downloadHtmlAndParseLinks(url, outputDir, isExtra);
-				} else {
-					notifyError("Could not save page", "Failed to download main HTML file.");
-					throw new IOException();
-				}
-			}
-			
+        if (shouldCancel) return;
 
-		} finally {
-			if(conn != null) {
-				conn.disconnect();
-			}
-			if(is != null){
-				try {
-					is.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-					lt.e(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Exception while input stream!");
-				}
-			}
-			if(in != null){
-				try {
-					in.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-					lt.e(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Exception while closing input reader streams!");
-				}
-			}
-			if (fop != null) {
-				try {
-					fop.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-					lt.e(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Exception while closing file output streams!");
-				}
-			}
-		}
-	}
-	
-	private void downloadCssAndParseLinks (final String url, final String outputDir) {
-		//todo: one method for saving & parsing both html & css, as they are very similar
-		FileOutputStream fop = null;
-		BufferedReader in = null;
-		HttpURLConnection conn = null;
-		File outputFile = null;
-		InputStream is = null;
-		String filename = GrabUtility.getFileName(url);
-		notifyProgress("Downloading CSS file", 100, 5, true);
+        //download and parse html frames
+        lt.i("Number of HTML frames to download: " + GrabUtility.framesToGrab.size());
 
-		try {
-			lt.i(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Preparing to download css file");
-			URL obj = new URL(url);
+        //don't change this!
+        for (int i = 0; i < GrabUtility.framesToGrab.size(); i++) {
+            lt.i("Started download of 1 frame");
+            downloadHtmlAndParseLinks(GrabUtility.framesToGrab.get(i), outputDirPath, true);
+            if (shouldCancel) return;
+            lt.i("Finished download of 1 frame");
 
-			outputFile = new File(outputDir, filename);
-			
-			conn = (HttpURLConnection) obj.openConnection();
-			conn.setReadTimeout(5000);
-			conn.addRequestProperty("User-Agent", uaString);
-			boolean redirect = false;
+        }
+        lt.i("Finished download of HTML frames.");
 
-			//catch possible redirect, normally, 3xx is redirect
-			int status = conn.getResponseCode();
-			lt.i(lt.COMPONENT_CSS_FILE_DOWNLOADER, "HTTP status: " + status);
-			if (status != HttpURLConnection.HTTP_OK) {
-				if (status == HttpURLConnection.HTTP_MOVED_TEMP
-					|| status == HttpURLConnection.HTTP_MOVED_PERM
-					|| status == HttpURLConnection.HTTP_SEE_OTHER){
-					redirect = true;
-				}else{
-					notifyError(null, "Failed to download CSS file. HTTP status code: " + status);
-					lt.i(lt.COMPONENT_CSS_FILE_DOWNLOADER, "HTTP status code: not nok " + status);
-				}
-			}
 
-			if (redirect) {
-				// get redirect url from "location" header field
-				String newUrl = conn.getHeaderField("Location");
+        //download and parse css files
+        lt.i("Number of CSS files to download: " + GrabUtility.cssToGrab.size());
+        for (String urlToDownload : GrabUtility.cssToGrab) {
+            if (shouldCancel) return;
+            downloadCssAndParseLinks(urlToDownload, outputDirPath);
+            lt.i("--");
+            failCount = 0;
+        }
+        lt.i("Finished download of CSS files.");
 
-				// get the cookie if need, for login
-				String cookies = conn.getHeaderField("Set-Cookie");
+        //download and parse extra css files
+        //todo : make this recursive
+        lt.i("Number of extra CSS files to download: " + GrabUtility.extraCssToGrab.size());
+        for (String urlToDownload : GrabUtility.extraCssToGrab) {
+            if (shouldCancel) return;
+            downloadCssAndParseLinks(urlToDownload, outputDirPath);
+            lt.i("--");
+        }
+        lt.i("Finished download of extra CSS files.");
 
-				// open the new connnection again
-				obj =  new URL(newUrl);
-				conn = (HttpURLConnection) obj.openConnection();
-				conn.setRequestProperty("Cookie", cookies);
-				conn.addRequestProperty("User-Agent", uaString);
-				
-				lt.i(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Redirect to URL: " + newUrl);
-			}
+        //download extra files, such as images / scripts
+        ExecutorService pool = Executors.newFixedThreadPool(10);
+        lt.i("Number of files to download: " + GrabUtility.filesToGrab.size());
+        for (String urlToDownload : GrabUtility.filesToGrab) {
+            if (shouldCancel) return;
+            notifyProgress("Saving file: " + urlToDownload.substring(urlToDownload.lastIndexOf("/") + 1), GrabUtility.filesToGrab.size(), GrabUtility.filesToGrab.indexOf(urlToDownload), false);
+            pool.submit(new DownloadTask(urlToDownload, outputDir));
+            lt.i("--");
+            failCount = 0;
 
-			// if file doesn't exists, then create it
-			if (!outputFile.exists()) {
-				outputFile.createNewFile();
-			}
-			// can we write this file
-			if(!outputFile.canWrite()){
-				
-				notifyError("Could not save page", "Cannot write to file - "+outputFile.getAbsolutePath());
-				lt.e(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Cannot write to file - "+outputFile.getAbsolutePath());
-				return;
-			
-			}
+        }
 
-			lt.i(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Getting input stream...");
-			in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+        pool.shutdown();
+        try {
+            pool.awaitTermination(5, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
-			String inputLine;
-			StringBuilder strResponse = new StringBuilder();
-			
-			while ((inputLine = in.readLine()) != null) {
-				strResponse.append(inputLine);
-				strResponse.append("\r\n");
-			}
+        lt.i("Finished download of extra files.");
+        lt.i("Finished downloading HTML page.");
 
-			
-			notifyProgress("Processing CSS file", 100, 5, true);
+    }
 
-			String cssContent = strResponse.toString();
+    private void downloadHtmlAndParseLinks(final String url, final String outputDir, final boolean isExtra) {
+        //isExtra should be true when saving a html frame file.
 
-			//parse for links and convert to relative links
-			lt.i(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Will now parse CSS");
-			cssContent = GrabUtility.parseCssForLinks(cssContent, url);
+        String filename;
 
-			outputFile = new File(outputDir, filename);
-			
-			lt.i(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Writing CSS file: " + filename);
-			fop = new FileOutputStream(outputFile);
-			fop.write(cssContent.getBytes());
-			fop.flush();
-			lt.i(lt.COMPONENT_CSS_FILE_DOWNLOADER, "CSS file downloaded.");
-			failCount = 0;
-		
-		
-		} catch (Exception e) {
+        if (isExtra) {
+            filename = GrabUtility.getFileName(url);
+            notifyProgress("Downloading extra HTML file", 100, 5, true);
+        } else {
+            filename = "index.html";
+            notifyProgress("Downloading main HTML file", 100, 5, true);
+        }
 
-			failCount++;
-			e.printStackTrace();
-			
-			if (GrabUtility.maxRetryCount >= failCount) {
-				notifyError(null, "Failed to download CSS file: " + filename+", retrying. Fail count: " + failCount);
-				lt.e(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Failed to download CSS file, retrying: " + filename);
-				tools.waitForInternet();
-				downloadCssAndParseLinks(url, outputDir);
-			} else {
-				notifyError(null, "Failed to download CSS file: " + filename);
-				lt.e(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Failed to download CSS file: " + filename);
-				return;
-			}
-		} finally {
-				if(conn != null) {
-					conn.disconnect();
-				}
-				if(is != null){
-					try {
-						is.close();
-					} catch (IOException e) {
-						e.printStackTrace();
-						lt.e(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Exception while input stream!");
-					}
-				}
-				if(in != null){
-					try {
-						in.close();
-					} catch (IOException e) {
-						e.printStackTrace();
-						lt.e(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Exception while closing input reader streams!");
-					}
-				}
-				if (fop != null) {
-					try {
-						fop.close();
-					} catch (IOException e) {
-						e.printStackTrace();
-						lt.e(lt.COMPONENT_CSS_FILE_DOWNLOADER, "Exception while closing file output streams!");
-					}
-				}
-		}
-	}
+        String baseUrl = url;
+        if (url.endsWith("/")) {
+            baseUrl = url + filename;
+        }
 
-	private void getExtraFile(final String urlToDownload, final File outputDir) {
-		HttpURLConnection connection = null;
-		InputStream is = null;
-		FileOutputStream fos = null;
-		File outputFile = null;
-		
-		URL obj;
-		
-		String filename = GrabUtility.getFileName(urlToDownload);
-		
-		try {
-			lt.i(lt.COMPONENT_EXTRA_FILE_DOWNLOADER, "Preparing to download file: " + filename);
-			obj  = new URL(urlToDownload);
-			
-			if(filename.equals("/") || filename.equals("")){
-				return;
-			}
+        try {
+            String htmlContent = getStringFromUrl(url);
+            htmlContent = GrabUtility.parseHtmlForLinks(htmlContent, baseUrl);
 
-			//Output file name
-			outputFile = new File(outputDir, filename);
-			if (outputFile.exists()) {
-				lt.e(lt.COMPONENT_EXTRA_FILE_DOWNLOADER,"File already exists, skipping: " + filename);
-				return;
-			}
-			lt.i(lt.COMPONENT_EXTRA_FILE_DOWNLOADER,"Opening connection: " + urlToDownload);
-			connection = (HttpURLConnection) obj.openConnection();
-			connection.setReadTimeout(5000);
-			connection.addRequestProperty("User-Agent", uaString);
+            File outputFile = new File(outputDir, filename);
+            saveStringToFile(htmlContent, outputFile);
 
-			boolean redirect = false;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
-			// catch redirect
-			int status = connection.getResponseCode();
-			lt.i(lt.COMPONENT_EXTRA_FILE_DOWNLOADER, "HTTP response status: " + status);
-			if (status != HttpURLConnection.HTTP_OK) {
-				if (status == HttpURLConnection.HTTP_MOVED_TEMP
-					|| status == HttpURLConnection.HTTP_MOVED_PERM
-					|| status == HttpURLConnection.HTTP_SEE_OTHER)
-					{
-					redirect = true;
-				}
-			}
+    private void downloadCssAndParseLinks(final String url, final String outputDir) {
+        //todo: one method for saving & parsing both html & css, as they are very similar
+        FileOutputStream fos = null;
 
-			if (redirect) {
-				// get redirect url from "location" header field
-				String newUrl = connection.getHeaderField("Location");
+        String filename = GrabUtility.getFileName(url);
+        File outputFile = new File(outputDir, filename);
 
-				// get the cookie if need, for login
-				String cookies = connection.getHeaderField("Set-Cookie");
+        try {
 
-				// open the new connnection again
-				obj =  new URL(newUrl);
-				connection = (HttpURLConnection) obj.openConnection();
-				connection.setRequestProperty("Cookie", cookies);
-				connection.addRequestProperty("User-Agent", uaString);
+            String cssContent = getStringFromUrl(url);
+            cssContent = GrabUtility.parseCssForLinks(cssContent, url);
+            saveStringToFile(cssContent, outputFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
-				lt.i("Redirect to URL : " + newUrl);
-			}
-			
-			// if file doesn't exists, then create it
-			if (!outputFile.exists()) {
-				outputFile.createNewFile();
-			}
-			
-			// can we write this file
-			if(!outputFile.canWrite()){
-				lt.e(lt.COMPONENT_EXTRA_FILE_DOWNLOADER,"Cannot write to file - "+outputFile.getAbsolutePath());
-				return;
-			}
-			
-			lt.i(lt.COMPONENT_EXTRA_FILE_DOWNLOADER, "Downloading file...");
-			
-//			ReadableByteChannel rbc = Channels.newChannel(conn.getInputStream());		
-//			fos.getChannel().transferFrom(rbc, 0, 1024*32);
-//			fos.flush();
-			
-			fos = new FileOutputStream(outputFile);
-			is = connection.getInputStream();
-			final byte[] buffer = new byte[1024*16]; // read in batches of 16K
-	        int length;
-	        while ((length = is.read(buffer)) != -1) {
-		       fos.write(buffer, 0, length);
-	        }
-			
-			fos.flush();
-			
-			lt.i(lt.COMPONENT_EXTRA_FILE_DOWNLOADER, "Extra file downloaded.");
-				
-			
-		failCount = 0;
-		
-		} catch (Exception e) {
-			failCount++;
-			lt.e(lt.COMPONENT_EXTRA_FILE_DOWNLOADER, e + "while getting extra file, printing stack trace...");
-			e.printStackTrace();
-			if (GrabUtility.maxRetryCount >= failCount) {
-				notifyError(null, "Failed to download: " + filename + ", retrying. Fail count: " + failCount );
-				lt.e(lt.COMPONENT_EXTRA_FILE_DOWNLOADER, "Error while getting extra file, waiting and retrying...");
-				tools.waitForInternet();
-				getExtraFile(urlToDownload, outputDir);
-				return;
-			} else {
-				notifyError(null, "Failed to download: " + filename);
-				lt.e(lt.COMPONENT_EXTRA_FILE_DOWNLOADER, "Error while getting extra file!");
-				return;
-			}
-			
-			
-		} finally {
-				if(connection != null) {
-					connection.disconnect();
-				}
-				if(is != null){
-					try {
-						is.close();
-					} catch (IOException e) {
-						lt.e(lt.COMPONENT_EXTRA_FILE_DOWNLOADER,e + "while closing input stream!");
-						e.printStackTrace();
-					}
-				}
-				if(fos != null) {
-					try {
-						fos.close();
-					} catch (IOException e) {
-						lt.e(lt.COMPONENT_EXTRA_FILE_DOWNLOADER,e + "while closing output stream!");
-						e.printStackTrace();
-					}
-				}
-		}
-	}
+
+    //HttpURLConnection sucks, this is much better.
+    //todo: put this somewhere else.
+    private static OkHttpClient client = new OkHttpClient();
+
+    //url: the URL to download.
+    //outputDir: the directory to place the downloaded file into
+    private static class DownloadTask implements Runnable {
+
+        private String url;
+        private File toPath;
+
+        public DownloadTask(String url, File toPath) {
+            this.url = url;
+            this.toPath = toPath;
+        }
+
+        @Override
+        public void run() {
+
+            downloadFile(url, toPath);
+        }
+
+        private void downloadFile(final String url, final File outputDir) {
+
+            String filename = GrabUtility.getFileName(url);
+            File outputFile = new File(outputDir, filename);
+            if (outputFile.exists()) {
+                lt.e(lt.COMPONENT_EXTRA_FILE_DOWNLOADER, "File already exists, skipping: " + filename);
+                return;
+            }
+
+            Request request = new Request.Builder()
+                    .url(url)
+                    .build();
+
+            try {
+                Response response = client.newCall(request).execute();
+                InputStream is = response.body().byteStream();
+
+                FileOutputStream fos = new FileOutputStream(outputFile);
+                final byte[] buffer = new byte[1024 * 16]; // read in batches of 16K
+                int length;
+                while ((length = is.read(buffer)) != -1) {
+                    fos.write(buffer, 0, length);
+                }
+
+                response.body().close();
+                fos.flush();
+                fos.close();
+                is.close();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+    }
+
+
+    private String getStringFromUrl (String url) throws IOException {
+        Request request = new Request.Builder()
+                .url(url)
+                .build();
+
+        Response response = client.newCall(request).execute();
+        String out = response.body().string();
+        response.body().close();
+        return out;
+    }
+
+    private void saveStringToFile (String ToSave, File outputFile) throws IOException {
+
+        if (outputFile.exists()) {
+            return;
+        }
+
+        outputFile.createNewFile();
+
+        FileOutputStream fos = new FileOutputStream(outputFile);
+        fos.write(ToSave.getBytes());
+
+        fos.flush();
+        fos.close();
+
+
+    }
+
 }
 
 
@@ -1176,7 +862,7 @@ class tools {
 		try {
 			TimeUnit.SECONDS.sleep(3);
 		} catch (InterruptedException e) {
-				
+			e.printStackTrace();
 		}
 	}
 }

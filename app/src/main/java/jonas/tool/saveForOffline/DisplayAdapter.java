@@ -109,8 +109,7 @@ public class DisplayAdapter extends BaseAdapter
 	@Override
 	public boolean isEmpty()
 	{
-		if (dbCursor.getCount() == 0) return true;
-		else return false;
+        return dbCursor.getCount() == 0;
 	}
 
 	public int getCount() {
