@@ -86,7 +86,7 @@ public class SaveService extends Service {
 
     private int waitingIntentCount = 0;
 
-    private boolean shouldCancel = false;
+    private boolean userHasCancelled = false;
 
     private Looper mServiceLooper;
     private ServiceHandler mServiceHandler;
@@ -108,8 +108,8 @@ public class SaveService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
-        if (intent.getBooleanExtra("shouldCancel", false)) {
-            shouldCancel = true;
+        if (intent.getBooleanExtra("userHasCancelled", false)) {
+            userHasCancelled = true;
             mBuilder
                     .setContentText("Please wait...")
                     .setContentTitle("Cancelling...")
@@ -147,16 +147,16 @@ public class SaveService extends Service {
 
         @Override
         public void handleMessage(final Message msg) {
-            shouldCancel = false;
+            userHasCancelled = false;
             Intent intent = (Intent) msg.obj;
-            if (intent.getBooleanExtra("shouldCancel", false)) {
+            if (intent.getBooleanExtra("userHasCancelled", false)) {
                 return;
             }
             waitingIntentCount--;
             wasAddedToDb = false;
 
             Intent notificationIntent = new Intent(SaveService.this, SaveService.class);
-            notificationIntent.putExtra("shouldCancel", true);
+            notificationIntent.putExtra("userHasCancelled", true);
             PendingIntent pendingIntent = PendingIntent.getService(SaveService.this, 0, notificationIntent, 0);
 
 
@@ -205,10 +205,14 @@ public class SaveService extends Service {
             thumbnail = destinationDirectory + "saveForOffline_thumbnail.png";
 
             origurl = intent.getStringExtra("origurl");
-            grabPage(origurl, destinationDirectory);
+            boolean success = grabPage(origurl, destinationDirectory);
 
-            if (shouldCancel) {
+            if (userHasCancelled) { //user cancelled, remove the notification, and delete files.
                 mNotificationManager.cancelAll();
+                File file = new File(destinationDirectory);
+                DirectoryHelper.deleteDirectory(file);
+                return;
+            } else if (!success) { //something went wrong, leave the notification, and delete files.
                 File file = new File(destinationDirectory);
                 DirectoryHelper.deleteDirectory(file);
                 return;
@@ -345,7 +349,14 @@ public class SaveService extends Service {
 
     }
 
-    private void grabPage(String url, String outputDirPath) {
+    private static class errorMessage {
+        public static final String badUrlFileProtocol = "Bad url, Cannot save local files. URL must not start with file://";
+        public static final String badUrlNotHttp = "URL to save must start with http:// or https://";
+        public static final String storageNotWritable = "SD Card / Storage not writable";
+    }
+
+    //returns false if the page cannot be saved for some reason, usually network or disk error.
+    private boolean grabPage(String url, String outputDirPath) {
 
         GrabUtility.filesToGrab.clear();
         GrabUtility.framesToGrab.clear();
@@ -356,45 +367,43 @@ public class SaveService extends Service {
 
         if (!url.startsWith("http")) {
             if (url.startsWith("file://")) {
-                notifyError("Bad url", "Cannot save local files. URL must not start with file://");
+                notifyError("Bad URL", errorMessage.badUrlFileProtocol);
             } else {
-                notifyError("Bad url", "URL to save must start with http:// or https://");
+                notifyError("Bad url", errorMessage.badUrlNotHttp);
             }
-            throw new IllegalStateException("URL does not have valid protocol part. Must start with http:// or https://");
+            return false;
         }
 
         File outputDir = new File(outputDirPath);
 
-        if (!outputDir.exists()) {
-            if (outputDir.mkdirs() == false) {
-                notifyError("Can't save", "SDcard not writable / available");
-                throw new IllegalStateException("SDcard not writable / available");
-
-            }
+        if (outputDir.mkdirs() == false) {
+            notifyError("Can't save", errorMessage.storageNotWritable);
+            return false;
         }
 
+
         //download main html and parse -- isExtra parameter should be false
-        downloadHtmlAndParseLinks(url, outputDirPath, false);
-        if (shouldCancel) return;
+        boolean success = downloadHtmlAndParseLinks(url, outputDirPath, false);
+        if (userHasCancelled) return false;
 
         //download and parse html frames
-        //don't change this!
+        //don't change this! Enhanced for loop breaks it!
         for (int i = 0; i < GrabUtility.framesToGrab.size(); i++) {
             downloadHtmlAndParseLinks(GrabUtility.framesToGrab.get(i), outputDirPath, true);
-            if (shouldCancel) return;
+            if (userHasCancelled) return true;
 
         }
 
         //download and parse css files
         for (String urlToDownload : GrabUtility.cssToGrab) {
-            if (shouldCancel) return;
+            if (userHasCancelled) return true;
             downloadCssAndParse(urlToDownload, outputDirPath);
         }
 
         //download and parse extra css files
         //todo : make this recursive
         for (String urlToDownload : GrabUtility.extraCssToGrab) {
-            if (shouldCancel) return;
+            if (userHasCancelled) return true;
             downloadCssAndParse(urlToDownload, outputDirPath);
         }
 
@@ -402,7 +411,7 @@ public class SaveService extends Service {
         ExecutorService pool = Executors.newFixedThreadPool(10);
 
         for (String urlToDownload : GrabUtility.filesToGrab) {
-            if (shouldCancel) return;
+            if (userHasCancelled) return true;
             notifyProgress("Saving file: " + urlToDownload.substring(urlToDownload.lastIndexOf("/") + 1), GrabUtility.filesToGrab.size(), GrabUtility.filesToGrab.indexOf(urlToDownload), false);
             pool.submit(new DownloadTask(urlToDownload, outputDir));
         }
@@ -414,9 +423,11 @@ public class SaveService extends Service {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+
+        return true;
     }
 
-    private void downloadHtmlAndParseLinks(final String url, final String outputDir, final boolean isExtra) {
+    private boolean downloadHtmlAndParseLinks(final String url, final String outputDir, final boolean isExtra) {
         //isExtra should be true when saving a html frame file.
 
         String filename;
@@ -440,9 +451,11 @@ public class SaveService extends Service {
 
             File outputFile = new File(outputDir, filename);
             saveStringToFile(htmlContent, outputFile);
+            return true;
 
         } catch (IOException e) {
             e.printStackTrace();
+            return false;
         }
     }
 
