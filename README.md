@@ -1,5 +1,5 @@
-#### Warning :
-While it mostly woks, it does have some bugs. Particularly, if saving a webpage does not work right, or there are no thumbnails of the saved page in the list, **go into settings, and turn off 'Save in background'**
+#### Note:
+Do not use the Play Store version, it is outdated and broken.
 
 # Save For Offline
 
