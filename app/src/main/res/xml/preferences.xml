@@ -16,21 +16,17 @@
 			
 		
 		
-		<!--<ListPreference
-			android:key="storage_dir"
-			android:title="File storage location"
-			android:defaultValue="external"
-			android:summary="This option is currently not implemented. Files are stored in /sdcard/Android/data/jonas.tool.saveForOffline/"
-			android:entries="@array/storage_dir_list"
-			android:entryValues="@array/storage_dir_list_values"
-			android:dialogTitle="Choose" />
+		<CheckBoxPreference
+            android:key = "is_custom_storage_dir"
+            android:title="Use custom file storage folder"
+            android:text="Select this if you want to store files in a custom location" />
 			
 		<EditTextPreference 
 			
 			android:key="custom_storage_dir" 
 			android:title="Custom storage location" 
 			android:summary="Enter the directory path where you want data to be saved. If it does not exist, it will be created." 
-			android:dialogTitle="Enter directory path (eg. /sdcard/saved-pages/ )"/>-->
+			android:dialogTitle="Enter directory path (eg. /sdcard/saved-pages/ )"/>
 
     </PreferenceCategory>
 	

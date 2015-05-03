@@ -1,16 +1,28 @@
 package jonas.tool.saveForOffline;
-import android.app.*;
-import android.os.*;
-import android.webkit.*;
-import android.content.*;
-import android.graphics.*;
-import java.io.*;
-import android.widget.*;
-import android.view.*;
-import android.database.sqlite.*;
-import android.transition.*;
-import android.preference.*;
-import android.util.*;
+import android.app.Activity;
+import android.content.ContentValues;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Picture;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.view.View;
+import android.webkit.WebChromeClient;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.widget.Button;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.concurrent.TimeUnit;
 
 public class SaveActivity extends Activity
@@ -25,9 +37,8 @@ public class SaveActivity extends Activity
 	private boolean hasErrorOccurred = false;
 	
 	private String origurl;
-	private DirectoryHelper dirHelper= new DirectoryHelper();
-	private String filelocation = dirHelper.getFileLocation();
-	private String thumbnail = dirHelper.getThumbnailLocation();
+	private String filelocation = null;
+	private String thumbnail = null;
 
 	
 	private boolean getHasErrorOccurred() {

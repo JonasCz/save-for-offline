@@ -69,13 +69,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+//this is a mess...
+
 public class SaveService extends Service {
 
     private String destinationDirectory;
     private String thumbnail;
     private String origurl;
 
-    private String uaString;
     private boolean wasAddedToDb = false;
 
     private int failCount = 0;
@@ -92,6 +93,28 @@ public class SaveService extends Service {
     private ServiceHandler mServiceHandler;
     private Message msg;
     private boolean shouldGoToMainListOnNotificationClick = false;
+
+    private String getUserAgent () {
+
+        //fixme, save user agent String somewhere else
+
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(SaveService.this);
+        String ua = sharedPref.getString("user_agent", "mobile");
+
+        String uaString;
+
+        if (ua.equals("desktop")) {
+            uaString = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.517 Safari/537.36";
+
+        } else if (ua.equals("ipad")) {
+            uaString = "iPad ipad safari";
+
+        } else {
+            uaString = "Mozilla/5.0 (Linux; U; Android 4.2.2; en-us; Phone Build/IML74K) AppleWebkit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30";
+        }
+
+        return uaString;
+    }
 
     @Override
     public void onCreate() {
@@ -175,7 +198,6 @@ public class SaveService extends Service {
             mNotificationManager.notify(notification_id, mBuilder.build());
 
             SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(SaveService.this);
-            String ua = sharedPref.getString("user_agent", "mobile");
 
             shouldGoToMainListOnNotificationClick = sharedPref.getBoolean("go_to_main_list_on_click", false);
 
@@ -190,21 +212,15 @@ public class SaveService extends Service {
             GrabUtility.saveScripts = sharedPref.getBoolean("save_scripts", true);
             GrabUtility.saveVideo = sharedPref.getBoolean("save_video", true);
 
-            if (ua.equals("desktop")) {
-                uaString = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.517 Safari/537.36";
+            //in the beginning, only God and I knew what I was doing.
+            //now, only God knows.
 
-            } else if (ua.equals("ipad")) {
-                uaString = "iPad ipad safari";
+            destinationDirectory = DirectoryHelper.getDestinationDirectory(SaveService.this);
 
-            } else {
-                uaString = "Mozilla/5.0 (Linux; U; Android 4.2.2; en-us; Phone Build/IML74K) AppleWebkit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30";
-            }
-
-
-            destinationDirectory = DirectoryHelper.getUnpackedDir();
             thumbnail = destinationDirectory + "saveForOffline_thumbnail.png";
 
             origurl = intent.getStringExtra("origurl");
+
             boolean success = grabPage(origurl, destinationDirectory);
 
             if (userHasCancelled) { //user cancelled, remove the notification, and delete files.
@@ -217,6 +233,13 @@ public class SaveService extends Service {
                 DirectoryHelper.deleteDirectory(file);
                 return;
             }
+
+            if (sharedPref.getBoolean("is_custom_storage_dir", false)) {
+
+                File oldFile = new File(destinationDirectory);
+                oldFile.renameTo(new File(getNewDirectoryName()));
+            }
+
             notifyProgress("Adding to list...", 100, 97, false);
 
             addToDb();
@@ -231,6 +254,14 @@ public class SaveService extends Service {
             lt.i("Finished");
         }
 
+    }
+
+    private String getNewDirectoryName () {
+        String title = GrabUtility.title.replaceAll("[^a-zA-Z0-9-_\\.]", "");
+        title = title.substring(0, Math.min(title.length(), 50));
+
+        File oldFile = new File(destinationDirectory);
+        return oldFile.getParentFile().getAbsolutePath() + title  + File.separatorChar;
     }
 
     private String getLastIdFromDb() {
@@ -253,8 +284,12 @@ public class SaveService extends Service {
         SQLiteDatabase dataBase = mHelper.getWritableDatabase();
         ContentValues values = new ContentValues();
 
-
-        values.put(DbHelper.KEY_FILE_LOCATION, destinationDirectory + "index.html");
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(SaveService.this);
+        if (sharedPref.getBoolean("is_custom_storage_dir", false)) {
+            values.put(DbHelper.KEY_FILE_LOCATION, getNewDirectoryName() + "index.html");
+        } else {
+            values.put(DbHelper.KEY_FILE_LOCATION, destinationDirectory + "index.html");
+        }
 
         values.put(DbHelper.KEY_TITLE, GrabUtility.title);
         values.put(DbHelper.KEY_THUMBNAIL, thumbnail);

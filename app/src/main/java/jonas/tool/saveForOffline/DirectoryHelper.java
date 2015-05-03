@@ -1,10 +1,13 @@
 package jonas.tool.saveForOffline;
-import java.io.*;
-import android.content.*;
-import android.util.*;
-import java.text.*;
-import java.util.*;
-import android.os.*;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.os.Environment;
+import android.preference.PreferenceManager;
+
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 public class DirectoryHelper {
 	
@@ -25,23 +28,19 @@ public class DirectoryHelper {
 		file.mkdirs();
 		return directory;
 	}
-	
-	public static String getThumbnailLocation () {
-		
-		String thumbnailLocation = getStorageDir() + createUniqueFilename() + ".png";
-		return thumbnailLocation;
-	}
-	
-	public static String getFileLocation () {
 
-		String fileLocation = getStorageDir() + createUniqueFilename() + ".mht";
-		return fileLocation;
-	}
 	
-	public static String getUnpackedDir () {
+	public static String getDestinationDirectory (Context context) {
 
-		String fileLocation = getStorageDir() + createUniqueFilename() + File.separatorChar;
-		return fileLocation;
+        String defaultFileLocation = getStorageDir() + createUniqueFilename() + File.separatorChar;
+
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
+
+        if (sharedPref.getBoolean("is_custom_storage_dir", false)) {
+            return sharedPref.getString("custom_storage_dir" + createUniqueFilename() + File.separatorChar, defaultFileLocation);
+        }
+
+		return defaultFileLocation;
 	}
 	
 	public static void deleteDirectory(File directory) {
