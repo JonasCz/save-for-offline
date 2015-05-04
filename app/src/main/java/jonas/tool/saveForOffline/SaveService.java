@@ -212,12 +212,11 @@ public class SaveService extends Service {
             GrabUtility.saveScripts = sharedPref.getBoolean("save_scripts", true);
             GrabUtility.saveVideo = sharedPref.getBoolean("save_video", true);
 
-            //in the beginning, only God and I knew what I was doing.
-            //now, only God knows.
+            System.out.println(sharedPref.getString("custom_storage_dir", "DEFAULT"));
 
-            destinationDirectory = DirectoryHelper.getDestinationDirectory(SaveService.this);
+            destinationDirectory = DirectoryHelper.getDestinationDirectory(sharedPref);
 
-            thumbnail = destinationDirectory + "saveForOffline_thumbnail.png";
+            System.out.println(destinationDirectory);
 
             origurl = intent.getStringExtra("origurl");
 
@@ -240,6 +239,9 @@ public class SaveService extends Service {
                 oldFile.renameTo(new File(getNewDirectoryName()));
             }
 
+            thumbnail = getNewDirectoryName() + "saveForOffline_thumbnail.png";
+
+
             notifyProgress("Adding to list...", 100, 97, false);
 
             addToDb();
@@ -257,11 +259,12 @@ public class SaveService extends Service {
     }
 
     private String getNewDirectoryName () {
-        String title = GrabUtility.title.replaceAll("[^a-zA-Z0-9-_\\.]", "");
+        String title = GrabUtility.title.replaceAll("[^a-zA-Z0-9-_\\.]", "_");
         title = title.substring(0, Math.min(title.length(), 50));
 
         File oldFile = new File(destinationDirectory);
-        return oldFile.getParentFile().getAbsolutePath() + title  + File.separatorChar;
+        System.out.println(oldFile.getParentFile().getAbsolutePath() + File.separator + title + DirectoryHelper.createUniqueFilename()  + File.separator);
+        return oldFile.getParentFile().getAbsolutePath() + File.separator + title + DirectoryHelper.createUniqueFilename()  + File.separator;
     }
 
     private String getLastIdFromDb() {
@@ -285,6 +288,7 @@ public class SaveService extends Service {
         ContentValues values = new ContentValues();
 
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(SaveService.this);
+
         if (sharedPref.getBoolean("is_custom_storage_dir", false)) {
             values.put(DbHelper.KEY_FILE_LOCATION, getNewDirectoryName() + "index.html");
         } else {

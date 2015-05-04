@@ -18,12 +18,14 @@
 		
 		<CheckBoxPreference
             android:key = "is_custom_storage_dir"
+            android:defaultValue="false"
             android:title="Use custom file storage folder"
             android:text="Select this if you want to store files in a custom location" />
 			
 		<EditTextPreference 
 			
-			android:key="custom_storage_dir" 
+			android:key="custom_storage_dir"
+            android:defaultValue="/sdcard/saved-pages/"
 			android:title="Custom storage location" 
 			android:summary="Enter the directory path where you want data to be saved. If it does not exist, it will be created." 
 			android:dialogTitle="Enter directory path (eg. /sdcard/saved-pages/ )"/>

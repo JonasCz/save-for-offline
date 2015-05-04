@@ -1,8 +1,6 @@
 package jonas.tool.saveForOffline;
-import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Environment;
-import android.preference.PreferenceManager;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -30,17 +28,16 @@ public class DirectoryHelper {
 	}
 
 	
-	public static String getDestinationDirectory (Context context) {
+	public static String getDestinationDirectory (SharedPreferences sharedPref) {
 
-        String defaultFileLocation = getStorageDir() + createUniqueFilename() + File.separatorChar;
-
-        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
+        String defaultFileLocation = getStorageDir() + createUniqueFilename() + File.separator;
 
         if (sharedPref.getBoolean("is_custom_storage_dir", false)) {
-            return sharedPref.getString("custom_storage_dir" + createUniqueFilename() + File.separatorChar, defaultFileLocation);
+            return sharedPref.getString("custom_storage_dir", defaultFileLocation) + createUniqueFilename() + File.separator;
+        } else {
+            return defaultFileLocation;
         }
 
-		return defaultFileLocation;
 	}
 	
 	public static void deleteDirectory(File directory) {
