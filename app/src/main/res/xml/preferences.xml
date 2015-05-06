@@ -71,11 +71,6 @@
     </PreferenceCategory>
 	
 	<PreferenceCategory android:title="Advanced options">
-		<CheckBoxPreference 
-			android:key="save_in_background" 
-			android:defaultValue="true"
-			android:title="Save in background" 
-			android:summary="Keep this enabled unless you experience problems"/>
 		
 		<PreferenceScreen
 			xmlns:android="http://schemas.android.com/apk/res/android"
@@ -84,27 +79,32 @@
 			android:key="saving_advanced_opts">
 			<PreferenceCategory
 				android:title="Saving options">
-				<CheckBoxPreference 
+				<CheckBoxPreference
+                    android:enabled="false"
 					android:key="save_images" 
 					android:defaultValue="true"
 					android:title="Save images in webpage" 
 					android:summary="Disable if you do not want images in webpages to be saved. Saving will be faster."/>
-				<CheckBoxPreference 
+				<CheckBoxPreference
+                    android:enabled="false"
 					android:key="save_scripts" 
 					android:defaultValue="true"
 					android:title="Save scripts in webpage" 
 					android:summary="Disable if you do not want JavaScript in webpages to be saved."/>
-				<CheckBoxPreference 
+				<CheckBoxPreference
+                    android:enabled="false"
 					android:key="save_other" 
 					android:defaultValue="true"
 					android:title="Save other stuff" 
 					android:summary="This includes CSS, extra data possibly needed by scripts, etc..."/>
-				<CheckBoxPreference 
+				<CheckBoxPreference
+                    android:enabled="false"
 					android:key="save_frames" 
 					android:defaultValue="true"
 					android:title="Save HTML frames" 
 					android:summary="If there are other webpages inside the one being saved, save those too."/>
-				<CheckBoxPreference 
+				<CheckBoxPreference
+                    android:enabled="false"
 					android:key="save_video" 
 					android:defaultValue="false"
 					android:title="Save HTML5 video" 

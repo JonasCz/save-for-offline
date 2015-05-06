@@ -1,16 +1,27 @@
 package jonas.tool.saveForOffline;
 
-import android.app.*;
-import android.content.*;
-import android.widget.*;
-import android.util.*;
-import android.webkit.*;
-import android.graphics.*;
-import java.io.*;
-import android.view.View.*;
-import android.os.*;
+import android.app.Service;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.os.AsyncTask;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.IBinder;
+import android.os.Looper;
+import android.os.Message;
 import android.os.Process;
 import android.preference.PreferenceManager;
+import android.util.Log;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.widget.Toast;
+
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.concurrent.TimeUnit;
 
 //this is an example of how to take a screenshot of a webpage in a background service
@@ -89,10 +100,11 @@ public class ScreenshotService extends Service {
 			Bitmap b = webview.getDrawingCache();
 
 			File file = new File(thumblocation[0]);
-			
+
+            System.out.println(file.getAbsolutePath());
 
 
-			try {
+            try {
 				OutputStream out = new BufferedOutputStream(new FileOutputStream(file));
 				b.compress(Bitmap.CompressFormat.PNG, 100, out);
 				out.flush();
