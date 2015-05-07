@@ -85,6 +85,7 @@ public class SaveService extends Service {
 
         if (mBuilder == null) {
             mBuilder = new Notification.Builder(SaveService.this);
+            mBuilder.addAction(R.drawable.ic_action_discard, "Cancel current", pendingIntent);
         }
 
         if (contentTitle != null) {
@@ -102,8 +103,6 @@ public class SaveService extends Service {
         mBuilder.setOngoing(!isFinished);
         mBuilder.setOnlyAlertOnce(true);
         mBuilder.setPriority(Notification.PRIORITY_LOW);
-
-        mBuilder.addAction(R.drawable.ic_action_discard, "Cancel current", pendingIntent);
 
         mNotificationManager.notify(NOTIFICATION_ID, mBuilder.build());
     }

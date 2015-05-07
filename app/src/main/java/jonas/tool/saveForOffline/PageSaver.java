@@ -439,6 +439,9 @@ public class PageSaver {
     }
 
     private void addLinkToList(String link) {
+        if (link == null) {
+            return;
+        }
         if (!filesToGrab.contains(link)) {
             filesToGrab.add(link);
         }
