@@ -51,6 +51,7 @@ public class PageSaver {
     private String indexFileName = "index.html";
 
     private final Pattern fileNameReplacementPattern = Pattern.compile("[^a-zA-Z0-9-_\\.]");
+    private final Pattern urlValidatingPattern = Pattern.compile("^(http(s)?:\\/\\/[a-zA-Z0-9\\-_]+\\.[a-zA-Z]+(.)+)+");
 
     public Options getOptions() {
         return this.options;
@@ -68,6 +69,10 @@ public class PageSaver {
         this.isCancelled = true;
         client.cancel(HTTP_REQUEST_TAG);
 
+    }
+
+    public boolean isCancelled () {
+        return this.isCancelled;
     }
 
     public boolean getPage(String url, String outputDirPath, String indexFilename) {
@@ -157,6 +162,9 @@ public class PageSaver {
             saveStringToFile(htmlContent, outputFile);
             return true;
 
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            return false;
         } catch (IOException e) {
             e.printStackTrace();
             return false;
@@ -201,6 +209,7 @@ public class PageSaver {
 
             Request request = new Request.Builder()
                     .url(url)
+                    .addHeader("User-Agent", getOptions().getUserAgent())
                     .tag(HTTP_REQUEST_TAG)
                     .build();
 
@@ -220,6 +229,8 @@ public class PageSaver {
                 fos.close();
                 is.close();
 
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -229,6 +240,7 @@ public class PageSaver {
     private String getStringFromUrl(String url) throws IOException {
         Request request = new Request.Builder()
                 .url(url)
+                .addHeader("User-Agent", getOptions().getUserAgent())
                 .build();
 
         Response response = client.newCall(request).execute();
@@ -272,11 +284,7 @@ public class PageSaver {
             eventCallback.onLogMessage("Got " + links.size() + " frames");
             for (Element link : links) {
                 urlToGrab = link.attr("abs:src");
-
-                if (!framesToGrab.contains(urlToGrab)) {
-                    framesToGrab.add(urlToGrab);
-                }
-
+                addLinkToList(urlToGrab, framesToGrab);
                 String replacedURL = getFileName(urlToGrab);
                 link.attr("src", replacedURL);
             }
@@ -286,10 +294,7 @@ public class PageSaver {
             for (Element link : links) {
                 urlToGrab = link.attr("abs:src");
 
-                    if (!framesToGrab.contains(urlToGrab)) {
-                        framesToGrab.add(urlToGrab);
-                    }
-
+                addLinkToList(urlToGrab, framesToGrab);
 
                 String replacedURL = getFileName(urlToGrab);
                 link.attr("src", replacedURL);
@@ -309,7 +314,7 @@ public class PageSaver {
                 if (link.attr("rel").equals("stylesheet")) {
                     cssToGrab.add(link.attr("abs:href"));
                 } else {
-                    addLinkToList(urlToGrab);
+                    addLinkToList(urlToGrab, filesToGrab);
                 }
 
                 String replacedURL = getFileName(urlToGrab);
@@ -343,7 +348,7 @@ public class PageSaver {
             eventCallback.onLogMessage("Got " + links.size() + " script elements");
             for (Element link : links) {
                 urlToGrab = link.attr("abs:src");
-                addLinkToList(urlToGrab);
+                addLinkToList(urlToGrab, filesToGrab);
                 String replacedURL = getFileName(urlToGrab);
                 link.attr("src", replacedURL);
             }
@@ -354,7 +359,7 @@ public class PageSaver {
             eventCallback.onLogMessage("Got " + links.size() + " image elements");
             for (Element link : links) {
                 urlToGrab = link.attr("abs:src");
-                addLinkToList(urlToGrab);
+                addLinkToList(urlToGrab, filesToGrab);
 
                 String replacedURL = getFileName(urlToGrab);
                 link.attr("src", replacedURL);
@@ -367,7 +372,7 @@ public class PageSaver {
             eventCallback.onLogMessage("Got " + links.size() + " video elements without src attribute");
             for (Element link : links.select("[src]")) {
                 urlToGrab = link.attr("abs:src");
-                addLinkToList(urlToGrab);
+                addLinkToList(urlToGrab, filesToGrab);
 
                 String replacedURL = getFileName(urlToGrab);
                 link.attr("src", replacedURL);
@@ -377,7 +382,7 @@ public class PageSaver {
             eventCallback.onLogMessage("Got " + links.size() + " video elements");
             for (Element link : links) {
                 urlToGrab = link.attr("abs:src");
-                addLinkToList(urlToGrab);
+                addLinkToList(urlToGrab, filesToGrab);
 
                 String replacedURL = getFileName(urlToGrab);
                 link.attr("src", replacedURL);
@@ -415,7 +420,7 @@ public class PageSaver {
 
             }
 
-            addLinkToList(makeLinkAbsolute(matcher.group().replaceAll(patternString, "$2").trim(), baseUrl));
+            addLinkToList(makeLinkAbsolute(matcher.group().replaceAll(patternString, "$2").trim(), baseUrl), filesToGrab);
         }
 
         // find css linked with @import  -  needs testing
@@ -431,19 +436,27 @@ public class PageSaver {
                 cssToParse = cssToParse.replace(matcher.group().replaceAll(patternString, "$2"), getFileName(matcher.group().replaceAll(patternString, "$2")));
 
             }
-
-            extraCssToGrab.add(makeLinkAbsolute(matcher.group().replaceAll(patternString, "$2").trim(), baseUrl));
+            addLinkToList(makeLinkAbsolute(matcher.group().replaceAll(patternString, "$2").trim(), baseUrl), extraCssToGrab);
         }
 
         return cssToParse;
     }
 
-    private void addLinkToList(String link) {
+    private boolean validateUrl(String url) {
+        return urlValidatingPattern.matcher(url).matches();
+    }
+
+    private void addLinkToList(String link, List<String> list) {
         if (link == null) {
             return;
         }
-        if (!filesToGrab.contains(link)) {
-            filesToGrab.add(link);
+
+        if (!validateUrl(link)) {
+            return;
+        }
+
+        if (!list.contains(link)) {
+            list.add(link);
         }
     }
 
@@ -481,6 +494,8 @@ public class PageSaver {
         private boolean saveScripts = true;
         private boolean saveVideo = false;
 
+        private String userAgent = "mozilla chrome webkit";
+
         public String getUserAgent() {
             return userAgent;
         }
@@ -488,8 +503,6 @@ public class PageSaver {
         public void setUserAgent(final String userAgent) {
             this.userAgent = userAgent;
         }
-
-        private String userAgent = "";
 
         public boolean makeLinksAbsolute() {
             return makeLinksAbsolute;

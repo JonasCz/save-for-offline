@@ -54,12 +54,13 @@ public class SaveService extends Service {
     private ServiceHandler mServiceHandler;
     private Notification.Builder mBuilder;
     private NotificationManager mNotificationManager;
-
     private SharedPreferences sharedPref;
 
     private final int NOTIFICATION_ID = 1;
 
     private int waitingIntentCount = 0;
+
+    private PageSaver pageSaver;
 
 
     private void addToDb(String fileLocation, String thumbnailLocation, String title, String originalUrl) {
@@ -78,13 +79,17 @@ public class SaveService extends Service {
         dataBase.close();
     }
 
+    private String getUserAgent () {
+        return sharedPref.getString("user_agent", getResources().getStringArray(R.array.entries_list_preference)[1]);
+    }
+
     private void notifyUser(String contentTitle, String extraMessage, int progress, int maxProgress, boolean progressIndeterminate, boolean showProgress, boolean isFinished) {
-        Intent cancelIntent = new Intent(SaveService.this, SaveService.class);
-        cancelIntent.putExtra("USER_CANCELLED", true);
-        PendingIntent pendingIntent = PendingIntent.getService(SaveService.this, 0, cancelIntent, 0);
 
         if (mBuilder == null) {
             mBuilder = new Notification.Builder(SaveService.this);
+            Intent cancelIntent = new Intent(SaveService.this, SaveService.class);
+            cancelIntent.putExtra("USER_CANCELLED", true);
+            PendingIntent pendingIntent = PendingIntent.getService(SaveService.this, 0, cancelIntent, 0);
             mBuilder.addAction(R.drawable.ic_action_discard, "Cancel current", pendingIntent);
         }
 
@@ -138,12 +143,14 @@ public class SaveService extends Service {
 
             notifyUser("Saving page...", "Save in progress", 0, 0, true, true, false);
 
-            PageSaver pageSaver = new PageSaver(new PageSaveEventCallback());
+            pageSaver = new PageSaver(new PageSaveEventCallback());
+
+            pageSaver.getOptions().setUserAgent(getUserAgent());
+            System.out.println(getUserAgent());
             boolean success = pageSaver.getPage(originalUrl, destinationDirectory, "index.html");
 
-            boolean userHasCancelled = false;
 
-            if (userHasCancelled) { //user cancelled, remove the notification, and delete files.
+            if (pageSaver.isCancelled()) { //user cancelled, remove the notification, and delete files.
                 mNotificationManager.cancelAll();
                 File file = new File(destinationDirectory);
                 DirectoryHelper.deleteDirectory(file);
@@ -217,6 +224,11 @@ public class SaveService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+
+        if (intent.getBooleanExtra("USER_CANCELLED", false)) {
+            pageSaver.cancel();
+            return 0;
+        }
 
         waitingIntentCount++;
 
