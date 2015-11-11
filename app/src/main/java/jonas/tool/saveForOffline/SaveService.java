@@ -1,7 +1,6 @@
 /**
 
  This file is part of saveForOffline, an app which saves / downloads complete webpages.
- Copyright (C) 2015  Jonas Czech
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -16,12 +15,6 @@
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
- **/
-
-/**
- This was originally based on getMeThatPage (https://github.com/PramodKhare/GetMeThatPage/),
- with lots of improvements.
- The code for actually saving pages is further down in this file.
  **/
 
 package jonas.tool.saveForOffline;
@@ -83,14 +76,15 @@ public class SaveService extends Service {
         return sharedPref.getString("user_agent", getResources().getStringArray(R.array.entries_list_preference)[1]);
     }
 
-    private void notifyUser(String contentTitle, String extraMessage, int progress, int maxProgress, boolean progressIndeterminate, boolean showProgress, boolean isFinished) {
+    private void notifyUser(String contentTitle, String extraMessage, int progress, int maxProgress, boolean progressIndeterminate, boolean showProgress, boolean isFinished, int icon) {
 
         if (mBuilder == null) {
             mBuilder = new Notification.Builder(SaveService.this);
-            Intent cancelIntent = new Intent(SaveService.this, SaveService.class);
-            cancelIntent.putExtra("USER_CANCELLED", true);
-            PendingIntent pendingIntent = PendingIntent.getService(SaveService.this, 0, cancelIntent, 0);
-            mBuilder.addAction(R.drawable.ic_action_discard, "Cancel current", pendingIntent);
+//            get rid of this for now..
+//            Intent cancelIntent = new Intent(SaveService.this, SaveService.class);
+//            cancelIntent.putExtra("USER_CANCELLED", true);
+//            PendingIntent pendingIntent = PendingIntent.getService(SaveService.this, 0, cancelIntent, 0);
+//            mBuilder.addAction(android.R.drawable.ic_delete, "Cancel", pendingIntent);
         }
 
         if (contentTitle != null) {
@@ -102,22 +96,16 @@ public class SaveService extends Service {
             mBuilder.setContentText(extraMessage);
         }
 
-        mBuilder.setProgress(maxProgress, progress, progressIndeterminate);
-        mBuilder.setSmallIcon(isFinished ? R.drawable.ic_notify_save : android.R.drawable.stat_sys_download);
+        mBuilder.setSmallIcon(icon);
         mBuilder.setProgress(showProgress ? maxProgress : 0, showProgress ? progress : 0, progressIndeterminate);
         mBuilder.setOngoing(!isFinished);
         mBuilder.setOnlyAlertOnce(true);
-        mBuilder.setPriority(Notification.PRIORITY_LOW);
+        mBuilder.setPriority(Notification.PRIORITY_HIGH);
 
         mNotificationManager.notify(NOTIFICATION_ID, mBuilder.build());
     }
 
     private String getNewDirectoryPath (String title, String oldDirectoryPath) {
-        if (!sharedPref.getBoolean("is_custom_storage_dir", false)) {
-            System.out.println(sharedPref.getBoolean("is_custom_storage_dir", false));
-            return oldDirectoryPath;
-        }
-
         String returnString = title.replaceAll("[^a-zA-Z0-9-_\\.]", "_") + DirectoryHelper.createUniqueFilename();
 
         File f = new File(oldDirectoryPath);
@@ -131,22 +119,18 @@ public class SaveService extends Service {
 
         @Override
         public void handleMessage(final Message msg) {
-
-            Intent intent = (Intent) msg.obj;
-            if (intent.getBooleanExtra("userHasCancelled", false)) {
-                return;
-            }
+			
+			Intent intent = (Intent) msg.obj;
             waitingIntentCount--;
 
             String originalUrl = intent.getStringExtra("origurl");
             String destinationDirectory = DirectoryHelper.getDestinationDirectory(sharedPref);
 
-            notifyUser("Saving page...", "Save in progress", 0, 0, true, true, false);
+            notifyUser("Saving page...", "Save in progress", 0, 0, true, true, false, android.R.drawable.stat_sys_download);
 
             pageSaver = new PageSaver(new PageSaveEventCallback());
 
             pageSaver.getOptions().setUserAgent(getUserAgent());
-            System.out.println(getUserAgent());
             boolean success = pageSaver.getPage(originalUrl, destinationDirectory, "index.html");
 
 
@@ -171,7 +155,7 @@ public class SaveService extends Service {
             String thumbnailLocation = destinationDirectory + "saveForOffline_thumbnail.png";
 
 
-            notifyUser(null, "Finishing..", 0, 0, true, true, false);
+            notifyUser(null, "Finishing..",0, 0, true, true, false, android.R.drawable.stat_sys_download_done);
 
             addToDb(destinationDirectory + "index.html", thumbnailLocation, pageSaver.getPageTitle(), originalUrl);
 
@@ -180,19 +164,19 @@ public class SaveService extends Service {
             i.putExtra("thumbnail", thumbnailLocation);
             startService(i);
 
-            notifyUser("Save completed", pageSaver.getPageTitle(), 0, 0, false, false, true);
+            notifyUser("Save completed", pageSaver.getPageTitle(), 0, 0, false, false, true, R.drawable.ic_notify_save);
         }
 
         private class PageSaveEventCallback implements EventCallback {
 
             @Override
             public void onProgressChanged(final int progress, final int maxProgress, final boolean indeterminate) {
-                notifyUser(null, null, progress, maxProgress, indeterminate, true, false);
+                notifyUser(null, null, progress, maxProgress, indeterminate, true, false, R.drawable.ic_notify_save);
             }
 
             @Override
             public void onCurrentFileChanged(final String fileName) {
-                notifyUser(null, "Saving file: " + fileName, 0, 0, false, true, false);
+                notifyUser(null, "Saving file: " + fileName, 0, 0, false, true, false, R.drawable.ic_notify_save);
             }
 
             @Override
@@ -203,6 +187,7 @@ public class SaveService extends Service {
             @Override
             public void onError(final String errorMessage) {
                 Log.e("PageSaverService", errorMessage);
+				notifyUser("Error, page not saved", errorMessage, 0, 0, false, false, true, android.R.drawable.stat_sys_warning);
             }
         }
 
@@ -214,7 +199,6 @@ public class SaveService extends Service {
         HandlerThread thread = new HandlerThread("SaveService", Process.THREAD_PRIORITY_BACKGROUND);
         thread.start();
 
-        // Get the HandlerThread's Looper and use it for our Handler
         mServiceLooper = thread.getLooper();
         mServiceHandler = new ServiceHandler(mServiceLooper);
 

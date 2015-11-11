@@ -1,3 +1,27 @@
+/**
+
+ This file is part of saveForOffline, an app which saves / downloads complete webpages.
+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 2 of the License, or
+ (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+ **/
+
+/**
+ This was originally based on https://github.com/PramodKhare/GetMeThatPage/
+ with lots of improvements.
+ **/
+
 package jonas.tool.saveForOffline;
 
 import com.squareup.okhttp.OkHttpClient;
@@ -24,9 +48,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Created by jonas on 03/05/15.
- */
+
 public class PageSaver {
     private EventCallback eventCallback;
 
@@ -78,11 +100,6 @@ public class PageSaver {
     public boolean getPage(String url, String outputDirPath, String indexFilename) {
 
         this.indexFileName = indexFilename;
-
-        if (!url.startsWith("http")) {
-            eventCallback.onError("Bad URL, must start with HTTP");
-            return false;
-        }
 
         File outputDir = new File(outputDirPath);
 
@@ -162,28 +179,23 @@ public class PageSaver {
             saveStringToFile(htmlContent, outputFile);
             return true;
 
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            return false;
         } catch (IOException e) {
-            e.printStackTrace();
+			eventCallback.onError(e.getMessage());
             return false;
         }
     }
 
     private void downloadCssAndParse(final String url, final String outputDir) {
 
-        FileOutputStream fos = null;
-
         String filename = getFileName(url);
         File outputFile = new File(outputDir, filename);
 
         try {
-
             String cssContent = getStringFromUrl(url);
             cssContent = parseCssForLinks(cssContent, url);
             saveStringToFile(cssContent, outputFile);
         } catch (IOException e) {
+			eventCallback.onError(e.getMessage());
             e.printStackTrace();
         }
     }
@@ -230,8 +242,10 @@ public class PageSaver {
                 is.close();
 
             } catch (MalformedURLException e) {
+				eventCallback.onError(e.getMessage());
                 e.printStackTrace();
             } catch (IOException e) {
+				eventCallback.onError(e.getMessage());
                 e.printStackTrace();
             }
         }
