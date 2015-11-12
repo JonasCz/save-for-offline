@@ -132,12 +132,6 @@ public class PageSaver {
             if (isCancelled) return true;
             downloadCssAndParse(urlToDownload, outputDirPath);
         }
-		
-		for (String urlToDownload : filesToGrab) {
-			System.out.println("fffffggffffgggggghhjj");
-            System.out.println(filesToGrab.size());
-            System.out.println(urlToDownload);
-        }
 
         //download extra files, such as images / scripts
         ExecutorService pool = Executors.newFixedThreadPool(5);
@@ -464,16 +458,8 @@ public class PageSaver {
         return cssToParse;
     }
 
-    private boolean validateUrl(String url) {
-        return urlValidatingPattern.matcher(url).matches();
-    }
-
     private void addLinkToList(String link, List<String> list) {
         if (link == null) {
-            return;
-        }
-
-        if (!validateUrl(link)) {
             return;
         }
 
@@ -536,7 +522,6 @@ public class PageSaver {
 
         public boolean saveImages() {
             return saveImages;
-			
         }
 
         public void saveImages(final boolean saveImages) {

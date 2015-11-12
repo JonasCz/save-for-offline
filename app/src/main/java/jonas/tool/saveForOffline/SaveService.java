@@ -98,7 +98,13 @@ public class SaveService extends Service {
             String destinationDirectory = DirectoryHelper.getDestinationDirectory(sharedPref);
 			
 			notificationTools = new NotificationTools();
-			notificationTools.setTicker("Saving page...").setContentTitle("Saving page...").setContentText("Save in progress").setIcon(android.R.drawable.stat_sys_download).setProgress(1, 1, true).setShowProgress(true).createNotification();
+			notificationTools.setTicker("Saving page...")
+				.setContentTitle("Saving page...")
+				.setContentText("Save in progress")
+				.setIcon(android.R.drawable.stat_sys_download)
+				.setProgress(0, 1, true)
+				.setShowProgress(true)
+				.createNotification();
 
             pageSaver = new PageSaver(new PageSaveEventCallback());
 
@@ -126,7 +132,8 @@ public class SaveService extends Service {
             destinationDirectory = getNewDirectoryPath(pageSaver.getPageTitle(), destinationDirectory);
             String thumbnailLocation = destinationDirectory + "saveForOffline_thumbnail.png";
 
-			notificationTools.setContentText("Finishing..").createNotification();
+			notificationTools.setContentText("Finishing..")
+				.createNotification();
 
             addToDb(destinationDirectory + "index.html", thumbnailLocation, pageSaver.getPageTitle(), originalUrl);
 
@@ -135,7 +142,12 @@ public class SaveService extends Service {
             i.putExtra("thumbnail", thumbnailLocation);
             startService(i);
 			
-			notificationTools.setTicker("Save completed: " + pageSaver.getPageTitle()).setContentTitle("Save completed;").setContentText(pageSaver.getPageTitle()).setIcon(R.drawable.ic_notify_save).setShowProgress(false).createNotificationWithAlert();
+			notificationTools.setTicker("Save completed: " + pageSaver.getPageTitle())
+				.setContentTitle("Save completed")
+				.setContentText(pageSaver.getPageTitle())
+				.setIcon(R.drawable.ic_notify_save)
+				.setShowProgress(false)
+				.createNotificationWithAlert();
         }
 		
 
@@ -148,7 +160,8 @@ public class SaveService extends Service {
 
             @Override
             public void onCurrentFileChanged(final String fileName) {
-				notificationTools.setContentText("Saving file: " + fileName).createNotification();
+				notificationTools.setContentText("Saving file: " + fileName)
+					.createNotification();
             }
 
             @Override
@@ -211,7 +224,11 @@ public class SaveService extends Service {
 			}
 			
 			public NotificationTools setShowProgress (boolean showProgress) {
-				builder.setProgress(0, 0, false);
+				if (showProgress) {
+					builder.setProgress(0, 1, true);
+				} else {
+					builder.setProgress(0, 0, false);
+				}
 				return this;
 			}
 			
