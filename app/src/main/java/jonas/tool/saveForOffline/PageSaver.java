@@ -132,9 +132,15 @@ public class PageSaver {
             if (isCancelled) return true;
             downloadCssAndParse(urlToDownload, outputDirPath);
         }
+		
+		for (String urlToDownload : filesToGrab) {
+			System.out.println("fffffggffffgggggghhjj");
+            System.out.println(filesToGrab.size());
+            System.out.println(urlToDownload);
+        }
 
         //download extra files, such as images / scripts
-        ExecutorService pool = Executors.newFixedThreadPool(10);
+        ExecutorService pool = Executors.newFixedThreadPool(5);
 
         for (String urlToDownload : filesToGrab) {
             if (isCancelled) break;
@@ -147,7 +153,7 @@ public class PageSaver {
         pool.shutdown();
 
         try {
-            pool.awaitTermination(10, TimeUnit.SECONDS);
+            pool.awaitTermination(20, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -281,13 +287,15 @@ public class PageSaver {
     }
 
     private String parseHtmlForLinks(String htmlToParse, String baseUrl) {
-        //get all links from this webpage and add them to Frontier List i.e. LinksToVisit ArrayList
+        //get all links from this webpage and add them to LinksToVisit ArrayList
         Document document;
 
         document = Jsoup.parse(htmlToParse, baseUrl);
         document.outputSettings().escapeMode(Entities.EscapeMode.extended);
-
-        title = document.title();
+		
+		if (title.equals("")) {
+			title = document.title();
+		}
 
         String urlToGrab;
 
@@ -481,7 +489,7 @@ public class PageSaver {
             return u.toString();
         } catch (MalformedURLException e) {
             e.printStackTrace();
-            return null;
+            return link;
         }
 
     }
@@ -528,6 +536,7 @@ public class PageSaver {
 
         public boolean saveImages() {
             return saveImages;
+			
         }
 
         public void saveImages(final boolean saveImages) {
@@ -569,7 +578,6 @@ public class PageSaver {
 }
 
 interface EventCallback {
-
     public void onProgressChanged(int progress, int maxProgress, boolean indeterminate);
 
     public void onCurrentFileChanged(String fileName);
@@ -577,7 +585,5 @@ interface EventCallback {
     public void onLogMessage (String message);
 
     public void onError(String errorMessage);
-
-
 }
 

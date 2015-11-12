@@ -29,6 +29,7 @@ import android.preference.*;
 import android.graphics.*;
 import android.content.res.*;
 import android.os.AsyncTask;
+import android.widget.AbsListView.*;
 
 public class MainActivity extends Activity implements SearchView.OnQueryTextListener {
 
@@ -55,13 +56,13 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		
 		PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
 		if (sharedPref.getBoolean("dark_mode", false)) {
 			setTheme(android.R.style.Theme_Holo);
 		}
 		setContentView(R.layout.main);
-		//initialize the preferences
 		
 		mainGrid = (GridView) findViewById(R.id.List);
 

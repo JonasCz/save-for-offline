@@ -45,15 +45,14 @@ public class SaveService extends Service {
 
     private Looper mServiceLooper;
     private ServiceHandler mServiceHandler;
-    private Notification.Builder mBuilder;
-    private NotificationManager mNotificationManager;
+    
     private SharedPreferences sharedPref;
-
-    private final int NOTIFICATION_ID = 1;
 
     private int waitingIntentCount = 0;
 
     private PageSaver pageSaver;
+	
+	private NotificationTools notificationTools;
 
 
     private void addToDb(String fileLocation, String thumbnailLocation, String title, String originalUrl) {
@@ -76,34 +75,6 @@ public class SaveService extends Service {
         return sharedPref.getString("user_agent", getResources().getStringArray(R.array.entries_list_preference)[1]);
     }
 
-    private void notifyUser(String contentTitle, String extraMessage, int progress, int maxProgress, boolean progressIndeterminate, boolean showProgress, boolean isFinished, int icon) {
-
-        if (mBuilder == null) {
-            mBuilder = new Notification.Builder(SaveService.this);
-//            get rid of this for now..
-//            Intent cancelIntent = new Intent(SaveService.this, SaveService.class);
-//            cancelIntent.putExtra("USER_CANCELLED", true);
-//            PendingIntent pendingIntent = PendingIntent.getService(SaveService.this, 0, cancelIntent, 0);
-//            mBuilder.addAction(android.R.drawable.ic_delete, "Cancel", pendingIntent);
-        }
-
-        if (contentTitle != null) {
-            mBuilder.setContentTitle(contentTitle);
-            mBuilder.setTicker(contentTitle);
-        }
-
-        if (extraMessage != null) {
-            mBuilder.setContentText(extraMessage);
-        }
-
-        mBuilder.setSmallIcon(icon);
-        mBuilder.setProgress(showProgress ? maxProgress : 0, showProgress ? progress : 0, progressIndeterminate);
-        mBuilder.setOngoing(!isFinished);
-        mBuilder.setOnlyAlertOnce(true);
-        mBuilder.setPriority(Notification.PRIORITY_HIGH);
-
-        mNotificationManager.notify(NOTIFICATION_ID, mBuilder.build());
-    }
 
     private String getNewDirectoryPath (String title, String oldDirectoryPath) {
         String returnString = title.replaceAll("[^a-zA-Z0-9-_\\.]", "_") + DirectoryHelper.createUniqueFilename();
@@ -125,8 +96,9 @@ public class SaveService extends Service {
 
             String originalUrl = intent.getStringExtra("origurl");
             String destinationDirectory = DirectoryHelper.getDestinationDirectory(sharedPref);
-
-            notifyUser("Saving page...", "Save in progress", 0, 0, true, true, false, android.R.drawable.stat_sys_download);
+			
+			notificationTools = new NotificationTools();
+			notificationTools.setTicker("Saving page...").setContentTitle("Saving page...").setContentText("Save in progress").setIcon(android.R.drawable.stat_sys_download).setProgress(1, 1, true).setShowProgress(true).createNotification();
 
             pageSaver = new PageSaver(new PageSaveEventCallback());
 
@@ -135,7 +107,7 @@ public class SaveService extends Service {
 
 
             if (pageSaver.isCancelled()) { //user cancelled, remove the notification, and delete files.
-                mNotificationManager.cancelAll();
+                notificationTools.cancelAll();
                 File file = new File(destinationDirectory);
                 DirectoryHelper.deleteDirectory(file);
                 return;
@@ -154,8 +126,7 @@ public class SaveService extends Service {
             destinationDirectory = getNewDirectoryPath(pageSaver.getPageTitle(), destinationDirectory);
             String thumbnailLocation = destinationDirectory + "saveForOffline_thumbnail.png";
 
-
-            notifyUser(null, "Finishing..",0, 0, true, true, false, android.R.drawable.stat_sys_download_done);
+			notificationTools.setContentText("Finishing..").createNotification();
 
             addToDb(destinationDirectory + "index.html", thumbnailLocation, pageSaver.getPageTitle(), originalUrl);
 
@@ -163,20 +134,21 @@ public class SaveService extends Service {
             i.putExtra("origurl", "file://" + destinationDirectory + "index.html");
             i.putExtra("thumbnail", thumbnailLocation);
             startService(i);
-
-            notifyUser("Save completed", pageSaver.getPageTitle(), 0, 0, false, false, true, R.drawable.ic_notify_save);
+			
+			notificationTools.setTicker("Save completed: " + pageSaver.getPageTitle()).setContentTitle("Save completed;").setContentText(pageSaver.getPageTitle()).setIcon(R.drawable.ic_notify_save).setShowProgress(false).createNotificationWithAlert();
         }
+		
 
         private class PageSaveEventCallback implements EventCallback {
 
             @Override
             public void onProgressChanged(final int progress, final int maxProgress, final boolean indeterminate) {
-                notifyUser(null, null, progress, maxProgress, indeterminate, true, false, R.drawable.ic_notify_save);
+				notificationTools.setProgress(progress, maxProgress, indeterminate);
             }
 
             @Override
             public void onCurrentFileChanged(final String fileName) {
-                notifyUser(null, "Saving file: " + fileName, 0, 0, false, true, false, R.drawable.ic_notify_save);
+				notificationTools.setContentText("Saving file: " + fileName).createNotification();
             }
 
             @Override
@@ -187,11 +159,83 @@ public class SaveService extends Service {
             @Override
             public void onError(final String errorMessage) {
                 Log.e("PageSaverService", errorMessage);
-				notifyUser("Error, page not saved", errorMessage, 0, 0, false, false, true, android.R.drawable.stat_sys_warning);
+				
+				notificationTools.setTicker("Error, page not saved: " + errorMessage)
+					.setContentTitle("Error, page not saved")
+					.setContentText(errorMessage)
+					.setShowProgress(false)
+					.setIcon(android.R.drawable.stat_sys_warning)
+					.createNotificationWithAlert();
             }
         }
 
     }
+	
+	private class NotificationTools {
+			
+			private Notification.Builder builder;
+            private NotificationManager notificationManager;
+			
+			private final int NOTIFICATION_ID = 1;
+			
+			public NotificationTools () {
+				notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+				builder = new Notification.Builder(SaveService.this);
+				builder.setOnlyAlertOnce(true);
+				builder.setPriority(Notification.PRIORITY_HIGH);
+			}
+			
+			public NotificationTools setTicker (String text) {
+				builder.setTicker(text);
+				return this;
+			}
+			
+			public NotificationTools setContentTitle (String text) {
+				builder.setContentTitle(text);
+				return this;
+			}
+			
+			public NotificationTools setContentText (String text) {
+				builder.setContentText(text);
+				return this;
+			}
+			
+			public NotificationTools setIcon (int icon) {
+				builder.setSmallIcon(icon);
+				return this;
+			}
+			
+			public NotificationTools setProgress (int progress, int maxProgress, boolean indeterminate) {
+				builder.setProgress(maxProgress, progress, indeterminate);
+				return this;
+			}
+			
+			public NotificationTools setShowProgress (boolean showProgress) {
+				builder.setProgress(0, 0, false);
+				return this;
+			}
+			
+			public NotificationTools setOngoing (boolean ongoing) {
+				builder.setOngoing(ongoing);
+				return this;
+			}
+			
+			public void createNotification () {
+				notificationManager.notify(NOTIFICATION_ID, builder.build());
+			}
+			
+		    public void createNotificationWithAlert () {
+				builder.setOnlyAlertOnce(false);
+			    notificationManager.notify(NOTIFICATION_ID, builder.build());
+				builder.setOnlyAlertOnce(true);
+		    }
+			
+			public void cancelAll () {
+				notificationManager.cancelAll();
+			}
+			
+			
+		}
 
     @Override
     public void onCreate() {
@@ -201,8 +245,7 @@ public class SaveService extends Service {
 
         mServiceLooper = thread.getLooper();
         mServiceHandler = new ServiceHandler(mServiceLooper);
-
-        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+		
         sharedPref = PreferenceManager.getDefaultSharedPreferences(SaveService.this);
     }
 

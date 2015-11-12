@@ -91,14 +91,13 @@ public class ScreenshotService extends Service {
 
 			//allow the webview to render
 			try {
-				TimeUnit.MILLISECONDS.sleep(500);
+				TimeUnit.MILLISECONDS.sleep(1000);
 			} catch (InterruptedException ex) {
 				Log.e("ScreenshotService", "InterruptedException while trying to save thumbnail!");
 			}
 
 			//here I save the bitmap to file
 			Bitmap b = webview.getDrawingCache();
-
 			File file = new File(thumblocation[0]);
 
             System.out.println(file.getAbsolutePath());
@@ -112,14 +111,8 @@ public class ScreenshotService extends Service {
 
 			} catch (IOException e) {
 				Log.e("ScreenshotService", "IOException while trying to save thumbnail, Is /sdcard/ writable?");
-
 				e.printStackTrace();
 			}
-			
-			//Toast.makeText(ScreenshotService.this, "Screenshot taken", Toast.LENGTH_SHORT).show();
-
-
-
 
 			return null;
 		}
