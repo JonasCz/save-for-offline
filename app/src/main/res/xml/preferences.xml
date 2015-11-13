@@ -1,29 +1,28 @@
 <PreferenceScreen
-        xmlns:android="http://schemas.android.com/apk/res/android">
-                
-    <PreferenceCategory
-            android:title="Saving Options">
+	xmlns:android="http://schemas.android.com/apk/res/android">
 
-                
+    <PreferenceCategory
+		android:title="Saving Options">
+
         <ListPreference
-                android:key="user_agent"
-                android:title="User agent"
-				android:defaultValue="mobile"
-                android:summary="Choose whether to save the desktop or mobile version of webpage"
-                android:entries="@array/entries_list_preference"
-                android:entryValues="@array/entryvalues_list_preference"
-                android:dialogTitle="Choose" />
-			
-		
-		
+			android:key="user_agent"
+			android:title="User agent"
+			android:defaultValue="mobile"
+			android:summary="Choose whether to save the desktop or mobile version of webpage"
+			android:entries="@array/entries_list_preference"
+			android:entryValues="@array/entryvalues_list_preference"
+			android:dialogTitle="Choose" />
+	</PreferenceCategory>
+
+	<PreferenceCategory
+		android:title="Storage">
 		<CheckBoxPreference
             android:key = "is_custom_storage_dir"
             android:defaultValue="false"
-            android:title="Use custom file storage folder"
-            android:text="Select this if you want to store files in a custom location" />
-			
-		<EditTextPreference 
-			
+            android:title="Custom file storage folder"
+            android:text="Enable if you want to store files in a custom location" />
+
+		<EditTextPreference
 			android:key="custom_storage_dir"
             android:defaultValue="/sdcard/saved-pages/"
 			android:title="Custom storage location" 
@@ -31,10 +30,10 @@
 			android:dialogTitle="Enter directory path (eg. /sdcard/saved-pages/ )"/>
 
     </PreferenceCategory>
-	
+
 	<PreferenceCategory
 		android:title="Appearance">
-		
+
 		<ListPreference
 			android:key="layout"
 			android:title="Layout for saved pages list"
@@ -43,7 +42,7 @@
 			android:entries="@array/layout_list"
 			android:entryValues="@array/layout_list_values"
 			android:dialogTitle="Choose" />
-		
+
 		<SwitchPreference 
 			android:key="dark_mode" 
 			android:defaultValue="false"
@@ -51,132 +50,22 @@
 			android:switchTextOff="Off"
 			android:title="Night mode" 
 			android:summary="Use a dark theme, and also use inverted rendering in the viewer (Black becomes white and vice versa)"/>
-		
-		<!--<ListPreference
-			android:key="default_sort_order"
-			android:title="Sort saved pages list by"
-			android:defaultValue="0"
-			android:summary="Oldest first, newest first, or alphabetically"
-			android:entries="@array/sort_by"
-			android:entryValues="@array/sort_by_values"
-			android:dialogTitle="Sort by" />-->
 
     </PreferenceCategory>
-	
-	<!--<PreferenceCategory android:title="Advanced options">
-		
-		<PreferenceScreen
-			xmlns:android="http://schemas.android.com/apk/res/android"
-			android:title="Advanced options for saving"
-			android:summary="Choose how errors should be handled and what parts of a webpage to save (images, scripts...). Use with care"
-			android:key="saving_advanced_opts">
-			<PreferenceCategory
-				android:title="Saving options">
-				<CheckBoxPreference
-                    android:enabled="false"
-					android:key="save_images" 
-					android:defaultValue="true"
-					android:title="Save images in webpage" 
-					android:summary="Disable if you do not want images in webpages to be saved. Saving will be faster."/>
-				<CheckBoxPreference
-                    android:enabled="false"
-					android:key="save_scripts" 
-					android:defaultValue="true"
-					android:title="Save scripts in webpage" 
-					android:summary="Disable if you do not want JavaScript in webpages to be saved."/>
-				<CheckBoxPreference
-                    android:enabled="false"
-					android:key="save_other" 
-					android:defaultValue="true"
-					android:title="Save other stuff" 
-					android:summary="This includes CSS, extra data possibly needed by scripts, etc..."/>
-				<CheckBoxPreference
-                    android:enabled="false"
-					android:key="save_frames" 
-					android:defaultValue="true"
-					android:title="Save HTML frames" 
-					android:summary="If there are other webpages inside the one being saved, save those too."/>
-				<CheckBoxPreference
-                    android:enabled="false"
-					android:key="save_video" 
-					android:defaultValue="false"
-					android:title="Save HTML5 video" 
-					android:summary="Not recommended, and may not work. This app is not a video downloader."/>
-			</PreferenceCategory>
-			<PreferenceCategory
-				android:title="Error handling">
-				<ListPreference
-                    android:enabled="false"
-					android:key="max_number_of_retries"
-					android:title="Maximum number of retries"
-					android:defaultValue="5"
-					android:summary="If a file such as image or script cannot be saved, the app will retry this many times"
-					android:entries="@array/max_num_retries"
-					android:entryValues="@array/max_num_retries_values"
-					android:dialogTitle="Maximum number of retries" />
-			</PreferenceCategory>
-			<PreferenceCategory
-				android:title="Viewer">
-				<CheckBoxPreference
-					android:key="viewer_enable_javascript" 
-					android:defaultValue="true"
-					android:title="Enable javaScript" 
-					android:summary="Enable javaScript in the viewer for saved pages"/>
-				
-			</PreferenceCategory>
-			<PreferenceCategory
-				android:title="Advanced options">
-				<CheckBoxPreference
-					android:key="make_links_absolute" 
-					android:defaultValue="true"
-					android:title="Make links absolute" 
-					android:summary="Recommended. Change links on page so they always point to the correct location, even if they are relative"/>
-
-				<CheckBoxPreference 
-					android:key="enable_javascript_screenshot" 
-					android:defaultValue="true"
-					android:dependency="save_scripts"
-					android:title="Enable javaScript when generating webpage thumbnail" 
-					android:summary="Thumbnail generation might be faster with this turned off"/>
-				
-				<SwitchPreference 
-					android:key="enable_logging" 
-					android:defaultValue="false"
-					android:switchTextOn="Yes"
-					android:switchTextOff="No"
-					android:title="Logging (debug messages)" 
-					android:summary="Include app's messages in the system log. Information about what you are doing in this app may end up in the system log."/>
-				
-				<SwitchPreference 
-					android:key="enable_logging_error" 
-					android:defaultValue="true"
-					android:switchTextOn="Yes"
-					android:switchTextOff="No"
-					android:title="Logging (errors)" 
-					android:summary="Include app's error messages in the system log."/>
-				
-
-			</PreferenceCategory>
-
-
-		</PreferenceScreen>
-		
-		
-	</PreferenceCategory>-->
 
     <PreferenceCategory
-            android:title="About this app">
+		android:title="About this app">
 
         <PreferenceScreen
-                android:title="GitHub project page"
-                android:summary="Feature request? Found a bug? Want to contribute? Go here!">
+			android:title="GitHub project page"
+			android:summary="Feature request? Found a bug? Want to contribute? Go here!">
 
             <intent android:action="android.intent.action.VIEW"
-                    android:data="http://github.com/jonasCz/save-for-offline" />
+				android:data="http://github.com/jonasCz/save-for-offline" />
 
         </PreferenceScreen>
 
     </PreferenceCategory>
-    
+
 </PreferenceScreen>
 

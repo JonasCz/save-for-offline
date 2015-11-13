@@ -1,35 +1,15 @@
 package jonas.tool.saveForOffline;
 
-import java.util.ArrayList;
-
-import android.app.Activity;
-import android.app.AlertDialog;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
-import android.os.Bundle;
-import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemClickListener;
-import android.widget.AdapterView.OnItemLongClickListener;
-import android.widget.ListView;
-import android.widget.Toast;
+import android.app.*;
+import android.content.*;
+import android.database.sqlite.*;
+import android.graphics.*;
+import android.os.*;
+import android.preference.*;
 import android.view.*;
 import android.widget.*;
-import org.apache.http.impl.conn.*;
-import android.app.*;
-import java.util.*;
-import android.content.*;
-import android.util.*;
+import android.widget.AdapterView.*;
 import java.io.*;
-import android.media.*;
-import android.preference.*;
-import android.graphics.*;
-import android.content.res.*;
-import android.os.AsyncTask;
-import android.widget.AbsListView.*;
 
 public class MainActivity extends Activity implements SearchView.OnQueryTextListener {
 
@@ -70,7 +50,6 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 
 		mainGrid.setMultiChoiceModeListener(new ModeCallback());
 
-
 		int list_layout_type = Integer.parseInt(sharedPref.getString("layout" , "1"));
 		switch (list_layout_type) {
 			case 1: break;
@@ -91,7 +70,6 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 		helpText = (TextView) findViewById(R.id.how_to_text);
 
 		gridAdapter = new DisplayAdapter(MainActivity.this);
-
 
 		mainGrid.setAdapter(gridAdapter);
 
@@ -120,11 +98,6 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 
 
 	public boolean onQueryTextChange(String newText) {
-
-		//dataBase = mHelper.getWritableDatabase();
-		//searchAdapter = new SimpleCursorAdapter(this, android.R.layout.simple_list_item_1, searchCursor, new String[] { DbHelper.KEY_TITLE, },new int[] {android.R.id.text1});
-		//searchCursor = dataBase.rawQuery(sqlStatement, null);
-		//mSearchView.setSuggestionsAdapter(searchAdapter);
 		searchQuery = newText;
 		displayData(newText);
 		if (newText.length() == 0) {
@@ -136,7 +109,6 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
     }
 
     public boolean onQueryTextSubmit(String query) {
-
 		displayData(query);
         return false;
     }
@@ -174,11 +146,9 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 			case R.id.action_add:
 				Intent i = new Intent(getApplicationContext(), AddActivity.class);
 				startActivity(i);
-
 				return true;
-
-			case R.id.action_sort_by:
-
+				
+				case R.id.action_sort_by:
 				AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
 				builder.setSingleChoiceItems(R.array.sort_by, sortOrder, new DialogInterface.OnClickListener() {
 						public void onClick(DialogInterface dialog, int which) {
@@ -218,10 +188,6 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 
 					clickedView.setBackgroundColor(Color.parseColor("#FFC107"));
 
-					//Toast.makeText(MainActivity.this, "Clicked " + id, Toast.LENGTH_SHORT).show();
-
-
-
 					pageLoadDialog.setMessage("Please wait while loading...");
 					pageLoadDialog.setIndeterminate(true);
 					pageLoadDialog.setCancelable(false);
@@ -235,6 +201,7 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 					i.putExtra("id", gridAdapter.getPropertiesByPosition(position, "id"));
 					i.putExtra("fileLocation", gridAdapter.getPropertiesByPosition(position, "file_location"));
 					i.putExtra("thumbnailLocation", gridAdapter.getPropertiesByPosition(position, "thumbnail_location"));
+					i.putExtra("date", gridAdapter.getPropertiesByPosition(position, "date"));
 
 					startActivity(i);
 

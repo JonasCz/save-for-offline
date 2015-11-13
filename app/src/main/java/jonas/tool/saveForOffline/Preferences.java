@@ -22,6 +22,7 @@ public class Preferences extends PreferenceActivity implements OnSharedPreferenc
 		} else if (key.equals("dark_mode")) {
 			setResult(RESULT_FIRST_USER);
 		} else { setResult(RESULT_OK);}
+		disableEnablePreferences();
 	}
 
     @Override
@@ -34,8 +35,19 @@ public class Preferences extends PreferenceActivity implements OnSharedPreferenc
         addPreferencesFromResource(R.xml.preferences);
 		
 		list_appearance = getPreferenceScreen().getSharedPreferences().getString("layout" , "1");
+		disableEnablePreferences();
 		
 		getPreferenceScreen().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
     }
+	
+	private void disableEnablePreferences () {
+		//this can probably be done through Preference dependencies, too lazy to figure out how..
+		boolean useCustomStorageDirEnabled = getPreferenceScreen().getSharedPreferences().getBoolean("is_custom_storage_dir", true);
+		if (useCustomStorageDirEnabled) {
+			getPreferenceScreen().findPreference("custom_storage_dir").setEnabled(true);
+		} else {
+			getPreferenceScreen().findPreference("custom_storage_dir").setEnabled(false);
+		}
+	}
 
 }

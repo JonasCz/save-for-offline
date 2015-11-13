@@ -13,21 +13,20 @@ import android.preference.*;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
 
-public class ViewActivity extends Activity
-{
+public class ViewActivity extends Activity {
 	private Intent incomingIntent;
 	private String title;
 	private String fileLocation;
+	private String date;
 	private WebView webview;
 	private TextView loadingText;
 	private WebView.HitTestResult result;
-	
+
 	private boolean save_in_background;
 	private boolean invertedRendering;
-	
+
 	@Override
-	public void onCreate(Bundle savedInstanceState)
-	{
+	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
 		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
@@ -35,57 +34,56 @@ public class ViewActivity extends Activity
 			setTheme(android.R.style.Theme_Holo);
 		}
 		setContentView(R.layout.view_activity);
-		
-		
-		
+
+
+
 		ActionBar actionBar = getActionBar();
 		actionBar.setDisplayHomeAsUpEnabled(true);
 		incomingIntent = getIntent();
 		actionBar.setSubtitle(incomingIntent.getStringExtra("title"));
 		title = incomingIntent.getStringExtra("title");
 		fileLocation = incomingIntent.getStringExtra("fileLocation");
-		
+		date = incomingIntent.getStringExtra("date");
+
 		setProgressBarIndeterminateVisibility(true);
 
-		loadingText =(TextView) findViewById(R.id.view_activity_loading_text);
+		loadingText = (TextView) findViewById(R.id.view_activity_loading_text);
 		webview = (WebView) findViewById(R.id.webview);
-		
+
 		String ua = sharedPref.getString("user_agent", "mobile");
-		save_in_background = sharedPref.getBoolean("save_in_background", true);
-		boolean jsEnabled = sharedPref.getBoolean("viewer_enable_javascript", true);
 		invertedRendering = sharedPref.getBoolean("dark_mode", false);
-		
-		
+
+
 		registerForContextMenu(webview);
-		
+
 
 		if (ua.equals("desktop")) {
 			webview.getSettings().setUserAgentString("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.517 Safari/537.36");
-			
+
 		}
 		if (ua.equals("ipad")) {
 			webview.getSettings().setUserAgentString("todo:iPad ua");
 		}
-		
-		
+
+
 		webview.getSettings().setLoadWithOverviewMode(true);
 		webview.getSettings().setUseWideViewPort(true);
-		webview.getSettings().setJavaScriptEnabled(jsEnabled);
+		webview.getSettings().setJavaScriptEnabled(true);
 		webview.getSettings().setBuiltInZoomControls(true);
 		webview.getSettings().setDisplayZoomControls(false);
 		webview.getSettings().setAllowFileAccess(true);
 		webview.getSettings().setAllowFileAccessFromFileURLs(true);
 		webview.getSettings().setMediaPlaybackRequiresUserGesture(false);
 		webview.getSettings().setDefaultTextEncodingName("UTF-8");
-		
-        
+
+
 		if (fileLocation.endsWith("html")) {
 			webview.loadUrl("file://" + fileLocation);
 			webview.setWebViewClient(new WebViewClient() {
 
 					@Override
 					public void onPageFinished(WebView view, String url) {
-					//	loadingText.setVisibility(View.GONE);
+						//	loadingText.setVisibility(View.GONE);
 						setProgressBarIndeterminateVisibility(false);
 
 					}
@@ -98,11 +96,11 @@ public class ViewActivity extends Activity
 					@Override
 					public void onPageFinished(WebView view, String url) {
 						setProgressBarIndeterminateVisibility(false);
-					//	loadingText.setVisibility(View.GONE);
+						//	loadingText.setVisibility(View.GONE);
 
 					}
 				});
-			
+
 		} else loadWebView();
     }
 
@@ -125,8 +123,7 @@ public class ViewActivity extends Activity
 	}
 
 
-	private void loadWebView()
-	{
+	private void loadWebView() {
 		try {
 			FileInputStream is = new FileInputStream(fileLocation);
             //InputStream is = getAssets().open("TestHtmlArchive.xml");
@@ -146,25 +143,20 @@ public class ViewActivity extends Activity
         }
 		super.onStart();
 	}
-	
+
 	void continueWhenLoaded(WebView webView) {
-        
-        // Any other code we need to execute after loading a page from a WebArchive...
-		setProgressBarIndeterminateVisibility(false);
-	//	loadingText.setVisibility(View.GONE);
+		setProgressBarIndeterminateVisibility(false);	
     }
-	
+
 
 	@Override
-	public boolean onCreateOptionsMenu(Menu menu)
-	{
+	public boolean onCreateOptionsMenu(Menu menu) {
 		MenuInflater inflater = getMenuInflater();
 		inflater.inflate(R.menu.view_activity_actions, menu);
 		return super.onCreateOptionsMenu(menu);
 	}
-	
-	public boolean onOptionsItemSelected(MenuItem item)
-	{
+
+	public boolean onOptionsItemSelected(MenuItem item) {
 		// Handle presses on the action bar items
 		switch (item.getItemId()) {
 			case R.id.ic_action_settings:
@@ -172,28 +164,23 @@ public class ViewActivity extends Activity
 				startActivityForResult(settings, 1);
 
 				return true;
-			
-			case R.id.action_save_page_properties:
-				
-				showPropertiesDialog();
 
+			case R.id.action_save_page_properties:
+				showPropertiesDialog();
 				return true;
-			
+				
 			case R.id.action_open_in_external:
-				
-				
 				Intent incomingIntent = getIntent();
-				
-				
+
 				Uri uri = Uri.parse(incomingIntent.getStringExtra("orig_url"));
 				Intent startBrowserIntent = new Intent(Intent.ACTION_VIEW, uri);
 				startActivity(startBrowserIntent);
 
 				return true;
-				
+
 			case R.id.action_open_file_in_external:
 				Intent newIntent = new Intent(Intent.ACTION_VIEW);
-				newIntent.setDataAndType(Uri.fromFile(new File(fileLocation)),"text/html");
+				newIntent.setDataAndType(Uri.fromFile(new File(fileLocation)), "text/html");
 				newIntent.setFlags(newIntent.FLAG_ACTIVITY_NEW_TASK);
 				try {
 					startActivity(newIntent);
@@ -202,14 +189,14 @@ public class ViewActivity extends Activity
 				}
 //
 				return true;
-				
+
 			case R.id.ic_action_about:
 				Intent intent = new Intent(this, FirstRunDialog.class);
 				startActivity(intent);
 				return true;
-				
+
 			case R.id.action_delete:
-				
+
 				AlertDialog.Builder build;
 				build = new AlertDialog.Builder(ViewActivity.this);
 				build.setTitle("Delete ?");
@@ -219,7 +206,7 @@ public class ViewActivity extends Activity
 
 						public void onClick(DialogInterface dialog,
 											int which) {
-							
+
 
 							DbHelper mHelper = new DbHelper(ViewActivity.this);
 							SQLiteDatabase dataBase = mHelper.getWritableDatabase();
@@ -228,10 +215,10 @@ public class ViewActivity extends Activity
 							dataBase.delete(
 								DbHelper.TABLE_NAME,
 								DbHelper.KEY_ID + "=" + incomingIntent2.getStringExtra("id"), null);
-								
-							
+
+
 							File file = new File(incomingIntent2.getStringExtra("thumbnailLocation"));
-								file.delete();
+							file.delete();
 
 							if (incomingIntent2.getStringExtra("fileLocation").endsWith("mht")) {
 								String fileLocation = incomingIntent2.getStringExtra("fileLocation");
@@ -246,7 +233,7 @@ public class ViewActivity extends Activity
 
 							Toast.makeText(
 								getApplicationContext(),
-								"Saved page deleted.", Toast.LENGTH_LONG).show();
+								"Saved page deleted", Toast.LENGTH_LONG).show();
 
 							finish();
 						}
@@ -262,11 +249,8 @@ public class ViewActivity extends Activity
 					});
 				AlertDialog alert = build.create();
 				alert.show();
-				
-				
-
 				return true;
-				
+
 			default:
 				return super.onOptionsItemSelected(item);
 		}
@@ -281,6 +265,8 @@ public class ViewActivity extends Activity
 		t.setText("Title: \r\n" + title);
 		t = (TextView) layout.findViewById(R.id.properties_dialog_text_file_location);
 		t.setText("File location: \r\n" + fileLocation);
+		t = (TextView) layout.findViewById(R.id.properties_dialog_text_date);
+		t.setText("Date & Time saved: \r\n" + date);
 		t = (TextView) layout.findViewById(R.id.properties_dialog_text_orig_url);
 		t.setText("Saved from: \r\n" + incomingIntent.getStringExtra("orig_url"));
 		build.setPositiveButton("OK",
@@ -288,19 +274,18 @@ public class ViewActivity extends Activity
 
 				public void onClick(DialogInterface dialog, int which) {
 
-
 				}
 			});
 		AlertDialog alert = build.create();
 		alert.show();
 	}
-	
-	
+
+
 	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenu.ContextMenuInfo menuInfo) {
 
-	
+
 		result = webview.getHitTestResult();
-		
+
 		if (result.getType() == WebView.HitTestResult.ANCHOR_TYPE || result.getType() == WebView.HitTestResult.SRC_ANCHOR_TYPE || result.getType() == WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE) {
 			// Menu options for a hyperlink.
 			//set the header title to the link url
@@ -321,9 +306,10 @@ public class ViewActivity extends Activity
 		} else if (item.getItemId() == 4) {
 			Intent i = new Intent(Intent.ACTION_SEND);
 			i.setType("text/plain");
+			i.putExtra(Intent.EXTRA_TITLE, webview.getTitle());
 			i.putExtra(Intent.EXTRA_TEXT, result.getExtra());
 			startActivity(Intent.createChooser(i, "Share Link via"));
-			
+
 		} else if (item.getItemId() == 3) {
 			if (save_in_background) {
 				Intent intent = new Intent(this, SaveService.class);
@@ -334,9 +320,9 @@ public class ViewActivity extends Activity
 				intent.putExtra("origurl", result.getExtra());
 				startActivity(intent);
 			}
-	
+
 		} else if (item.getItemId() == 6) {
-			
+
 			ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE); 
 			ClipData clip = ClipData.newPlainText(webview.getTitle(), result.getExtra());
 			clipboard.setPrimaryClip(clip);
@@ -344,7 +330,7 @@ public class ViewActivity extends Activity
 
 		}
 		return super.onContextItemSelected(item);
-		
+
 	}
-	
+
 }

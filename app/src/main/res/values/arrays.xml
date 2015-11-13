@@ -1,5 +1,4 @@
 <resources>
-	
 	<string-array name="entries_list_preference">
 		<item>Desktop</item>
 		<item>Mobile (Recommended)</item>
@@ -8,20 +7,8 @@
 	
 	<string-array name="entryvalues_list_preference">
 		<item>Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.517 Safari/537.36</item>
-		<item>Mozilla/5.0 (Linux; U; Android 4.0.3; de-ch; mobile) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30</item>
+		<item>Mozilla/5.0 (Linux; U; Android 4.4.3; en-us; mobile) AppleWebKit/537.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30</item>
 		<item>ipad</item>
-	</string-array>
-	
-	<string-array name="storage_dir_list">
-		<item>Default (External)</item>
-		<item>/sdcard/saved-pages/</item>
-		<item>Custom</item>
-	</string-array>
-	
-	<string-array name="storage_dir_list_values">
-		<item>external</item>
-		<item>public</item>
-		<item>custom</item>
 	</string-array>
 	
 	<string-array name="layout_list">
@@ -29,7 +16,7 @@
 		<item>Grid</item>
 		<item>List</item>
 		<item>List with details</item>
-		<item>List, no thumbmails</item>
+		<item>Small list, no thumbnails</item>
 	</string-array>
 
 	<string-array name="layout_list_values">
@@ -51,22 +38,4 @@
 		<item>1</item>
 		<item>2</item>
 	</string-array>
-	
-	
-	<string-array name="max_num_retries">
-		<item>Don\'t retry</item>
-		<item>3 Retries</item>
-		<item>5 Retries</item>
-	</string-array>
-
-	<string-array name="max_num_retries_values">
-		<item>0</item>
-		<item>3</item>
-		<item>5</item>
-	</string-array>
-	
-	
-	
-	
-	
 </resources>

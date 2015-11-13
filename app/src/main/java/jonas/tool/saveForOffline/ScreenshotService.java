@@ -47,10 +47,7 @@ public class ScreenshotService extends Service {
 
 			//without this toast message, screenshot will be blank, dont ask me why...
 			Toast.makeText(ScreenshotService.this, "Save completed.", Toast.LENGTH_SHORT).show();
-
-			SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(ScreenshotService.this);
-			boolean js = sharedPref.getBoolean("enable_javascript_screenshot", true);
-			webview.getSettings().setJavaScriptEnabled(js);
+			webview.getSettings().setJavaScriptEnabled(true);
 
 			// This is the important code :)   
 			webview.setDrawingCacheEnabled(true);

@@ -17,7 +17,7 @@
 		android:showAsAction="never"/>
 	
 	<item android:id="@+id/ic_action_settings"
-		android:title="Settings"
+		android:title="Preferences"
 		android:showAsAction="never" />
 	
 	<item android:id="@+id/ic_action_about"

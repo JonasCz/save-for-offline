@@ -30,7 +30,6 @@
         <item name="android:actionModeCloseButtonStyle">@style/ActionButton.CloseMode.Theme_main_yellow</item>
 		<item name="android:alertDialogTheme">@style/Theme_Dialog_Alert</item>
         
-        
     </style>
 	
 	<style name="Theme_Dialog_Alert" parent="@style/Theme_Holo_Light_Dialog_Alert">

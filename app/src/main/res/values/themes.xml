@@ -4,6 +4,8 @@
 			<item name="android:actionBarStyle">@style/themeLightRed</item>
 			<item name="android:actionModeStyle">@style/themeLightRed</item>
 			<item name="android:popupMenuStyle">@style/popupMenu</item>	
+			<item name="android:windowTranslucentStatus">true</item>
+			<item name="android:fitsSystemWindows">true</item>
 		</style>
 		
 		<style name="themeLightRed" parent="@android:style/Widget.Holo.Light.ActionBar.Solid">

@@ -25,65 +25,56 @@ import java.text.*;
 import java.text.ParseException;
 
 
-public class DisplayAdapter extends BaseAdapter
-{
-
-	
+public class DisplayAdapter extends BaseAdapter {
 
 	private Context mContext;
 	private DbHelper mHelper;
 	private SQLiteDatabase dataBase;
 	private FuzzyDateFormatter fuzzyFormatter;
-	
-	
+
 	private String searchQuery = "";
 	private String sqlStatement;
-	
+
 	public int list_layout_type = 1;
 	private boolean darkMode;
-	
+
 	public ArrayList<Integer> selectedViewsPositions = new ArrayList<Integer>();
-	
-	
+
 	private Bitmap placeHolder;
-	
+
 	private LruCache<String, Bitmap> mMemoryCache;
-	
-	
-	
-	
+
 	public Cursor dbCursor;
-	
+
 	public void refreshData(String searchQuery, int sortOrder, boolean dataSetChanged) {
 		//sortOrder 0 = date newest first, 1 = oldest first, 2 = alphabetical
-		if (sortOrder == 0) sqlStatement = "SELECT * FROM " + DbHelper.TABLE_NAME + " WHERE " + DbHelper.KEY_TITLE + " LIKE'%"+searchQuery+"%' ORDER BY " + DbHelper.KEY_ID + " DESC";
-		if (sortOrder == 1) sqlStatement = "SELECT * FROM " + DbHelper.TABLE_NAME + " WHERE " + DbHelper.KEY_TITLE + " LIKE'%"+searchQuery+"%' ORDER BY " + DbHelper.KEY_ID + " ASC";
-		else if (sortOrder == 2) sqlStatement = "SELECT * FROM " + DbHelper.TABLE_NAME + " WHERE " + DbHelper.KEY_TITLE + " LIKE'%"+searchQuery+"%' ORDER BY " + DbHelper.KEY_TITLE + " ASC";
-		else sqlStatement = "SELECT * FROM " + DbHelper.TABLE_NAME + " WHERE " + DbHelper.KEY_TITLE + " LIKE'%"+searchQuery+"%' ORDER BY " + DbHelper.KEY_ID + " DESC";
-	
-		 
-		dbCursor = dataBase.rawQuery(sqlStatement,null);
+		if (sortOrder == 0) sqlStatement = "SELECT * FROM " + DbHelper.TABLE_NAME + " WHERE " + DbHelper.KEY_TITLE + " LIKE'%" + searchQuery + "%' ORDER BY " + DbHelper.KEY_ID + " DESC";
+		if (sortOrder == 1) sqlStatement = "SELECT * FROM " + DbHelper.TABLE_NAME + " WHERE " + DbHelper.KEY_TITLE + " LIKE'%" + searchQuery + "%' ORDER BY " + DbHelper.KEY_ID + " ASC";
+		else if (sortOrder == 2) sqlStatement = "SELECT * FROM " + DbHelper.TABLE_NAME + " WHERE " + DbHelper.KEY_TITLE + " LIKE'%" + searchQuery + "%' ORDER BY " + DbHelper.KEY_TITLE + " ASC";
+		else sqlStatement = "SELECT * FROM " + DbHelper.TABLE_NAME + " WHERE " + DbHelper.KEY_TITLE + " LIKE'%" + searchQuery + "%' ORDER BY " + DbHelper.KEY_ID + " DESC";
+
+		dbCursor = dataBase.rawQuery(sqlStatement, null);
 		dbCursor.moveToFirst();
 		if (dataSetChanged) notifyDataSetChanged();
 	}
 
 	public DisplayAdapter(Context c) {
 		this.mContext = c;
-		
+
 		mHelper = new DbHelper(c);
 		dataBase = mHelper.getReadableDatabase();
 		FuzzyDateMessages fdm = new FuzzyDateMessages();
 		fuzzyFormatter = new FuzzyDateFormatter(Calendar.getInstance(), fdm);
-		
+
 		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(mContext);
-		
+
 		list_layout_type = Integer.parseInt(sharedPref.getString("layout" , "1"));
 		darkMode = sharedPref.getBoolean("dark_mode", false);
-	
+
 		refreshData(null, 1, false);
-		
+
 		placeHolder = BitmapFactory.decodeResource(mContext.getResources(), R.drawable.placeholder);
-		
+
 		final int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
 		// Use 1/8th of the available memory for this memory cache.
 		final int cacheSize = maxMemory / 4;
@@ -96,19 +87,15 @@ public class DisplayAdapter extends BaseAdapter
 				return bitmap.getByteCount() / 1024;
 			}
 		};
-		
+
 	}
 
-	public String getSearchQuery()
-	{
+	public String getSearchQuery() {
 		return searchQuery;
 	}
-	
-	
 
 	@Override
-	public boolean isEmpty()
-	{
+	public boolean isEmpty() {
         return dbCursor.getCount() == 0;
 	}
 
@@ -119,56 +106,41 @@ public class DisplayAdapter extends BaseAdapter
 	public Object getItem(int position) {
 		return null;
 	}
-	
+
 	@Override
-	public long getItemId(int position)
-	{
+	public long getItemId(int position) {
 		if (dbCursor.getCount() != 0) {
-		return Long.valueOf(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_ID)));
+			return Long.valueOf(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_ID)));
 		} else return 0;
 	}
 
 	public String getPropertiesByPosition(int position, String type) {
-		
+
 		dbCursor.moveToPosition(position);
-		
+
 		if (type.equals("id")) {
 			return dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_ID));
-		}
-		
-		else if (type.equals("thumbnail_location")) {
+		} else if (type.equals("thumbnail_location")) {
 			return dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_THUMBNAIL));
-		}
-		
-		else if (type.equals("file_location")) {
+		} else if (type.equals("file_location")) {
 			return dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_FILE_LOCATION));
-		}
-		
-		else if (type.equals("title")) {
+		} else if (type.equals("title")) {
 			return dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_TITLE));
-		}
-		
-		else if (type.equals("orig_url")) {
+		} else if (type.equals("orig_url")) {
 			return dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_ORIG_URL));
-		}
-		
-		else if (type.equals("date")) {
+		} else if (type.equals("date")) {
 			return dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_TIMESTAMP));
-		}
-		
-		else { return null; }
+		} else { return null; }
 	}
-	
-	
+
+
 
 	public View getView(int pos, View convertView, ViewGroup parent) {
-		
-		
 		dbCursor.moveToPosition(pos);
-		
+
 		Holder mHolder;
 		LayoutInflater layoutInflater;
-		
+
 		if (selectedViewsPositions.contains(pos)) {
 			convertView.setBackgroundColor(Color.parseColor("#FFC107"));
 		} else if (convertView != null) {
@@ -178,7 +150,7 @@ public class DisplayAdapter extends BaseAdapter
 				convertView.setBackgroundColor(Color.parseColor("#E2E2E2"));
 			}
 		}
-		
+
 		if (convertView == null) {
 			layoutInflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 			switch (list_layout_type) {
@@ -210,7 +182,7 @@ public class DisplayAdapter extends BaseAdapter
 				mHolder.txt_orig_url = (TextView) convertView.findViewById(R.id.txt_orig_url);
 				mHolder.txt_title = (TextView) convertView.findViewById(R.id.txt_title);
 			}
-			
+
 			if (list_layout_type != 5) {
 				mHolder.listimage = (ImageView) convertView.findViewById(R.id.listimage);
 			}
@@ -230,20 +202,20 @@ public class DisplayAdapter extends BaseAdapter
 		mHolder.txt_filelocation.setText(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_FILE_LOCATION)));
 		mHolder.txt_orig_url.setText(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_ORIG_URL)));
 		mHolder.txt_title.setText(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_TITLE)));
-		
+
 		//if (bitmapCache.size() > pos) {
 		//	mHolder.mBitmap= bitmapCache.get(pos);
 		//} else { 
 		//	mHolder.mBitmap = BitmapFactory.decodeFile(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_THUMBNAIL)));
 		//	bitmapCache.add(pos, mHolder.mBitmap);
 		//}
-	
+
 		//mHolder.listimage.setImageBitmap(mHolder.mBitmap);
-		
+
 		if (list_layout_type != 5) {
 			loadBitmap(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_THUMBNAIL)), mHolder.listimage);
 		}
-		
+
 		return convertView;
 	}
 
@@ -256,7 +228,7 @@ public class DisplayAdapter extends BaseAdapter
 		ImageView listimage;
 		Bitmap mBitmap;
 	}
-	
+
 	public void addBitmapToMemoryCache(String key, Bitmap bitmap) {
 		if (bitmap != null && getBitmapFromMemCache(key) == null) {
 			mMemoryCache.put(key, bitmap);
@@ -264,15 +236,12 @@ public class DisplayAdapter extends BaseAdapter
 	}
 
 	public Bitmap getBitmapFromMemCache(String key) {
-		 return mMemoryCache.get(key);
+		return mMemoryCache.get(key);
 	}
-	
-	
-	
+
 	public void loadBitmap(String path, ImageView imageView) {
 		if (cancelPotentialWork(0, imageView)) {
-			
-			
+
 			final String imageKey = path;
 			final Bitmap bitmap = mMemoryCache.get(imageKey);
 			if (bitmap != null) {
@@ -328,7 +297,7 @@ public class DisplayAdapter extends BaseAdapter
 		}
 		return null;
 	}
-	
+
 	class BitmapWorkerTask extends AsyncTask<String, Void, Bitmap> {
 		private final WeakReference<ImageView> imageViewReference;
 		private int data = 0;
@@ -352,9 +321,9 @@ public class DisplayAdapter extends BaseAdapter
 			if (imageViewReference != null && bitmap != null) {
 				final ImageView imageView = imageViewReference.get();
 				if (imageView != null) {
-					
+
 					imageView.setImageBitmap(bitmap);
-					
+
 					// Transition drawable with a transparent drwabale and the final bitmap
 //					TransitionDrawable td = new TransitionDrawable(new Drawable[] {
 //						new ColorDrawable(Color.parseColor("#E2E2E2")),
