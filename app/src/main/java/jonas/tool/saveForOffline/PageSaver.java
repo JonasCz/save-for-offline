@@ -73,7 +73,6 @@ public class PageSaver {
     private String indexFileName = "index.html";
 
     private final Pattern fileNameReplacementPattern = Pattern.compile("[^a-zA-Z0-9-_\\.]");
-    private final Pattern urlValidatingPattern = Pattern.compile("^(http(s)?:\\/\\/[a-zA-Z0-9\\-_]+\\.[a-zA-Z]+(.)+)+");
 
     public Options getOptions() {
         return this.options;
@@ -103,8 +102,8 @@ public class PageSaver {
 
         File outputDir = new File(outputDirPath);
 
-        if (outputDir.mkdirs() == false) {
-            eventCallback.onError("Can't save, storage not available");
+        if (!outputDir.exists() && outputDir.mkdirs() == false) {
+            eventCallback.onError("Storage not available");
             return false;
         }
 

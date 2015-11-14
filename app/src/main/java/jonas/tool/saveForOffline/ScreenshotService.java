@@ -23,6 +23,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.TimeUnit;
+import java.io.*;
 
 //this is an example of how to take a screenshot of a webpage in a background service
 //not very elegant, but it works (for me anyway)
@@ -97,9 +98,12 @@ public class ScreenshotService extends Service {
 			Bitmap b = webview.getDrawingCache();
 			File file = new File(thumblocation[0]);
 
-            System.out.println(file.getAbsolutePath());
-
-
+			file.getParentFile().listFiles(new FileFilter() {
+					@Override
+					public boolean accept(File currentFile) {
+						return false;
+					}	
+			});
             try {
 				OutputStream out = new BufferedOutputStream(new FileOutputStream(file));
 				b.compress(Bitmap.CompressFormat.PNG, 100, out);
