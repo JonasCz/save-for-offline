@@ -1,28 +1,19 @@
 package jonas.tool.saveForOffline;
 
-import java.util.ArrayList;
-
-import android.content.Context;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.BaseAdapter;
-import android.widget.TextView;
-import android.widget.*;
-import android.net.*;
-import android.graphics.*;
+import android.content.*;
 import android.database.*;
 import android.database.sqlite.*;
-import android.content.*;
-import android.preference.*;
+import android.graphics.*;
 import android.graphics.drawable.*;
-import java.lang.ref.*;
 import android.os.*;
-import android.content.res.*;
+import android.preference.*;
 import android.util.*;
-import java.util.*;
+import android.view.*;
+import android.widget.*;
+import java.io.*;
+import java.lang.ref.*;
 import java.text.*;
-import java.text.ParseException;
+import java.util.*;
 
 
 public class DisplayAdapter extends BaseAdapter {
@@ -73,7 +64,7 @@ public class DisplayAdapter extends BaseAdapter {
 
 		refreshData(null, 1, false);
 
-		placeHolder = BitmapFactory.decodeResource(mContext.getResources(), R.drawable.placeholder);
+		placeHolder = BitmapFactory.decodeResource(mContext.getResources(), R.drawable.icon_website_large);
 
 		final int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
 		// Use 1/8th of the available memory for this memory cache.
@@ -158,6 +149,7 @@ public class DisplayAdapter extends BaseAdapter {
 				case 3: convertView = layoutInflater.inflate(R.layout.listcell_list, null); break;
 				case 4: convertView = layoutInflater.inflate(R.layout.listcell_list_details, null); break;
 				case 5: convertView = layoutInflater.inflate(R.layout.listcell_list_details_small, null); break;
+				case 6: convertView = layoutInflater.inflate(R.layout.listcell_list_details_small_icon_only, null); break;
 				default: convertView = layoutInflater.inflate(R.layout.listcell_default, null);
 			}
 			mHolder = new Holder();
@@ -213,7 +205,12 @@ public class DisplayAdapter extends BaseAdapter {
 		//mHolder.listimage.setImageBitmap(mHolder.mBitmap);
 
 		if (list_layout_type != 5) {
-			loadBitmap(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_THUMBNAIL)), mHolder.listimage);
+			if (list_layout_type == 6) {
+				File icon = new File(new File(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_THUMBNAIL))).getParent(), "saveForOffline_icon.png");
+				loadBitmap(icon.getPath(), mHolder.listimage);
+			} else {
+				loadBitmap(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_THUMBNAIL)), mHolder.listimage);
+			}
 		}
 
 		return convertView;

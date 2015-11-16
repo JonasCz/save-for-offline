@@ -55,15 +55,16 @@ public class SaveService extends Service {
 	private NotificationTools notificationTools;
 
 
-    private void addToDb(String fileLocation, String thumbnailLocation, String title, String originalUrl) {
+    private void addToDb(String destinationDirectory, String title, String originalUrl) {
 
         DbHelper mHelper = new DbHelper(SaveService.this);
         SQLiteDatabase dataBase = mHelper.getWritableDatabase();
         ContentValues values = new ContentValues();
 
-        values.put(DbHelper.KEY_FILE_LOCATION, fileLocation);
+        values.put(DbHelper.KEY_FILE_LOCATION, destinationDirectory + "index.html");
+		values.put(DbHelper.KEY_SAVED_PAGE_BASE_DIRECTORY, destinationDirectory);
         values.put(DbHelper.KEY_TITLE, title);
-        values.put(DbHelper.KEY_THUMBNAIL, thumbnailLocation);
+        values.put(DbHelper.KEY_THUMBNAIL, destinationDirectory + "saveForOffline_thumbnail.png");
         values.put(DbHelper.KEY_ORIG_URL, originalUrl);
 
         dataBase.insert(DbHelper.TABLE_NAME, null, values);
@@ -130,16 +131,15 @@ public class SaveService extends Service {
             System.out.println("rename to: "  + getNewDirectoryPath(pageSaver.getPageTitle(), destinationDirectory));
 
             destinationDirectory = getNewDirectoryPath(pageSaver.getPageTitle(), destinationDirectory);
-            String thumbnailLocation = destinationDirectory + "saveForOffline_thumbnail.png";
 
 			notificationTools.setContentText("Finishing..")
 				.createNotification();
 
-            addToDb(destinationDirectory + "index.html", thumbnailLocation, pageSaver.getPageTitle(), originalUrl);
+            addToDb(destinationDirectory, pageSaver.getPageTitle(), originalUrl);
 
             Intent i = new Intent(SaveService.this, ScreenshotService.class);
             i.putExtra("origurl", "file://" + destinationDirectory + "index.html");
-            i.putExtra("thumbnail", thumbnailLocation);
+            i.putExtra("thumbnail", destinationDirectory + "saveForOffline_thumbnail.png");
             startService(i);
 			
 			notificationTools.setTicker("Save completed: " + pageSaver.getPageTitle())
@@ -152,6 +152,19 @@ public class SaveService extends Service {
 		
 
         private class PageSaveEventCallback implements EventCallback {
+
+			@Override
+			public void onFatalError(String errorMessage) {
+				Log.e("PageSaverService", errorMessage);
+				
+				notificationTools.setTicker("Error, page not saved: " + errorMessage)
+					.setContentTitle("Error, page not saved")
+					.setContentText(errorMessage)
+					.setShowProgress(false)
+					.setIcon(android.R.drawable.stat_sys_warning)
+					.createNotificationWithAlert();
+			}
+			
 
             @Override
             public void onProgressChanged(final int progress, final int maxProgress, final boolean indeterminate) {
@@ -172,13 +185,6 @@ public class SaveService extends Service {
             @Override
             public void onError(final String errorMessage) {
                 Log.e("PageSaverService", errorMessage);
-				
-				notificationTools.setTicker("Error, page not saved: " + errorMessage)
-					.setContentTitle("Error, page not saved")
-					.setContentText(errorMessage)
-					.setShowProgress(false)
-					.setIcon(android.R.drawable.stat_sys_warning)
-					.createNotificationWithAlert();
             }
         }
 

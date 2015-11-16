@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.TimeUnit;
 import java.io.*;
+import android.graphics.*;
+import java.util.*;
 
 //this is an example of how to take a screenshot of a webpage in a background service
 //not very elegant, but it works (for me anyway)
@@ -95,18 +97,10 @@ public class ScreenshotService extends Service {
 			}
 
 			//here I save the bitmap to file
-			Bitmap b = webview.getDrawingCache();
-			File file = new File(thumblocation[0]);
-
-			file.getParentFile().listFiles(new FileFilter() {
-					@Override
-					public boolean accept(File currentFile) {
-						return false;
-					}	
-			});
-            try {
-				OutputStream out = new BufferedOutputStream(new FileOutputStream(file));
-				b.compress(Bitmap.CompressFormat.PNG, 100, out);
+			Bitmap webviewScreenshotBitmap = webview.getDrawingCache();
+			try {
+				OutputStream out = new BufferedOutputStream(new FileOutputStream(new File(thumblocation[0])));
+				webviewScreenshotBitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
 				out.flush();
 				out.close();
 
@@ -114,8 +108,53 @@ public class ScreenshotService extends Service {
 				Log.e("ScreenshotService", "IOException while trying to save thumbnail, Is /sdcard/ writable?");
 				e.printStackTrace();
 			}
+			
+			getSiteIcon(new File(thumblocation[0]).getParentFile().getPath());
 
 			return null;
+		}
+		
+		private void getSiteIcon (String directory) {
+			Bitmap siteIcon = null;
+			File[] iconBitmapFiles = new File(directory).listFiles(new FilenameFilter() {
+
+					@Override
+					public boolean accept(File directory, String filename) {
+						System.out.println(filename);
+						System.out.println((filename.endsWith("png") || filename.endsWith("ico")) && filename.contains("icon"));
+						return (filename.endsWith("png") || filename.endsWith("ico")) && (filename.contains("favicon") || filename.contains("apple-touch-icon") || filename.contains("logo"));
+					}
+
+
+				});
+
+			for (File f : iconBitmapFiles) {
+				Bitmap bitmap = BitmapFactory.decodeFile(f.getPath());
+				if (bitmap != null && bitmap.getHeight() == bitmap.getWidth()) {
+					if (siteIcon != null && siteIcon.getWidth() <= bitmap.getWidth()) {
+						siteIcon = bitmap;	
+					} else if (siteIcon == null) {
+						siteIcon = bitmap;
+					}
+				}
+
+			}
+
+			if (siteIcon != null) {
+				File outputFile = new File(directory, "saveForOffline_icon.png");
+				try {
+
+					OutputStream out = new BufferedOutputStream(new FileOutputStream(outputFile));
+					siteIcon.compress(Bitmap.CompressFormat.PNG, 100, out);
+					out.flush();
+					out.close();
+
+				} catch (FileNotFoundException e) {
+					e.printStackTrace();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
 		}
 	}
 	

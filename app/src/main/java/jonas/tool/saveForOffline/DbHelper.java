@@ -8,7 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class DbHelper extends SQLiteOpenHelper {
 	
-	static String DATABASE_NAME="SavedPagesMeta.db";
+	static final String DATABASE_NAME="SavedPagesMeta.db";
 	public static final String TABLE_NAME="main";
 	public static final String KEY_TITLE="title";
 	public static final String KEY_FILE_LOCATION="file_location";
@@ -16,7 +16,7 @@ public class DbHelper extends SQLiteOpenHelper {
 	public static final String KEY_ORIG_URL="origurl";
 	public static final String KEY_ID="_id";
 	public static final String KEY_TIMESTAMP="timestamp";
-	public static final String KEY_TAGS="tags";
+	public static final String KEY_SAVED_PAGE_BASE_DIRECTORY="tags";
 	
 	public DbHelper(Context context) {
 		super(context, DATABASE_NAME, null, 4);
@@ -31,7 +31,7 @@ public class DbHelper extends SQLiteOpenHelper {
 		+KEY_FILE_LOCATION+" TEXT, "
 		+KEY_THUMBNAIL+" TEXT, "
 		+KEY_ORIG_URL+" TEXT, "
-		+KEY_TAGS+" TEXT, "
+		+KEY_SAVED_PAGE_BASE_DIRECTORY+" TEXT, "
 		+KEY_TIMESTAMP+" TEXT DEFAULT CURRENT_TIMESTAMP)";
 		
 		db.execSQL(CREATE_TABLE);

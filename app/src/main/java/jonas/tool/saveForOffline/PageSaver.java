@@ -47,6 +47,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.Iterator;
 
 
 public class PageSaver {
@@ -103,7 +104,7 @@ public class PageSaver {
         File outputDir = new File(outputDirPath);
 
         if (!outputDir.exists() && outputDir.mkdirs() == false) {
-            eventCallback.onError("Storage not available");
+            eventCallback.onFatalError("Storage not available");
             return false;
         }
 
@@ -111,26 +112,19 @@ public class PageSaver {
         boolean success = downloadHtmlAndParseLinks(url, outputDirPath, false);
         if (isCancelled) return false;
 
-        //download and parse html frames
-        //don't change this! Enhanced for loop breaks it!
-        for (int i = 0; i < framesToGrab.size(); i++) {
-            downloadHtmlAndParseLinks(framesToGrab.get(i), outputDirPath, true);
-            if (isCancelled) return true;
-
-        }
+        //download and parse html frames - use iterator because our list may be modified as frames can contain other frames
+		Iterator<String> i = framesToGrab.iterator();
+		while (i.hasNext()) {
+			downloadHtmlAndParseLinks(i.next(), outputDirPath, true);
+			if (isCancelled) return true;
+		}
 
         //download and parse css files
-        for (String urlToDownload : cssToGrab) {
-            if (isCancelled) return true;
-            downloadCssAndParse(urlToDownload, outputDirPath);
-        }
-
-        //download and parse extra css files
-        //todo : make this recursive
-        for (String urlToDownload : extraCssToGrab) {
-            if (isCancelled) return true;
-            downloadCssAndParse(urlToDownload, outputDirPath);
-        }
+		i = cssToGrab.iterator();
+		while (i.hasNext()) {
+			if (isCancelled) return true;
+            downloadCssAndParse(i.next(), outputDirPath);
+		}
 
         //download extra files, such as images / scripts
         ExecutorService pool = Executors.newFixedThreadPool(5);
@@ -156,7 +150,6 @@ public class PageSaver {
 
     private boolean downloadHtmlAndParseLinks(final String url, final String outputDir, final boolean isExtra) {
         //isExtra should be true when saving a html frame file.
-
         String filename;
 
         if (isExtra) {
@@ -179,7 +172,12 @@ public class PageSaver {
             return true;
 
         } catch (IOException e) {
-			eventCallback.onError(e.getMessage());
+			if (isExtra) {
+				eventCallback.onError(e.getMessage());
+				
+			} else {
+				eventCallback.onFatalError(e.getMessage());
+			}
             return false;
         }
     }
@@ -213,10 +211,6 @@ public class PageSaver {
         public void run() {
             String filename = getFileName(url);
             File outputFile = new File(outputDir, filename);
-            if (outputFile.exists()) {
-                eventCallback.onLogMessage("File already exists, skipping: " + filename);
-                return;
-            }
 
             Request request = new Request.Builder()
                     .url(url)
@@ -254,6 +248,7 @@ public class PageSaver {
         Request request = new Request.Builder()
                 .url(url)
                 .addHeader("User-Agent", getOptions().getUserAgent())
+				.tag(HTTP_REQUEST_TAG)
                 .build();
 
         Response response = client.newCall(request).execute();
@@ -451,7 +446,7 @@ public class PageSaver {
                 cssToParse = cssToParse.replace(matcher.group().replaceAll(patternString, "$2"), getFileName(matcher.group().replaceAll(patternString, "$2")));
 
             }
-            addLinkToList(makeLinkAbsolute(matcher.group().replaceAll(patternString, "$2").trim(), baseUrl), extraCssToGrab);
+            addLinkToList(makeLinkAbsolute(matcher.group().replaceAll(patternString, "$2").trim(), baseUrl), cssToGrab);
         }
 
         return cssToParse;
@@ -569,5 +564,7 @@ interface EventCallback {
     public void onLogMessage (String message);
 
     public void onError(String errorMessage);
+	
+	public void onFatalError (String errorMessage)
 }
 
