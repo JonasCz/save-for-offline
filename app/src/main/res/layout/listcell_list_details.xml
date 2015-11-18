@@ -9,14 +9,14 @@
 
 	<ImageView
 		android:id="@+id/listimage"
-		android:layout_width="200dp"
-		android:layout_height="match_parent"
+		android:layout_width="150dp"
+		android:layout_height="100dp"
 		android:layout_alignParentBottom="true"
 		android:layout_alignParentTop="true"
 		android:layout_marginRight="8dp"
-		android:contentDescription="TODO"
 		android:src="@drawable/ic_launcher"
-		android:adjustViewBounds="true"/>
+		android:adjustViewBounds="true"
+		android:tag="show:thumbnail"/>
 
 	<TextView
 		android:id="@+id/txt_title"

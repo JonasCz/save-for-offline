@@ -18,7 +18,8 @@
 		android:layout_height="wrap_content"
 		android:paddingTop="8dp"
 		android:paddingBottom="8dp"
-		android:adjustViewBounds="true"/>
+		android:adjustViewBounds="true"
+		android:tag="show:thumbnail"/>
 
 	<TextView
 		android:id="@+id/txt_id"

@@ -38,7 +38,7 @@
 			android:key="layout"
 			android:title="Layout for saved pages list"
 			android:defaultValue="1"
-			android:summary="Choose between list or grid."
+			android:summary="Choose what the list of saved pages should look like, with various choices for list or grid"
 			android:entries="@array/layout_list"
 			android:entryValues="@array/layout_list_values"
 			android:dialogTitle="Choose" />

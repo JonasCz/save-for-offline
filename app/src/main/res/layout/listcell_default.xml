@@ -9,14 +9,13 @@
 
 	<ImageView
 		android:id="@+id/listimage"
-		android:layout_width="100dp"
-		android:layout_height="match_parent"
+		android:layout_width="50dp"
+		android:layout_height="50dp"
 		android:layout_alignParentBottom="true"
 		android:layout_alignParentTop="true"
 		android:layout_marginRight="8dp"
-		android:contentDescription="TODO"
-		android:src="@drawable/ic_launcher"
-		android:adjustViewBounds="true"/>
+		android:adjustViewBounds="true"
+		android:tag="show:icon"/>
 
 	<TextView
 		android:id="@+id/txt_title"
@@ -24,7 +23,8 @@
 		android:layout_height="wrap_content"
 		android:layout_toRightOf="@id/listimage"
 		android:text="Title"
-		android:textSize="16sp"/>
+		android:textSize="14sp"
+		android:maxLines="3"/>
 
 	<TextView
 		android:id="@+id/txt_orig_url"
@@ -33,6 +33,19 @@
 		android:text="Original URL"
 		android:layout_toRightOf="@id/listimage"
 		android:layout_below="@id/txt_title"
+		android:textSize="12sp"
+		android:visibility="gone"/>
+
+	<TextView
+		android:id="@+id/txt_date"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:text="Saved one week ago"
+		android:layout_toRightOf="@id/listimage"
+		android:layout_below="@id/txt_orig_url"
+		android:textSize="12sp"
+		android:layout_alignParentBottom="true"
+		android:gravity="bottom"
 		android:visibility="gone"/>
 
 	<TextView

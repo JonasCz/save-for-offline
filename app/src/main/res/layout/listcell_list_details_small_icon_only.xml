@@ -14,7 +14,8 @@
 		android:layout_alignParentBottom="true"
 		android:layout_alignParentTop="true"
 		android:layout_marginRight="8dp"
-		android:adjustViewBounds="true"/>
+		android:adjustViewBounds="true"
+		android:tag="show:icon"/>
 
 	<TextView
 		android:id="@+id/txt_title"

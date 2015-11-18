@@ -14,9 +14,19 @@ import java.io.*;
 import java.lang.ref.*;
 import java.text.*;
 import java.util.*;
+import com.squareup.picasso.Picasso;
 
 
 public class DisplayAdapter extends BaseAdapter {
+	
+	public static class Constants {
+		private Constants() {}		
+		public final static int LIST_LAYOUT_DEFAULT = 1;
+		public final static int LIST_LAYOUT_GRID = 2;
+		public final static int LIST_LAYOUT_DETAILS_THUMBNAILS = 4;
+		public final static int LIST_LAYOUT_DETAILS_SMALL_TEXT_ONLY = 5;
+		public final static int LIST_LAYOUT_SMALL_ICON = 6;
+	}
 
 	private Context mContext;
 	private DbHelper mHelper;
@@ -32,8 +42,6 @@ public class DisplayAdapter extends BaseAdapter {
 	public ArrayList<Integer> selectedViewsPositions = new ArrayList<Integer>();
 
 	private Bitmap placeHolder;
-
-	private LruCache<String, Bitmap> mMemoryCache;
 
 	public Cursor dbCursor;
 
@@ -66,19 +74,6 @@ public class DisplayAdapter extends BaseAdapter {
 
 		placeHolder = BitmapFactory.decodeResource(mContext.getResources(), R.drawable.icon_website_large);
 
-		final int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
-		// Use 1/8th of the available memory for this memory cache.
-		final int cacheSize = maxMemory / 4;
-
-		mMemoryCache = new LruCache<String, Bitmap>(cacheSize) {
-			@Override
-			protected int sizeOf(String key, Bitmap bitmap) {
-				// The cache size will be measured in kilobytes rather than
-				// number of items.
-				return bitmap.getByteCount() / 1024;
-			}
-		};
-
 	}
 
 	public String getSearchQuery() {
@@ -109,6 +104,7 @@ public class DisplayAdapter extends BaseAdapter {
 
 		dbCursor.moveToPosition(position);
 
+		//todo use switch statement, this is horrible..
 		if (type.equals("id")) {
 			return dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_ID));
 		} else if (type.equals("thumbnail_location")) {
@@ -123,18 +119,79 @@ public class DisplayAdapter extends BaseAdapter {
 			return dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_TIMESTAMP));
 		} else { return null; }
 	}
+	
+	private View inflateView (View convertView, Holder mHolder) {
+		LayoutInflater layoutInflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+		switch (list_layout_type) {
+			case 2: convertView = layoutInflater.inflate(R.layout.listcell_grid, null); break;
+			case 4: convertView = layoutInflater.inflate(R.layout.listcell_list_details, null); break;
+			case 5: convertView = layoutInflater.inflate(R.layout.listcell_list_details_small, null); break;
+			case 6: convertView = layoutInflater.inflate(R.layout.listcell_list_details_small_icon_only, null); break;
+			default: convertView = layoutInflater.inflate(R.layout.listcell_default, null);
+		}	
+		if (darkMode) {
+			convertView.setBackgroundColor(Color.BLACK);
+			if (list_layout_type == 4 || list_layout_type == 5) {
+				mHolder.txt_date = (TextView) convertView.findViewById(R.id.txt_date);
+				mHolder.txt_date.setTextColor(Color.WHITE);
+			}
+			mHolder.txt_id = (TextView) convertView.findViewById(R.id.txt_id);
+			mHolder.txt_filelocation = (TextView) convertView.findViewById(R.id.txt_fileLocation);
+			mHolder.txt_orig_url = (TextView) convertView.findViewById(R.id.txt_orig_url);
+			mHolder.txt_orig_url.setTextColor(Color.WHITE);
+			mHolder.txt_title = (TextView) convertView.findViewById(R.id.txt_title);
+			mHolder.txt_title.setTextColor(Color.WHITE);
+		} else {
+			if (list_layout_type == 4 || list_layout_type == 5) {
+				mHolder.txt_date = (TextView) convertView.findViewById(R.id.txt_date);
+			}
+			mHolder.txt_id = (TextView) convertView.findViewById(R.id.txt_id);
+			mHolder.txt_filelocation = (TextView) convertView.findViewById(R.id.txt_fileLocation);
+			mHolder.txt_orig_url = (TextView) convertView.findViewById(R.id.txt_orig_url);
+			mHolder.txt_title = (TextView) convertView.findViewById(R.id.txt_title);
+		}
+
+		if (list_layout_type != 5) {
+			mHolder.listimage = (ImageView) convertView.findViewById(R.id.listimage);
+		}
+		convertView.setTag(mHolder);
+		
+		return convertView;
+	}
+	
+	private void setListImage (ImageView imageView) {
+		if (list_layout_type == Constants.LIST_LAYOUT_DETAILS_SMALL_TEXT_ONLY) return;
+		switch ((String) imageView.getTag()) {
+			case "show:icon":
+				File icon = new File(new File(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_THUMBNAIL))).getParent(), "saveForOffline_icon.png");
+				Picasso.with(mContext).load(icon).error(R.drawable.icon_website_large).into(imageView);
+			break;
+			case "show:thumbnail":
+				File image = new File(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_THUMBNAIL)));
+				Picasso.with(mContext).load(image).placeholder(R.drawable.placeholder).into(imageView);
+			break;
+			default:
+				Log.e("displayAdapter", "Bug: image / icon not set due to imageView.getTag() returning bad value:" + imageView.getTag());
+		}
+	}
 
 
 
-	public View getView(int pos, View convertView, ViewGroup parent) {
-		dbCursor.moveToPosition(pos);
+	public View getView(int position, View convertView, ViewGroup parent) {
+		dbCursor.moveToPosition(position);
 
-		Holder mHolder;
-		LayoutInflater layoutInflater;
+		Holder mHolder = null;
+		
+		if (convertView == null) {
+			mHolder = new Holder();
+			convertView = inflateView(convertView, mHolder);
+		} else {
+			mHolder = (Holder) convertView.getTag();
+		}
 
-		if (selectedViewsPositions.contains(pos)) {
+		if (selectedViewsPositions.contains(position)) {
 			convertView.setBackgroundColor(Color.parseColor("#FFC107"));
-		} else if (convertView != null) {
+		} else {
 			if (darkMode) {
 				convertView.setBackgroundColor(Color.BLACK);
 			} else {
@@ -142,46 +199,6 @@ public class DisplayAdapter extends BaseAdapter {
 			}
 		}
 
-		if (convertView == null) {
-			layoutInflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-			switch (list_layout_type) {
-				case 2: convertView = layoutInflater.inflate(R.layout.listcell_grid, null); break;
-				case 3: convertView = layoutInflater.inflate(R.layout.listcell_list, null); break;
-				case 4: convertView = layoutInflater.inflate(R.layout.listcell_list_details, null); break;
-				case 5: convertView = layoutInflater.inflate(R.layout.listcell_list_details_small, null); break;
-				case 6: convertView = layoutInflater.inflate(R.layout.listcell_list_details_small_icon_only, null); break;
-				default: convertView = layoutInflater.inflate(R.layout.listcell_default, null);
-			}
-			mHolder = new Holder();
-			if (darkMode) {
-				convertView.setBackgroundColor(Color.BLACK);
-				if (list_layout_type == 4 || list_layout_type == 5) {
-					mHolder.txt_date = (TextView) convertView.findViewById(R.id.txt_date);
-					mHolder.txt_date.setTextColor(Color.WHITE);
-				}
-				mHolder.txt_id = (TextView) convertView.findViewById(R.id.txt_id);
-				mHolder.txt_filelocation = (TextView) convertView.findViewById(R.id.txt_fileLocation);
-				mHolder.txt_orig_url = (TextView) convertView.findViewById(R.id.txt_orig_url);
-				mHolder.txt_orig_url.setTextColor(Color.WHITE);
-				mHolder.txt_title = (TextView) convertView.findViewById(R.id.txt_title);
-				mHolder.txt_title.setTextColor(Color.WHITE);
-			} else {
-				if (list_layout_type == 4 || list_layout_type == 5) {
-					mHolder.txt_date = (TextView) convertView.findViewById(R.id.txt_date);
-				}
-				mHolder.txt_id = (TextView) convertView.findViewById(R.id.txt_id);
-				mHolder.txt_filelocation = (TextView) convertView.findViewById(R.id.txt_fileLocation);
-				mHolder.txt_orig_url = (TextView) convertView.findViewById(R.id.txt_orig_url);
-				mHolder.txt_title = (TextView) convertView.findViewById(R.id.txt_title);
-			}
-
-			if (list_layout_type != 5) {
-				mHolder.listimage = (ImageView) convertView.findViewById(R.id.listimage);
-			}
-			convertView.setTag(mHolder);
-		} else {
-			mHolder = (Holder) convertView.getTag();
-		}
 		if (list_layout_type == 4 || list_layout_type == 5) {
 			try {
 				mHolder.txt_date.setText("Saved " + fuzzyFormatter.getFuzzy(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_TIMESTAMP))));
@@ -194,24 +211,8 @@ public class DisplayAdapter extends BaseAdapter {
 		mHolder.txt_filelocation.setText(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_FILE_LOCATION)));
 		mHolder.txt_orig_url.setText(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_ORIG_URL)));
 		mHolder.txt_title.setText(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_TITLE)));
-
-		//if (bitmapCache.size() > pos) {
-		//	mHolder.mBitmap= bitmapCache.get(pos);
-		//} else { 
-		//	mHolder.mBitmap = BitmapFactory.decodeFile(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_THUMBNAIL)));
-		//	bitmapCache.add(pos, mHolder.mBitmap);
-		//}
-
-		//mHolder.listimage.setImageBitmap(mHolder.mBitmap);
-
-		if (list_layout_type != 5) {
-			if (list_layout_type == 6) {
-				File icon = new File(new File(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_THUMBNAIL))).getParent(), "saveForOffline_icon.png");
-				loadBitmap(icon.getPath(), mHolder.listimage);
-			} else {
-				loadBitmap(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_THUMBNAIL)), mHolder.listimage);
-			}
-		}
+		
+		setListImage(mHolder.listimage);
 
 		return convertView;
 	}
@@ -224,116 +225,5 @@ public class DisplayAdapter extends BaseAdapter {
 		TextView txt_date;
 		ImageView listimage;
 		Bitmap mBitmap;
-	}
-
-	public void addBitmapToMemoryCache(String key, Bitmap bitmap) {
-		if (bitmap != null && getBitmapFromMemCache(key) == null) {
-			mMemoryCache.put(key, bitmap);
-		}
-	}
-
-	public Bitmap getBitmapFromMemCache(String key) {
-		return mMemoryCache.get(key);
-	}
-
-	public void loadBitmap(String path, ImageView imageView) {
-		if (cancelPotentialWork(0, imageView)) {
-
-			final String imageKey = path;
-			final Bitmap bitmap = mMemoryCache.get(imageKey);
-			if (bitmap != null) {
-				imageView.setImageBitmap(bitmap);
-			} else {
-				BitmapWorkerTask task = new BitmapWorkerTask(imageView);
-				final AsyncDrawable asyncDrawable =new AsyncDrawable(placeHolder, task);
-				imageView.setImageDrawable(asyncDrawable);
-				task.execute(path);
-			}
-			//task.execute(path);
-		}
-	}
-
-	static class AsyncDrawable extends BitmapDrawable {
-		private final WeakReference<BitmapWorkerTask> bitmapWorkerTaskReference;
-
-		public AsyncDrawable(Bitmap bitmap, BitmapWorkerTask bitmapWorkerTask) {
-			super(bitmap);
-			bitmapWorkerTaskReference =
-				new WeakReference<BitmapWorkerTask>(bitmapWorkerTask);
-		}
-
-		public BitmapWorkerTask getBitmapWorkerTask() {
-			return bitmapWorkerTaskReference.get();
-		}
-	}
-
-	public static boolean cancelPotentialWork(int data, ImageView imageView) {
-		final BitmapWorkerTask bitmapWorkerTask = getBitmapWorkerTask(imageView);
-
-		if (bitmapWorkerTask != null) {
-			final int bitmapData = bitmapWorkerTask.data;
-			if (bitmapData != data) {
-				// Cancel previous task
-				bitmapWorkerTask.cancel(true);
-			} else {
-				// The same work is already in progress
-				return false;
-			}
-		}
-		// No task associated with the ImageView, or an existing task was cancelled
-		return true;
-	}
-
-	private static BitmapWorkerTask getBitmapWorkerTask(ImageView imageView) {
-		if (imageView != null) {
-			final Drawable drawable = imageView.getDrawable();
-			if (drawable instanceof AsyncDrawable) {
-				final AsyncDrawable asyncDrawable = (AsyncDrawable) drawable;
-				return asyncDrawable.getBitmapWorkerTask();
-			}
-		}
-		return null;
-	}
-
-	class BitmapWorkerTask extends AsyncTask<String, Void, Bitmap> {
-		private final WeakReference<ImageView> imageViewReference;
-		private int data = 0;
-
-		public BitmapWorkerTask(ImageView imageView) {
-			// Use a WeakReference to ensure the ImageView can be garbage collected
-			imageViewReference = new WeakReference<ImageView>(imageView);
-		}
-
-		// Decode image in background.
-		@Override
-		protected Bitmap doInBackground(String... params) {
-			final Bitmap bitmap = BitmapFactory.decodeFile(params[0]);
-			addBitmapToMemoryCache(params[0], bitmap);
-			return bitmap;
-		}
-
-		// Once complete, see if ImageView is still around and set bitmap.
-		@Override
-		protected void onPostExecute(Bitmap bitmap) {
-			if (imageViewReference != null && bitmap != null) {
-				final ImageView imageView = imageViewReference.get();
-				if (imageView != null) {
-
-					imageView.setImageBitmap(bitmap);
-
-					// Transition drawable with a transparent drwabale and the final bitmap
-//					TransitionDrawable td = new TransitionDrawable(new Drawable[] {
-//						new ColorDrawable(Color.parseColor("#E2E2E2")),
-//						new BitmapDrawable(mContext.getResources(), bitmap)
-//					 });
-//					 
-//					// Set background to loading bitmap
-//					imageView.setBackgroundDrawable(new BitmapDrawable(mContext.getResources(), bitmap));
-//
-//					imageView.setImageDrawable(td);
-//					td.startTransition(5000);
-				}
-			}
-		}
 	}
 }
