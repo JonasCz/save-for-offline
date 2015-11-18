@@ -53,7 +53,7 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 		int list_layout_type = Integer.parseInt(sharedPref.getString("layout" , "1"));
 		switch (list_layout_type) {
 			case 1: break;
-			case 2: break;
+			case 2: mainGrid.setNumColumns(-1); break;
 			case 4: mainGrid.setNumColumns(1); break;
 			case 5: mainGrid.setNumColumns(1); break;
 			case 6: mainGrid.setNumColumns(1); break;

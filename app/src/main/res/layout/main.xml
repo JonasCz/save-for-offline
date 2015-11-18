@@ -13,6 +13,7 @@
 		android:layout_height="match_parent"
 		android:columnWidth="200dp"
 		android:horizontalSpacing="5dp"
+		android:numColumns="1"
 		android:stretchMode="columnWidth"
 		android:verticalSpacing="5dp"/>
 
