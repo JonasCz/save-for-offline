@@ -13,8 +13,8 @@
 	
 	<string-array name="layout_list">
 		<item>Default (Automatic, by screen size)</item>
-		<item>Grid, with title and thumbnails of saved page</item>
-		<item>List, with details and thumbnails</item>
+		<item>Grid, with title and thumbnail of saved page</item>
+		<item>List, with details and thumbnail (for large screens)</item>
 		<item>List, compact with title + details and without thumbnails</item>
 		<item>List, with title and site icon</item>
 	</string-array>

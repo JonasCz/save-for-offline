@@ -9,13 +9,13 @@
 
 	<ImageView
 		android:id="@+id/listimage"
-		android:layout_width="150dp"
-		android:layout_height="100dp"
+		android:layout_width="50dp"
+		android:layout_height="50dp"
 		android:layout_alignParentBottom="true"
 		android:layout_alignParentTop="true"
 		android:layout_marginRight="8dp"
 		android:adjustViewBounds="true"
-		android:tag="show:thumbnail"/>
+		android:tag="show:icon"/>
 
 	<TextView
 		android:id="@+id/txt_title"
@@ -34,7 +34,7 @@
 		android:layout_toRightOf="@id/listimage"
 		android:layout_below="@id/txt_title"
 		android:textSize="12sp"
-		android:maxLines="2"/>
+		android:visibility="gone"/>
 
 	<TextView
 		android:id="@+id/txt_date"
@@ -45,7 +45,8 @@
 		android:layout_below="@id/txt_orig_url"
 		android:textSize="12sp"
 		android:layout_alignParentBottom="true"
-		android:gravity="bottom"/>
+		android:gravity="bottom"
+		android:visibility="gone"/>
 
 	<TextView
 		android:id="@+id/txt_id"

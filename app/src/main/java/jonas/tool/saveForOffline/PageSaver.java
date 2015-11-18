@@ -48,6 +48,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.Iterator;
+import com.squareup.okhttp.*;
+import android.os.*;
+import android.content.*;
 
 
 public class PageSaver {
@@ -497,6 +500,15 @@ public class PageSaver {
         private boolean saveVideo = false;
 
         private String userAgent = "mozilla chrome webkit";
+		
+		public void setCache (File cacheDirectory, long maxCacheSize) {
+			Cache cache = (new Cache(cacheDirectory, maxCacheSize));
+			client.setCache(cache);
+		}
+		
+		public void clearCache () throws IOException {
+			client.getCache().evictAll();
+		}
 
         public String getUserAgent() {
             return userAgent;

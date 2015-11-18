@@ -105,11 +105,13 @@ public class SaveService extends Service {
 				.setIcon(android.R.drawable.stat_sys_download)
 				.setProgress(0, 1, true)
 				.setShowProgress(true)
+				.setOngoing(true)
 				.createNotification();
 
             pageSaver = new PageSaver(new PageSaveEventCallback());
 
             pageSaver.getOptions().setUserAgent(getUserAgent());
+			pageSaver.getOptions().setCache(getApplicationContext().getExternalCacheDir(), 52428800); //8mb of cache, hope i got this right..
             boolean success = pageSaver.getPage(originalUrl, destinationDirectory, "index.html");
 
 
@@ -147,6 +149,7 @@ public class SaveService extends Service {
 				.setContentText(pageSaver.getPageTitle())
 				.setIcon(R.drawable.ic_notify_save)
 				.setShowProgress(false)
+				.setOngoing(false)
 				.createNotificationWithAlert();
         }
 		
