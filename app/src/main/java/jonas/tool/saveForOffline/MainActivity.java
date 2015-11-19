@@ -20,8 +20,8 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 
 	private TextView noSavedPages;
 	private TextView helpText;
-
-	private int sortOrder = 0;
+	
+	private DisplayAdapter.SortOrder sortOrder = DisplayAdapter.SortOrder.NEWEST_FIRST;
 	
 
 	private GridView mainGrid;
@@ -150,9 +150,9 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 				
 				case R.id.action_sort_by:
 				AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-				builder.setSingleChoiceItems(R.array.sort_by, sortOrder, new DialogInterface.OnClickListener() {
+				builder.setSingleChoiceItems(R.array.sort_by, DisplayAdapter.SortOrder.toInt(sortOrder), new DialogInterface.OnClickListener() {
 						public void onClick(DialogInterface dialog, int which) {
-							sortOrder = which;
+							sortOrder = DisplayAdapter.SortOrder.fromInt(which);
 							displayData(searchQuery);
 							dialogSortItemsBy.cancel();
 						}
@@ -241,10 +241,8 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 		@Override
         public boolean onCreateActionMode(ActionMode mode, Menu menu) {
 
-            MenuInflater inflater = getMenuInflater();
-            inflater.inflate(R.menu.main_activity_multi_choice, menu);
+            getMenuInflater().inflate(R.menu.main_activity_multi_choice, menu);
             mode.setTitle("Select Items");
-
 
             return true;
         }

@@ -19,13 +19,63 @@ import com.squareup.picasso.Picasso;
 
 public class DisplayAdapter extends BaseAdapter {
 	
-	public static class Constants {
-		private Constants() {}		
-		public final static int LIST_LAYOUT_DEFAULT = 1;
-		public final static int LIST_LAYOUT_GRID = 2;
-		public final static int LIST_LAYOUT_DETAILS_THUMBNAILS = 4;
-		public final static int LIST_LAYOUT_DETAILS_SMALL_TEXT_ONLY = 5;
-		public final static int LIST_LAYOUT_SMALL_ICON = 6;
+	public enum SortOrder {
+		NEWEST_FIRST, OLDEST_FIRST, ALPHABETICAL;
+		
+		public static int toInt (SortOrder o) {
+			switch (o) {
+				case OLDEST_FIRST:
+					return 1;
+				case ALPHABETICAL:
+					return 2;
+				default:
+					return 0;
+			}
+		}
+		
+		public static SortOrder fromInt (int i) {
+			switch (i) {
+				case 1:
+					return OLDEST_FIRST;
+				case 2:
+					return ALPHABETICAL;
+				default:
+					return NEWEST_FIRST;
+			}
+		}
+	}
+	
+	public enum Layout {
+		DEFAULT, GRID, DETAILS_THUMBNAILS, SMALL_TEXT_ONLY, SMALL_ICON;
+		
+		private static Layout currentLayout = DEFAULT;
+		
+		public static void setCurrentLayout (Layout l) {
+			currentLayout = l;
+		}
+		
+		public static Layout getCurrentLayout () {
+			return currentLayout;
+		}
+		
+		public static Layout fromInt (int i) {
+			switch (i) {
+				case 2:
+					return GRID;
+				case 4:
+					return DETAILS_THUMBNAILS;
+				case 5:
+					return SMALL_TEXT_ONLY;
+				case 6:
+					return SMALL_ICON;
+				default:
+					return DEFAULT;
+			}
+		}
+		
+		public static boolean hasDate (Layout l) {
+			return l == Layout.DETAILS_THUMBNAILS || l == Layout.SMALL_TEXT_ONLY;
+		}
 	}
 
 	private Context mContext;
@@ -36,7 +86,6 @@ public class DisplayAdapter extends BaseAdapter {
 	private String searchQuery = "";
 	private String sqlStatement;
 
-	public int list_layout_type = 1;
 	private boolean darkMode;
 
 	public ArrayList<Integer> selectedViewsPositions = new ArrayList<Integer>();
@@ -45,13 +94,19 @@ public class DisplayAdapter extends BaseAdapter {
 
 	public Cursor dbCursor;
 
-	public void refreshData(String searchQuery, int sortOrder, boolean dataSetChanged) {
-		//sortOrder 0 = date newest first, 1 = oldest first, 2 = alphabetical
-		if (sortOrder == 0) sqlStatement = "SELECT * FROM " + DbHelper.TABLE_NAME + " WHERE " + DbHelper.KEY_TITLE + " LIKE'%" + searchQuery + "%' ORDER BY " + DbHelper.KEY_ID + " DESC";
-		if (sortOrder == 1) sqlStatement = "SELECT * FROM " + DbHelper.TABLE_NAME + " WHERE " + DbHelper.KEY_TITLE + " LIKE'%" + searchQuery + "%' ORDER BY " + DbHelper.KEY_ID + " ASC";
-		else if (sortOrder == 2) sqlStatement = "SELECT * FROM " + DbHelper.TABLE_NAME + " WHERE " + DbHelper.KEY_TITLE + " LIKE'%" + searchQuery + "%' ORDER BY " + DbHelper.KEY_TITLE + " ASC";
-		else sqlStatement = "SELECT * FROM " + DbHelper.TABLE_NAME + " WHERE " + DbHelper.KEY_TITLE + " LIKE'%" + searchQuery + "%' ORDER BY " + DbHelper.KEY_ID + " DESC";
-
+	public void refreshData(String searchQuery, SortOrder order, boolean dataSetChanged) {
+		switch (order) {
+			case OLDEST_FIRST:
+				sqlStatement = "SELECT * FROM " + DbHelper.TABLE_NAME + " WHERE " + DbHelper.KEY_TITLE + " LIKE'%" + searchQuery + "%' ORDER BY " + DbHelper.KEY_ID + " ASC";
+				break;
+			case ALPHABETICAL:
+				sqlStatement = "SELECT * FROM " + DbHelper.TABLE_NAME + " WHERE " + DbHelper.KEY_TITLE + " LIKE'%" + searchQuery + "%' ORDER BY " + DbHelper.KEY_TITLE + " ASC";
+				break;
+			default: //newest first
+				sqlStatement = "SELECT * FROM " + DbHelper.TABLE_NAME + " WHERE " + DbHelper.KEY_TITLE + " LIKE'%" + searchQuery + "%' ORDER BY " + DbHelper.KEY_ID + " DESC";
+				break;
+		}
+		
 		dbCursor = dataBase.rawQuery(sqlStatement, null);
 		dbCursor.moveToFirst();
 		if (dataSetChanged) notifyDataSetChanged();
@@ -67,10 +122,10 @@ public class DisplayAdapter extends BaseAdapter {
 
 		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(mContext);
 
-		list_layout_type = Integer.parseInt(sharedPref.getString("layout" , "1"));
+		Layout.setCurrentLayout(Layout.fromInt(Integer.parseInt(sharedPref.getString("layout" , "1"))));
 		darkMode = sharedPref.getBoolean("dark_mode", false);
 
-		refreshData(null, 1, false);
+		refreshData(null, SortOrder.NEWEST_FIRST, false);
 
 		placeHolder = BitmapFactory.decodeResource(mContext.getResources(), R.drawable.icon_website_large);
 
@@ -122,16 +177,21 @@ public class DisplayAdapter extends BaseAdapter {
 	
 	private View inflateView (View convertView, Holder mHolder) {
 		LayoutInflater layoutInflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-		switch (list_layout_type) {
-			case 2: convertView = layoutInflater.inflate(R.layout.listcell_grid, null); break;
-			case 4: convertView = layoutInflater.inflate(R.layout.listcell_list_details, null); break;
-			case 5: convertView = layoutInflater.inflate(R.layout.listcell_list_details_small, null); break;
-			case 6: convertView = layoutInflater.inflate(R.layout.listcell_list_details_small_icon_only, null); break;
-			default: convertView = layoutInflater.inflate(R.layout.listcell_default, null);
+		switch (Layout.getCurrentLayout()) {
+			case GRID: 
+				convertView = layoutInflater.inflate(R.layout.listcell_grid, null); break;
+			case DETAILS_THUMBNAILS: 
+				convertView = layoutInflater.inflate(R.layout.listcell_list_details, null); break;
+			case SMALL_TEXT_ONLY: 
+				convertView = layoutInflater.inflate(R.layout.listcell_list_details_small, null); break;
+			case SMALL_ICON: 
+				convertView = layoutInflater.inflate(R.layout.listcell_list_details_small_icon_only, null); break;
+			default: 
+				convertView = layoutInflater.inflate(R.layout.listcell_default, null);
 		}	
 		if (darkMode) {
 			convertView.setBackgroundColor(Color.BLACK);
-			if (list_layout_type == 4 || list_layout_type == 5) {
+			if (Layout.hasDate(Layout.getCurrentLayout())) {
 				mHolder.txt_date = (TextView) convertView.findViewById(R.id.txt_date);
 				mHolder.txt_date.setTextColor(Color.WHITE);
 			}
@@ -142,7 +202,7 @@ public class DisplayAdapter extends BaseAdapter {
 			mHolder.txt_title = (TextView) convertView.findViewById(R.id.txt_title);
 			mHolder.txt_title.setTextColor(Color.WHITE);
 		} else {
-			if (list_layout_type == 4 || list_layout_type == 5) {
+			if (Layout.hasDate(Layout.getCurrentLayout())) {
 				mHolder.txt_date = (TextView) convertView.findViewById(R.id.txt_date);
 			}
 			mHolder.txt_id = (TextView) convertView.findViewById(R.id.txt_id);
@@ -151,7 +211,7 @@ public class DisplayAdapter extends BaseAdapter {
 			mHolder.txt_title = (TextView) convertView.findViewById(R.id.txt_title);
 		}
 
-		if (list_layout_type != 5) {
+		if (Layout.getCurrentLayout() != Layout.SMALL_TEXT_ONLY) {
 			mHolder.listimage = (ImageView) convertView.findViewById(R.id.listimage);
 		}
 		convertView.setTag(mHolder);
@@ -160,7 +220,7 @@ public class DisplayAdapter extends BaseAdapter {
 	}
 	
 	private void setListImage (ImageView imageView) {
-		if (list_layout_type == Constants.LIST_LAYOUT_DETAILS_SMALL_TEXT_ONLY) return;
+		if (Layout.getCurrentLayout() == Layout.SMALL_TEXT_ONLY) return;
 		switch ((String) imageView.getTag()) {
 			case "show:icon":
 				File icon = new File(new File(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_THUMBNAIL))).getParent(), "saveForOffline_icon.png");
@@ -199,7 +259,7 @@ public class DisplayAdapter extends BaseAdapter {
 			}
 		}
 
-		if (list_layout_type == 4 || list_layout_type == 5) {
+		if (Layout.hasDate(Layout.getCurrentLayout())) {
 			try {
 				mHolder.txt_date.setText("Saved " + fuzzyFormatter.getFuzzy(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_TIMESTAMP))));
 			} catch (ParseException e) {

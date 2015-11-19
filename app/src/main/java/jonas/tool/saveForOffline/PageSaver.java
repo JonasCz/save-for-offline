@@ -69,9 +69,7 @@ public class PageSaver {
     private List<String> framesToGrab = new ArrayList<String>();
     //cssToGrab - list of all css files to download an parse
     private List<String> cssToGrab = new ArrayList<String>();
-    //we do another pass for this one
-    private List<String> extraCssToGrab = new ArrayList<String>();
-
+	
     private String title = "";
 
     private String indexFileName = "index.html";
@@ -224,7 +222,7 @@ public class PageSaver {
             try {
                 Response response = client.newCall(request).execute();
                 InputStream is = response.body().byteStream();
-
+				
                 FileOutputStream fos = new FileOutputStream(outputFile);
                 final byte[] buffer = new byte[1024 * 16]; // read in batches of 16K
                 int length;
@@ -237,7 +235,7 @@ public class PageSaver {
                 fos.close();
                 is.close();
 
-            } catch (MalformedURLException e) {
+            } catch (IllegalArgumentException e) {
 				eventCallback.onError(e.getMessage());
                 e.printStackTrace();
             } catch (IOException e) {
