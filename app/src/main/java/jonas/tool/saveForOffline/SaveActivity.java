@@ -159,17 +159,17 @@ public class SaveActivity extends Activity
 	private void addToDb () {
 		String title = webview.getTitle();
 
-		DbHelper mHelper = new DbHelper(this);
+		Database mHelper = new Database(this);
 		SQLiteDatabase dataBase = mHelper.getWritableDatabase();
 		ContentValues values=new ContentValues();
 		
-		values.put(DbHelper.KEY_FILE_LOCATION,filelocation );
-		values.put(DbHelper.KEY_TITLE,title );
-		values.put(DbHelper.KEY_THUMBNAIL,thumbnail );
-		values.put(DbHelper.KEY_ORIG_URL,origurl );
+		values.put(Database.FILE_LOCATION,filelocation );
+		values.put(Database.TITLE,title );
+		values.put(Database.THUMBNAIL,thumbnail );
+		values.put(Database.ORIGINAL_URL,origurl );
 
 		//insert data into database
-		dataBase.insert(DbHelper.TABLE_NAME, null, values);
+		dataBase.insert(Database.TABLE_NAME, null, values);
 
 		//close database
 		dataBase.close();

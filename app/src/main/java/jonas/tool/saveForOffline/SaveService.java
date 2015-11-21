@@ -57,17 +57,17 @@ public class SaveService extends Service {
 
     private void addToDb(String destinationDirectory, String title, String originalUrl) {
 
-        DbHelper mHelper = new DbHelper(SaveService.this);
+        Database mHelper = new Database(SaveService.this);
         SQLiteDatabase dataBase = mHelper.getWritableDatabase();
         ContentValues values = new ContentValues();
 
-        values.put(DbHelper.KEY_FILE_LOCATION, destinationDirectory + "index.html");
-		values.put(DbHelper.KEY_SAVED_PAGE_BASE_DIRECTORY, destinationDirectory);
-        values.put(DbHelper.KEY_TITLE, title);
-        values.put(DbHelper.KEY_THUMBNAIL, destinationDirectory + "saveForOffline_thumbnail.png");
-        values.put(DbHelper.KEY_ORIG_URL, originalUrl);
+        values.put(Database.FILE_LOCATION, destinationDirectory + "index.html");
+		values.put(Database.SAVED_PAGE_BASE_DIRECTORY, destinationDirectory);
+        values.put(Database.TITLE, title);
+        values.put(Database.THUMBNAIL, destinationDirectory + "saveForOffline_thumbnail.png");
+        values.put(Database.ORIGINAL_URL, originalUrl);
 
-        dataBase.insert(DbHelper.TABLE_NAME, null, values);
+        dataBase.insert(Database.TABLE_NAME, null, values);
 
         dataBase.close();
     }

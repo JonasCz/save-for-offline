@@ -208,13 +208,13 @@ public class ViewActivity extends Activity {
 											int which) {
 
 
-							DbHelper mHelper = new DbHelper(ViewActivity.this);
+							Database mHelper = new Database(ViewActivity.this);
 							SQLiteDatabase dataBase = mHelper.getWritableDatabase();
 							Intent incomingIntent2 = getIntent();
 
 							dataBase.delete(
-								DbHelper.TABLE_NAME,
-								DbHelper.KEY_ID + "=" + incomingIntent2.getStringExtra("id"), null);
+								Database.TABLE_NAME,
+								Database.ID + "=" + incomingIntent2.getStringExtra("id"), null);
 
 
 							File file = new File(incomingIntent2.getStringExtra("thumbnailLocation"));

@@ -15,7 +15,7 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 
 
 	private DisplayAdapter gridAdapter;
-	private DbHelper mHelper;
+	private Database mHelper;
 	private SQLiteDatabase dataBase;
 
 	private TextView noSavedPages;
@@ -196,12 +196,12 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 
 					Intent i = new Intent(getApplicationContext(),
 										  ViewActivity.class);
-					i.putExtra("orig_url", gridAdapter.getPropertiesByPosition(position, "orig_url"));
-					i.putExtra("title", gridAdapter.getPropertiesByPosition(position, "title"));
-					i.putExtra("id", gridAdapter.getPropertiesByPosition(position, "id"));
-					i.putExtra("fileLocation", gridAdapter.getPropertiesByPosition(position, "file_location"));
-					i.putExtra("thumbnailLocation", gridAdapter.getPropertiesByPosition(position, "thumbnail_location"));
-					i.putExtra("date", gridAdapter.getPropertiesByPosition(position, "date"));
+					i.putExtra("orig_url", gridAdapter.getPropertiesByPosition(position, Database.ORIGINAL_URL));
+					i.putExtra("title", gridAdapter.getPropertiesByPosition(position, Database.TITLE));
+					i.putExtra("id", gridAdapter.getPropertiesByPosition(position, Database.ID));
+					i.putExtra("fileLocation", gridAdapter.getPropertiesByPosition(position, Database.FILE_LOCATION));
+					i.putExtra("thumbnailLocation", gridAdapter.getPropertiesByPosition(position, Database.THUMBNAIL));
+					i.putExtra("date", gridAdapter.getPropertiesByPosition(position, Database.TIMESTAMP));
 
 					startActivity(i);
 
@@ -266,7 +266,7 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 					e = (EditText) layout.findViewById(R.id.rename_dialog_edit);
 					TextView t = (TextView) layout.findViewById(R.id.rename_dialog_text);
 					if (gridAdapter.selectedViewsPositions.size() == 1) {
-						e.setText(gridAdapter.getPropertiesByPosition(gridAdapter.selectedViewsPositions.get(0), "title"));
+						e.setText(gridAdapter.getPropertiesByPosition(gridAdapter.selectedViewsPositions.get(0), Database.TITLE));
 						e.selectAll();
 					
 					} else {
@@ -280,15 +280,15 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 
 							public void onClick(DialogInterface dialog, int which) {
 
-								mHelper = new DbHelper(MainActivity.this);
+								mHelper = new Database(MainActivity.this);
 								dataBase = mHelper.getWritableDatabase();
 
 								for (Integer position: gridAdapter.selectedViewsPositions) {
 
 									ContentValues values=new ContentValues();
 
-									values.put(DbHelper.KEY_TITLE, e.getText().toString() );
-									dataBase.update(DbHelper.TABLE_NAME, values, DbHelper.KEY_ID + "=" + gridAdapter.getPropertiesByPosition(position, "id"), null);
+									values.put(Database.TITLE, e.getText().toString() );
+									dataBase.update(Database.TABLE_NAME, values, Database.ID + "=" + gridAdapter.getPropertiesByPosition(position, Database.ID), null);
 									
 
 								}
@@ -330,7 +330,7 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 					if (gridAdapter.selectedViewsPositions.size() == 1) {
 						//build.setTitle("Do you want to delete ?");
 
-						build.setMessage("Do you want to delete ?\r\n" + gridAdapter.getPropertiesByPosition(gridAdapter.selectedViewsPositions.get(0), "title"));
+						build.setMessage("Do you want to delete ?\r\n" + gridAdapter.getPropertiesByPosition(gridAdapter.selectedViewsPositions.get(0), Database.TITLE));
 					} else {
 						//build.setTitle("Delete ?");
 						build.setMessage("Delete these " + gridAdapter.selectedViewsPositions.size() + " saved pages ?");
@@ -349,29 +349,29 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 
 								pd.show();
 
-								mHelper = new DbHelper(MainActivity.this);
+								mHelper = new Database(MainActivity.this);
 								dataBase = mHelper.getWritableDatabase();
 
 								for (Integer position: gridAdapter.selectedViewsPositions) {
 
 
-									String fileLocation = gridAdapter.getPropertiesByPosition(position, "thumbnail_location");
+									String fileLocation = gridAdapter.getPropertiesByPosition(position, Database.THUMBNAIL);
 									File file = new File(fileLocation);
 									file.delete();
 
 									//for compatibility with old versions
-									if (gridAdapter.getPropertiesByPosition(position, "file_location").endsWith("mht")) {
-										fileLocation = gridAdapter.getPropertiesByPosition(position, "file_location");
+									if (gridAdapter.getPropertiesByPosition(position, Database.FILE_LOCATION).endsWith("mht")) {
+										fileLocation = gridAdapter.getPropertiesByPosition(position, Database.FILE_LOCATION);
 										file = new File(fileLocation);
 										file.delete();
 									} else {
-										fileLocation = gridAdapter.getPropertiesByPosition(position, "file_location");
+										fileLocation = gridAdapter.getPropertiesByPosition(position, Database.FILE_LOCATION);
 										file = new File(fileLocation);
 										file = file.getParentFile();
 										DirectoryHelper.deleteDirectory(file);
 									}
 
-									dataBase.delete(DbHelper.TABLE_NAME, DbHelper.KEY_ID + "=" + gridAdapter.getPropertiesByPosition(position, "id"), null);
+									dataBase.delete(Database.TABLE_NAME, Database.ID + "=" + gridAdapter.getPropertiesByPosition(position, Database.ID), null);
 									pd.setProgress(gridAdapter.selectedViewsPositions.indexOf(position));
 
 								}

@@ -79,7 +79,6 @@ public class DisplayAdapter extends BaseAdapter {
 	}
 
 	private Context mContext;
-	private DbHelper mHelper;
 	private SQLiteDatabase dataBase;
 	private FuzzyDateFormatter fuzzyFormatter;
 
@@ -88,7 +87,7 @@ public class DisplayAdapter extends BaseAdapter {
 
 	private boolean darkMode;
 
-	public ArrayList<Integer> selectedViewsPositions = new ArrayList<Integer>();
+	public List<Integer> selectedViewsPositions = new ArrayList<Integer>();
 
 	private Bitmap placeHolder;
 
@@ -97,13 +96,13 @@ public class DisplayAdapter extends BaseAdapter {
 	public void refreshData(String searchQuery, SortOrder order, boolean dataSetChanged) {
 		switch (order) {
 			case OLDEST_FIRST:
-				sqlStatement = "SELECT * FROM " + DbHelper.TABLE_NAME + " WHERE " + DbHelper.KEY_TITLE + " LIKE'%" + searchQuery + "%' ORDER BY " + DbHelper.KEY_ID + " ASC";
+				sqlStatement = "SELECT * FROM " + Database.TABLE_NAME + " WHERE " + Database.TITLE + " LIKE'%" + searchQuery + "%' ORDER BY " + Database.ID + " ASC";
 				break;
 			case ALPHABETICAL:
-				sqlStatement = "SELECT * FROM " + DbHelper.TABLE_NAME + " WHERE " + DbHelper.KEY_TITLE + " LIKE'%" + searchQuery + "%' ORDER BY " + DbHelper.KEY_TITLE + " ASC";
+				sqlStatement = "SELECT * FROM " + Database.TABLE_NAME + " WHERE " + Database.TITLE + " LIKE'%" + searchQuery + "%' ORDER BY " + Database.TITLE + " ASC";
 				break;
 			default: //newest first
-				sqlStatement = "SELECT * FROM " + DbHelper.TABLE_NAME + " WHERE " + DbHelper.KEY_TITLE + " LIKE'%" + searchQuery + "%' ORDER BY " + DbHelper.KEY_ID + " DESC";
+				sqlStatement = "SELECT * FROM " + Database.TABLE_NAME + " WHERE " + Database.TITLE + " LIKE'%" + searchQuery + "%' ORDER BY " + Database.ID + " DESC";
 				break;
 		}
 		
@@ -115,10 +114,8 @@ public class DisplayAdapter extends BaseAdapter {
 	public DisplayAdapter(Context c) {
 		this.mContext = c;
 
-		mHelper = new DbHelper(c);
-		dataBase = mHelper.getReadableDatabase();
-		FuzzyDateMessages fdm = new FuzzyDateMessages();
-		fuzzyFormatter = new FuzzyDateFormatter(Calendar.getInstance(), fdm);
+		dataBase = new Database(c).getReadableDatabase();
+		fuzzyFormatter = new FuzzyDateFormatter(Calendar.getInstance(), new FuzzyDateMessages());
 
 		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(mContext);
 
@@ -128,7 +125,6 @@ public class DisplayAdapter extends BaseAdapter {
 		refreshData(null, SortOrder.NEWEST_FIRST, false);
 
 		placeHolder = BitmapFactory.decodeResource(mContext.getResources(), R.drawable.icon_website_large);
-
 	}
 
 	public String getSearchQuery() {
@@ -151,28 +147,13 @@ public class DisplayAdapter extends BaseAdapter {
 	@Override
 	public long getItemId(int position) {
 		if (dbCursor.getCount() != 0) {
-			return Long.valueOf(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_ID)));
+			return Long.valueOf(dbCursor.getString(dbCursor.getColumnIndex(Database.ID)));
 		} else return 0;
 	}
 
 	public String getPropertiesByPosition(int position, String type) {
-
 		dbCursor.moveToPosition(position);
-
-		//todo use switch statement, this is horrible..
-		if (type.equals("id")) {
-			return dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_ID));
-		} else if (type.equals("thumbnail_location")) {
-			return dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_THUMBNAIL));
-		} else if (type.equals("file_location")) {
-			return dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_FILE_LOCATION));
-		} else if (type.equals("title")) {
-			return dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_TITLE));
-		} else if (type.equals("orig_url")) {
-			return dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_ORIG_URL));
-		} else if (type.equals("date")) {
-			return dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_TIMESTAMP));
-		} else { return null; }
+		return dbCursor.getString(dbCursor.getColumnIndex(type));
 	}
 	
 	private View inflateView (View convertView, Holder mHolder) {
@@ -223,11 +204,11 @@ public class DisplayAdapter extends BaseAdapter {
 		if (Layout.getCurrentLayout() == Layout.SMALL_TEXT_ONLY) return;
 		switch ((String) imageView.getTag()) {
 			case "show:icon":
-				File icon = new File(new File(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_THUMBNAIL))).getParent(), "saveForOffline_icon.png");
+				File icon = new File(new File(dbCursor.getString(dbCursor.getColumnIndex(Database.THUMBNAIL))).getParent(), "saveForOffline_icon.png");
 				Picasso.with(mContext).load(icon).error(R.drawable.icon_website_large).into(imageView);
 			break;
 			case "show:thumbnail":
-				File image = new File(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_THUMBNAIL)));
+				File image = new File(dbCursor.getString(dbCursor.getColumnIndex(Database.THUMBNAIL)));
 				Picasso.with(mContext).load(image).placeholder(R.drawable.placeholder).into(imageView);
 			break;
 			default:
@@ -261,16 +242,16 @@ public class DisplayAdapter extends BaseAdapter {
 
 		if (Layout.hasDate(Layout.getCurrentLayout())) {
 			try {
-				mHolder.txt_date.setText("Saved " + fuzzyFormatter.getFuzzy(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_TIMESTAMP))));
+				mHolder.txt_date.setText("Saved " + fuzzyFormatter.getFuzzy(dbCursor.getString(dbCursor.getColumnIndex(Database.TIMESTAMP))));
 			} catch (ParseException e) {
-				Log.e("displayAdapter", "attempted to parse date '" + dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_TIMESTAMP)) + "' for display, with format yyyy-MM-dd HH:mm:ss, which resulted in a ParseException");
+				Log.e("displayAdapter", "attempted to parse date '" + dbCursor.getString(dbCursor.getColumnIndex(Database.TIMESTAMP)) + "' for display, with format yyyy-MM-dd HH:mm:ss, which resulted in a ParseException");
 				mHolder.txt_date.setText("Date unavailable");
 			}
 		}
-		mHolder.txt_id.setText(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_ID)));
-		mHolder.txt_filelocation.setText(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_FILE_LOCATION)));
-		mHolder.txt_orig_url.setText(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_ORIG_URL)));
-		mHolder.txt_title.setText(dbCursor.getString(dbCursor.getColumnIndex(DbHelper.KEY_TITLE)));
+		mHolder.txt_id.setText(dbCursor.getString(dbCursor.getColumnIndex(Database.ID)));
+		mHolder.txt_filelocation.setText(dbCursor.getString(dbCursor.getColumnIndex(Database.FILE_LOCATION)));
+		mHolder.txt_orig_url.setText(dbCursor.getString(dbCursor.getColumnIndex(Database.ORIGINAL_URL)));
+		mHolder.txt_title.setText(dbCursor.getString(dbCursor.getColumnIndex(Database.TITLE)));
 		
 		setListImage(mHolder.listimage);
 
