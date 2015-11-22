@@ -164,6 +164,7 @@ public class SaveService extends Service {
 					.setContentTitle("Error, page not saved")
 					.setContentText(errorMessage)
 					.setShowProgress(false)
+					.setOngoing(false)
 					.setIcon(android.R.drawable.stat_sys_warning)
 					.createNotificationWithAlert();
 			}
