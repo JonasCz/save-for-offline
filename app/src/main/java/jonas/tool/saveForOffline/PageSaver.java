@@ -575,6 +575,6 @@ interface EventCallback {
 
     public void onError(String errorMessage);
 	
-	public void onFatalError (String errorMessage)
+	public void onFatalError (String errorMessage);
 }
 
