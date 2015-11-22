@@ -10,6 +10,8 @@ import android.view.*;
 import android.widget.*;
 import android.widget.AdapterView.*;
 import java.io.*;
+import java.util.*;
+import java.util.concurrent.*;
 
 public class MainActivity extends Activity implements SearchView.OnQueryTextListener {
 
@@ -279,43 +281,31 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 						new DialogInterface.OnClickListener() {
 
 							public void onClick(DialogInterface dialog, int which) {
-
 								mHelper = new Database(MainActivity.this);
 								dataBase = mHelper.getWritableDatabase();
 
 								for (Integer position: gridAdapter.selectedViewsPositions) {
-
 									ContentValues values=new ContentValues();
-
 									values.put(Database.TITLE, e.getText().toString() );
 									dataBase.update(Database.TABLE_NAME, values, Database.ID + "=" + gridAdapter.getPropertiesByPosition(position, Database.ID), null);
-									
-
 								}
 								
 								if (gridAdapter.selectedViewsPositions.size() == 1) {
 									Toast.makeText(MainActivity.this, "Saved page renamed", Toast.LENGTH_LONG).show();
 								} else {
 									Toast.makeText(MainActivity.this, "Renamed " + gridAdapter.selectedViewsPositions.size() + " saved pages", Toast.LENGTH_LONG).show();
-									
 								}
-								
 
 								dataBase.close();
-
 								displayData("");
-								
 								mode.finish();
 							}
 						});
 						
 					rename_dialog.setNegativeButton("Cancel",
 						new DialogInterface.OnClickListener() {
-
 							public void onClick(DialogInterface dialog, int which) {
-
 								mode.finish();
-
 							}
 						});
 					AlertDialog rename_dialog_alert = rename_dialog.create();
@@ -328,62 +318,14 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 					AlertDialog.Builder build;
 					build = new AlertDialog.Builder(MainActivity.this);
 					if (gridAdapter.selectedViewsPositions.size() == 1) {
-						//build.setTitle("Do you want to delete ?");
-
 						build.setMessage("Do you want to delete ?\r\n" + gridAdapter.getPropertiesByPosition(gridAdapter.selectedViewsPositions.get(0), Database.TITLE));
 					} else {
-						//build.setTitle("Delete ?");
 						build.setMessage("Delete these " + gridAdapter.selectedViewsPositions.size() + " saved pages ?");
 					}
 					build.setPositiveButton("Delete",
 						new DialogInterface.OnClickListener() {
-
 							public void onClick(DialogInterface dialog, int which) {
-								ProgressDialog pd = new ProgressDialog(MainActivity.this);
-								pd.setMessage("Deleting items...");
-								pd.setIndeterminate(false);
-								pd.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-								pd.setMax(gridAdapter.selectedViewsPositions.size());
-								pd.setCancelable(false);
-								pd.setCanceledOnTouchOutside(false);
-
-								pd.show();
-
-								mHelper = new Database(MainActivity.this);
-								dataBase = mHelper.getWritableDatabase();
-
-								for (Integer position: gridAdapter.selectedViewsPositions) {
-
-
-									String fileLocation = gridAdapter.getPropertiesByPosition(position, Database.THUMBNAIL);
-									File file = new File(fileLocation);
-									file.delete();
-
-									//for compatibility with old versions
-									if (gridAdapter.getPropertiesByPosition(position, Database.FILE_LOCATION).endsWith("mht")) {
-										fileLocation = gridAdapter.getPropertiesByPosition(position, Database.FILE_LOCATION);
-										file = new File(fileLocation);
-										file.delete();
-									} else {
-										fileLocation = gridAdapter.getPropertiesByPosition(position, Database.FILE_LOCATION);
-										file = new File(fileLocation);
-										file = file.getParentFile();
-										DirectoryHelper.deleteDirectory(file);
-									}
-
-									dataBase.delete(Database.TABLE_NAME, Database.ID + "=" + gridAdapter.getPropertiesByPosition(position, Database.ID), null);
-									pd.setProgress(gridAdapter.selectedViewsPositions.indexOf(position));
-
-								}
-								dataBase.close();
-
-								displayData("");
-								pd.hide();
-								pd.cancel();
-
-								Toast.makeText(MainActivity.this, "Deleted " + gridAdapter.selectedViewsPositions.size() + " saved pages", Toast.LENGTH_LONG).show();
-
-
+								new deleteItemsTask().execute(gridAdapter.selectedViewsPositions.toArray());
 								mode.finish();	
 							}
 						});
@@ -391,23 +333,77 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 					build.setNegativeButton("Cancel",
 						new DialogInterface.OnClickListener() {
 
-							public void onClick(DialogInterface dialog,
-												int which) {
+							public void onClick(DialogInterface dialog,	int which) {
 								dialog.cancel();
 								mode.finish();
 							}
 						});
 					AlertDialog alert = build.create();
 					alert.show();
-
-
 					break;
 				default:
-
 					break;
             }
             return true;
         }
+		
+		private class deleteItemsTask extends AsyncTask<Object, Integer, Integer> {
+			ProgressDialog pd = null;
+			@Override
+			protected Integer doInBackground(Object[] selectedPositions) {
+				mHelper = new Database(MainActivity.this);
+				dataBase = mHelper.getWritableDatabase();
+				
+				for (final Object position : selectedPositions) {
+					String fileLocation = gridAdapter.getPropertiesByPosition(position, Database.THUMBNAIL);
+					File file = new File(fileLocation);
+					file.delete();
+
+					//for compatibility with old versions
+					if (gridAdapter.getPropertiesByPosition(position, Database.FILE_LOCATION).endsWith("mht")) {
+						fileLocation = gridAdapter.getPropertiesByPosition(position, Database.FILE_LOCATION);
+						file = new File(fileLocation);
+						file.delete();
+					} else {
+						fileLocation = gridAdapter.getPropertiesByPosition(position, Database.FILE_LOCATION);
+						file = new File(fileLocation);
+						file = file.getParentFile();
+						DirectoryHelper.deleteDirectory(file);
+					}
+
+					dataBase.delete(Database.TABLE_NAME, Database.ID + "=" + gridAdapter.getPropertiesByPosition(position, Database.ID), null);
+					publishProgress((Integer)position);
+				}
+				return selectedPositions.length;
+			}
+
+			@Override
+			protected void onPreExecute() {
+				pd = new ProgressDialog(MainActivity.this);
+				pd.setMessage("Deleting items...");
+				pd.setIndeterminate(false);
+				pd.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+				pd.setMax(gridAdapter.selectedViewsPositions.size());
+				pd.setCancelable(false);
+				pd.setCanceledOnTouchOutside(false);
+
+				pd.show();
+			}
+
+			@Override
+			protected void onPostExecute(Integer result) {
+				pd.hide();
+				pd.cancel();	
+				displayData("");
+				Toast.makeText(MainActivity.this, "Deleted " + result + " saved pages", Toast.LENGTH_LONG).show();
+			}
+
+			@Override
+			protected void onProgressUpdate(Integer[] values) {
+				pd.setProgress(values[0]);
+			}
+			
+		}
 
 		@Override
         public void onDestroyActionMode(ActionMode mode) {
