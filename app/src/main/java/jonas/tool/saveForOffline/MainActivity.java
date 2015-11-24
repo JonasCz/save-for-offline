@@ -344,8 +344,8 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 				default:
 					break;
             }
-            return true;
-        }
+			return true;
+		}
 		
 		private class deleteItemsTask extends AsyncTask<Object, Integer, Integer> {
 			ProgressDialog pd = null;
@@ -407,9 +407,7 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 
 		@Override
         public void onDestroyActionMode(ActionMode mode) {
-
 			gridAdapter.selectedViewsPositions.clear();
-
         }
 
 		@Override
@@ -419,22 +417,11 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 			View gridCellLayout = mainGrid.getChildAt(position - mainGrid.getFirstVisiblePosition()).findViewById(R.id.gridCellLayout);
 			if (checked) {
 				gridAdapter.selectedViewsPositions.add(pos);
-
-				//getViewByPosition(position, mainGrid).setBackgroundColor(Color.parseColor("#FEA597"));
-
 				gridCellLayout.setBackgroundColor(Color.parseColor("#FFC107"));
-
-				//Toast.makeText(MainActivity.this, "Checked " + position, Toast.LENGTH_SHORT).show();
-
 			} else {
-
 				gridAdapter.selectedViewsPositions.remove(pos);
-				//getViewByPosition(position, mainGrid).setBackgroundColor(Color.parseColor("#E2E2E2"));
 				gridCellLayout.setBackgroundColor(Color.parseColor("#E2E2E2"));
-				//Toast.makeText(MainActivity.this, "unChecked " + position, Toast.LENGTH_SHORT).show();
-
 			}
-
 
 			final int checkedCount = gridAdapter.selectedViewsPositions.size();
 

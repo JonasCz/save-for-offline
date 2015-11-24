@@ -51,6 +51,7 @@ import java.util.Iterator;
 import com.squareup.okhttp.*;
 import android.os.*;
 import android.content.*;
+import java.io.*;
 
 
 public class PageSaver {
@@ -86,6 +87,8 @@ public class PageSaver {
 
     public PageSaver(EventCallback callback) {
         this.eventCallback = callback;
+		client.setConnectTimeout(10, TimeUnit.SECONDS);
+		client.setReadTimeout(10, TimeUnit.SECONDS);
     }
 
     public void cancel() {
@@ -175,12 +178,20 @@ public class PageSaver {
         } catch (IOException e) {
 			if (isExtra) {
 				eventCallback.onError(e.getMessage());
-				
 			} else {
 				eventCallback.onFatalError(e.getMessage());
 			}
+			e.printStackTrace();
             return false;
-        }
+        } catch (IllegalStateException e) {
+			if (isExtra) {
+				eventCallback.onError(e.getMessage());
+			} else {
+				eventCallback.onFatalError(e.getMessage());
+			}
+			e.printStackTrace();
+			return false;
+		}
     }
 
     private void downloadCssAndParse(final String url, final String outputDir) {
@@ -245,15 +256,14 @@ public class PageSaver {
         }
     }
 
-    private String getStringFromUrl(String url) throws IOException {
+    private String getStringFromUrl(String url) throws IOException, IllegalStateException {
         Request request = new Request.Builder()
                 .url(url)
                 .addHeader("User-Agent", getOptions().getUserAgent())
 				.tag(HTTP_REQUEST_TAG)
                 .build();
-
         Response response = client.newCall(request).execute();
-        String out = response.body().string();
+        String out = response.body().toString();
         response.body().close();
         return out;
     }
