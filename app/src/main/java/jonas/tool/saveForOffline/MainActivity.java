@@ -199,11 +199,11 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 					Intent i = new Intent(getApplicationContext(),
 										  ViewActivity.class);
 					i.putExtra(Database.ORIGINAL_URL, gridAdapter.getPropertiesByPosition(position, Database.ORIGINAL_URL));
-					i.putExtra("title", gridAdapter.getPropertiesByPosition(position, Database.TITLE));
-					i.putExtra("id", gridAdapter.getPropertiesByPosition(position, Database.ID));
-					i.putExtra("fileLocation", gridAdapter.getPropertiesByPosition(position, Database.FILE_LOCATION));
-					i.putExtra("thumbnailLocation", gridAdapter.getPropertiesByPosition(position, Database.THUMBNAIL));
-					i.putExtra("date", gridAdapter.getPropertiesByPosition(position, Database.TIMESTAMP));
+					i.putExtra(Database.TITLE, gridAdapter.getPropertiesByPosition(position, Database.TITLE));
+					i.putExtra(Database.ID, gridAdapter.getPropertiesByPosition(position, Database.ID));
+					i.putExtra(Database.FILE_LOCATION, gridAdapter.getPropertiesByPosition(position, Database.FILE_LOCATION));
+					i.putExtra(Database.THUMBNAIL, gridAdapter.getPropertiesByPosition(position, Database.THUMBNAIL));
+					i.putExtra(Database.TIMESTAMP, gridAdapter.getPropertiesByPosition(position, Database.TIMESTAMP));
 
 					startActivity(i);
 
