@@ -45,13 +45,11 @@ public class ScreenshotService extends Service {
 		}
 		@Override
 		public void handleMessage(final Message msg) {
-			
 			webview = new WebView(ScreenshotService.this);
 
 			//without this toast message, screenshot will be blank, dont ask me why...
 			Toast.makeText(ScreenshotService.this, "Save completed.", Toast.LENGTH_SHORT).show();
-			webview.getSettings().setJavaScriptEnabled(true);
-
+			
 			// This is the important code :)   
 			webview.setDrawingCacheEnabled(true);
 
@@ -60,9 +58,11 @@ public class ScreenshotService extends Service {
 			webview.layout(0, 0, 600, 400); 
 
 			final Intent intent = (Intent) msg.obj;
-
 			webview.loadUrl(intent.getStringExtra("origurl"));
-
+			boolean javaScriptEnabled  = PreferenceManager.getDefaultSharedPreferences(ScreenshotService.this).getBoolean("enable_javascript", true);
+			
+			webview.getSettings().setJavaScriptEnabled(javaScriptEnabled);
+			
 			webview.setWebViewClient(new WebViewClient() {
 
 					@Override
