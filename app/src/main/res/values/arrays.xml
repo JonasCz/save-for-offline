@@ -1,14 +1,14 @@
 <resources>
 	<string-array name="entries_list_preference">
 		<item>Desktop</item>
-		<item>Mobile (Recommended)</item>
-		<item>iPad</item>
+		<item>Mobile</item>
+		<item>None (Send an empty user agent)</item>
 	</string-array>
 	
 	<string-array name="entryvalues_list_preference">
 		<item>Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.517 Safari/537.36</item>
 		<item>Mozilla/5.0 (Linux; U; Android 4.4.3; en-us; mobile) AppleWebKit/537.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30</item>
-		<item>ipad</item>
+		<item> </item>
 	</string-array>
 	
 	<string-array name="layout_list">

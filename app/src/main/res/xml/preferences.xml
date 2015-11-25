@@ -53,6 +53,26 @@
 
     </PreferenceCategory>
 
+	<PreferenceCategory
+		android:title="Advanced Settings">
+		<PreferenceScreen
+			android:title="Advanced Settings"
+			android:summary="Use with care. Enabling these may cause dragons to materialize, unexpected behaviour by the app, or crashes.">
+			<PreferenceCategory
+				android:title="Privacy">
+				<CheckBoxPreference
+					android:key = "offline_sandbox_mode"
+					android:defaultValue="false"
+					android:title="Block network access when viewing pages"
+					android:summary="Prevents saved pages from communicating with web servers and loading scripts, content, ads, or tracking." />
+				<CheckBoxPreference
+					android:key = "enable_javascript"
+					android:defaultValue="true"
+					android:title="Enable JavaScript"/>
+			</PreferenceCategory>
+		</PreferenceScreen>
+	</PreferenceCategory>
+
     <PreferenceCategory
 		android:title="About this app">
 
@@ -64,6 +84,88 @@
 				android:data="http://github.com/jonasCz/save-for-offline" />
 
         </PreferenceScreen>
+
+		<PreferenceScreen
+			android:title="Credits"
+			android:summary="All the wonderful libraries and code snippets used in this app">
+
+			<PreferenceScreen
+				android:title="Author: Jonas Czech"
+				android:summary="Check out my GitHub profile for more interesting things">
+
+				<intent android:action="android.intent.action.VIEW"
+					android:data="http://github.com/jonasCz/" />
+
+			</PreferenceScreen>
+
+			<PreferenceCategory
+				android:title="Libraries used">
+
+				<PreferenceScreen
+					android:title="jSoup"
+					android:summary="jSoup, used for parsing and modifying HTML when saving pages.">
+
+					<intent android:action="android.intent.action.VIEW"
+						android:data="http://jsoup.org" />
+
+				</PreferenceScreen>
+
+				<PreferenceScreen
+					android:title="OkHttp"
+					android:summary="OkHttp, an awesome HTTP client library, used for network operations when saving pages">
+
+					<intent android:action="android.intent.action.VIEW"
+						android:data="https://github.com/square/okhttp" />
+
+				</PreferenceScreen>
+
+				<PreferenceScreen
+					android:title="Picasso"
+					android:summary="Square's picasso, for loading thumbnails and icons in the main list">
+
+					<intent android:action="android.intent.action.VIEW"
+						android:data="http://square.github.io/picasso/" />
+
+				</PreferenceScreen>
+
+				<PreferenceScreen
+					android:title="WebArchiveReader"
+					android:summary="by Stack Overflow user gregko, for loading web archive files saved by older versions of the app">
+
+					<intent android:action="android.intent.action.VIEW"
+						android:data="http://github.com/gregko/webarchivereader/" />
+
+				</PreferenceScreen>
+
+				<PreferenceScreen
+					android:title="FuzzyDateFormatter"
+					android:summary="Slightly modified, for displaying the dates in the list, originally by Ionut G. Stan">
+				</PreferenceScreen>
+
+			</PreferenceCategory>
+
+			<PreferenceCategory
+				android:title="Thanks">
+				<PreferenceScreen
+					android:title="F-Droid and its maintainers"
+					android:summary="Touch to visit f-droid.org">
+
+					<intent android:action="android.intent.action.VIEW"
+						android:data="http://f-droid.org" />
+
+				</PreferenceScreen>
+
+				<PreferenceScreen
+					android:title="Android Action Bar Style Generator"
+					android:summary="Web-based tool to make nice themes for your app, touch to visit">
+
+				</PreferenceScreen>
+
+
+
+			</PreferenceCategory>
+
+		</PreferenceScreen>
 
     </PreferenceCategory>
 
