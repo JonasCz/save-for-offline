@@ -15,6 +15,8 @@ import android.graphics.Paint;
 
 public class ViewActivity extends Activity {
 	private Intent incomingIntent;
+	private SharedPreferences preferences;
+	
 	private String title;
 	private String fileLocation;
 	private String date;
@@ -28,79 +30,43 @@ public class ViewActivity extends Activity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
-		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-		if (sharedPref.getBoolean("dark_mode", false)) {
+		
+		incomingIntent = getIntent();
+		preferences = PreferenceManager.getDefaultSharedPreferences(this);
+		
+		if (preferences.getBoolean("dark_mode", false)) {
 			setTheme(android.R.style.Theme_Holo);
 		}
-		setContentView(R.layout.view_activity);
 		
-		ActionBar actionBar = getActionBar();
-		actionBar.setDisplayHomeAsUpEnabled(true);
-		incomingIntent = getIntent();
-		actionBar.setSubtitle(incomingIntent.getStringExtra("title"));
-		title = incomingIntent.getStringExtra("title");
-		fileLocation = incomingIntent.getStringExtra("fileLocation");
-		date = incomingIntent.getStringExtra("date");
+		setContentView(R.layout.view_activity);	
+		
+		title = incomingIntent.getStringExtra(Database.TITLE);
+		fileLocation = incomingIntent.getStringExtra(Database.FILE_LOCATION);
+		date = incomingIntent.getStringExtra(Database.TIMESTAMP);
+		
+		getActionBar().setDisplayHomeAsUpEnabled(true);
+		getActionBar().setSubtitle(incomingIntent.getStringExtra(Database.TITLE));
 
 		setProgressBarIndeterminateVisibility(true);
 
 		webview = (WebView) findViewById(R.id.webview);
+		setupWebView();
+		
+		invertedRendering = preferences.getBoolean("dark_mode", false);
 
-		String ua = sharedPref.getString("user_agent", "mobile");
-		invertedRendering = sharedPref.getBoolean("dark_mode", false);
-
-		registerForContextMenu(webview);
-
-		if (ua.equals("desktop")) {
-			webview.getSettings().setUserAgentString("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.517 Safari/537.36");
-
-		}
-		if (ua.equals("ipad")) {
-			webview.getSettings().setUserAgentString("todo:iPad ua");
-		}
-
-		webview.getSettings().setLoadWithOverviewMode(true);
-		webview.getSettings().setUseWideViewPort(true);
-		webview.getSettings().setJavaScriptEnabled(true);
-		webview.getSettings().setBuiltInZoomControls(true);
-		webview.getSettings().setDisplayZoomControls(false);
-		webview.getSettings().setAllowFileAccess(true);
-		webview.getSettings().setAllowFileAccessFromFileURLs(true);
-		webview.getSettings().setMediaPlaybackRequiresUserGesture(false);
-		webview.getSettings().setDefaultTextEncodingName("UTF-8");
-
-
-		if (fileLocation.endsWith("html")) {
+		if (fileLocation.endsWith("html") || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)) {
+			//we can load the file directly - either the file was saved as pure html, or it was saved under kitkat or later with saveWebArchive().
 			webview.loadUrl("file://" + fileLocation);
-			webview.setWebViewClient(new WebViewClient() {
-
-					@Override
-					public void onPageFinished(WebView view, String url) {
-						//	loadingText.setVisibility(View.GONE);
-						setProgressBarIndeterminateVisibility(false);
-
-					}
-				});
-		} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-			//kitkat and up saves webarchives in a different format, which we can read easyly
-			webview.loadUrl("file://" + fileLocation);
-			webview.setWebViewClient(new WebViewClient() {
-
-					@Override
-					public void onPageFinished(WebView view, String url) {
-						setProgressBarIndeterminateVisibility(false);
-						//	loadingText.setVisibility(View.GONE);
-
-					}
-				});
-
-		} else loadWebView();
+		} else {
+			//otherwise, if it was saved under android older than 4.4 with saveWebArchive(), we need some magic - thanks to gregko's webArchiveReader.
+			loadWebView();
+		 }
     }
 
 	@Override
 	protected void onResume() {
 		super.onResume();
-		//set up inverted rendering, aka. night mode.
+		//set up inverted rendering, aka. night mode, if enabled.
 		if (invertedRendering) {
 			float[] mNegativeColorArray = { 
 				-1.0f, 0, 0, 0, 255, // red
@@ -119,15 +85,11 @@ public class ViewActivity extends Activity {
 	private void loadWebView() {
 		try {
 			FileInputStream is = new FileInputStream(fileLocation);
-            //InputStream is = getAssets().open("TestHtmlArchive.xml");
             WebArchiveReader wr = new WebArchiveReader() {
                 void onFinished(WebView v) {
-                    // we are notified here when the page is fully loaded.
-                    continueWhenLoaded(v);
+                    setProgressBarIndeterminateVisibility(false);
                 }
             };
-            // To read from a file instead of an asset, use:
-            // FileInputStream is = new FileInputStream(fileName);
             if (wr.readWebArchive(is)) {
                 wr.loadToWebView(webview);
             }
@@ -136,11 +98,55 @@ public class ViewActivity extends Activity {
         }
 		super.onStart();
 	}
-
-	void continueWhenLoaded(WebView webView) {
-		setProgressBarIndeterminateVisibility(false);	
-    }
-
+	
+	private void setupWebView() {
+		String ua = preferences.getString("user_agent", "mobile");
+		boolean javaScriptEnabled = preferences.getBoolean("enable_javascript", true);
+		System.out.println(ua);
+		
+		registerForContextMenu(webview);
+		
+		webview.getSettings().setUserAgentString(ua);
+		webview.getSettings().setLoadWithOverviewMode(true);
+		webview.getSettings().setUseWideViewPort(true);
+		webview.getSettings().setJavaScriptEnabled(javaScriptEnabled);
+		webview.getSettings().setBuiltInZoomControls(true);
+		webview.getSettings().setDisplayZoomControls(false);
+		webview.getSettings().setAllowFileAccess(true);
+		webview.getSettings().setAllowFileAccessFromFileURLs(true);
+		webview.getSettings().setMediaPlaybackRequiresUserGesture(false);
+		webview.getSettings().setDefaultTextEncodingName("UTF-8");
+		
+		webview.setWebViewClient(new WebViewClient() {
+			@Override
+			public void onPageFinished(WebView view, String url){
+				setProgressBarIndeterminateVisibility(false);
+			}
+			
+			@Override
+			public boolean shouldOverrideUrlLoading(WebView view, String url) {
+				try {
+					//send the user to installed browser instead of opening in the app, as per issue 19.
+					startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+					return true;
+				} catch (Exception e) {
+					//Activity not found or bad url
+					e.printStackTrace();
+					return false;
+				}
+			}
+			
+			@Override
+			public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
+				if (!url.startsWith("file") && preferences.getBoolean("offline_sandbox_mode", false)) {
+					Log.w("ViewActivity", "Request blocked: " + url);
+					return new WebResourceResponse(null, null, null);
+				} else {
+					return null;
+				}
+			}
+		});
+	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -155,9 +161,8 @@ public class ViewActivity extends Activity {
 			case R.id.ic_action_settings:
 				Intent settings = new Intent(getApplicationContext(), Preferences.class);
 				startActivityForResult(settings, 1);
-
 				return true;
-
+				
 			case R.id.action_save_page_properties:
 				showPropertiesDialog();
 				return true;
@@ -178,9 +183,8 @@ public class ViewActivity extends Activity {
 				try {
 					startActivity(newIntent);
 				} catch (android.content.ActivityNotFoundException e) {
-					Toast.makeText(this, "No installed app can open HTML files..", Toast.LENGTH_LONG).show();
+					Toast.makeText(this, "No installed app can open HTML files", Toast.LENGTH_LONG).show();
 				}
-//
 				return true;
 
 			case R.id.ic_action_about:
@@ -207,18 +211,18 @@ public class ViewActivity extends Activity {
 
 							dataBase.delete(
 								Database.TABLE_NAME,
-								Database.ID + "=" + incomingIntent2.getStringExtra("id"), null);
+								Database.ID + "=" + incomingIntent2.getStringExtra(Database.ID), null);
 
 
-							File file = new File(incomingIntent2.getStringExtra("thumbnailLocation"));
+							File file = new File(incomingIntent2.getStringExtra(Database.THUMBNAIL));
 							file.delete();
 
-							if (incomingIntent2.getStringExtra("fileLocation").endsWith("mht")) {
-								String fileLocation = incomingIntent2.getStringExtra("fileLocation");
+							if (incomingIntent2.getStringExtra(Database.FILE_LOCATION).endsWith("mht")) {
+								String fileLocation = incomingIntent2.getStringExtra(Database.FILE_LOCATION);
 								file = new File(fileLocation);
 								file.delete();
 							} else {
-								String fileLocation = incomingIntent2.getStringExtra("fileLocation");
+								String fileLocation = incomingIntent2.getStringExtra(Database.FILE_LOCATION);
 								file = new File(fileLocation);
 								file = file.getParentFile();
 								DirectoryHelper.deleteDirectory(file);
@@ -275,8 +279,6 @@ public class ViewActivity extends Activity {
 
 
 	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenu.ContextMenuInfo menuInfo) {
-
-
 		result = webview.getHitTestResult();
 
 		if (result.getType() == WebView.HitTestResult.ANCHOR_TYPE || result.getType() == WebView.HitTestResult.SRC_ANCHOR_TYPE || result.getType() == WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE) {
