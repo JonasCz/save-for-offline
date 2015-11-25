@@ -19,7 +19,6 @@ public class ViewActivity extends Activity {
 	private String fileLocation;
 	private String date;
 	private WebView webview;
-	private TextView loadingText;
 	private WebView.HitTestResult result;
 
 	private boolean save_in_background;
@@ -34,9 +33,7 @@ public class ViewActivity extends Activity {
 			setTheme(android.R.style.Theme_Holo);
 		}
 		setContentView(R.layout.view_activity);
-
-
-
+		
 		ActionBar actionBar = getActionBar();
 		actionBar.setDisplayHomeAsUpEnabled(true);
 		incomingIntent = getIntent();
@@ -47,15 +44,12 @@ public class ViewActivity extends Activity {
 
 		setProgressBarIndeterminateVisibility(true);
 
-		loadingText = (TextView) findViewById(R.id.view_activity_loading_text);
 		webview = (WebView) findViewById(R.id.webview);
 
 		String ua = sharedPref.getString("user_agent", "mobile");
 		invertedRendering = sharedPref.getBoolean("dark_mode", false);
 
-
 		registerForContextMenu(webview);
-
 
 		if (ua.equals("desktop")) {
 			webview.getSettings().setUserAgentString("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.517 Safari/537.36");
@@ -64,7 +58,6 @@ public class ViewActivity extends Activity {
 		if (ua.equals("ipad")) {
 			webview.getSettings().setUserAgentString("todo:iPad ua");
 		}
-
 
 		webview.getSettings().setLoadWithOverviewMode(true);
 		webview.getSettings().setUseWideViewPort(true);
@@ -172,7 +165,7 @@ public class ViewActivity extends Activity {
 			case R.id.action_open_in_external:
 				Intent incomingIntent = getIntent();
 
-				Uri uri = Uri.parse(incomingIntent.getStringExtra("orig_url"));
+				Uri uri = Uri.parse(incomingIntent.getStringExtra(Database.ORIGINAL_URL));
 				Intent startBrowserIntent = new Intent(Intent.ACTION_VIEW, uri);
 				startActivity(startBrowserIntent);
 
@@ -268,7 +261,7 @@ public class ViewActivity extends Activity {
 		t = (TextView) layout.findViewById(R.id.properties_dialog_text_date);
 		t.setText("Date & Time saved: \r\n" + date);
 		t = (TextView) layout.findViewById(R.id.properties_dialog_text_orig_url);
-		t.setText("Saved from: \r\n" + incomingIntent.getStringExtra("orig_url"));
+		t.setText("Saved from: \r\n" + incomingIntent.getStringExtra(Database.ORIGINAL_URL));
 		build.setPositiveButton("OK",
 			new DialogInterface.OnClickListener() {
 

@@ -198,7 +198,7 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 
 					Intent i = new Intent(getApplicationContext(),
 										  ViewActivity.class);
-					i.putExtra("orig_url", gridAdapter.getPropertiesByPosition(position, Database.ORIGINAL_URL));
+					i.putExtra(Database.ORIGINAL_URL, gridAdapter.getPropertiesByPosition(position, Database.ORIGINAL_URL));
 					i.putExtra("title", gridAdapter.getPropertiesByPosition(position, Database.TITLE));
 					i.putExtra("id", gridAdapter.getPropertiesByPosition(position, Database.ID));
 					i.putExtra("fileLocation", gridAdapter.getPropertiesByPosition(position, Database.FILE_LOCATION));

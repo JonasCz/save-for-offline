@@ -87,14 +87,18 @@ public class PageSaver {
 
     public PageSaver(EventCallback callback) {
         this.eventCallback = callback;
-		client.setConnectTimeout(10, TimeUnit.SECONDS);
-		client.setReadTimeout(10, TimeUnit.SECONDS);
+		
+		client.setConnectTimeout(15, TimeUnit.SECONDS);
+		client.setReadTimeout(15, TimeUnit.SECONDS);
+		client.setWriteTimeout(15, TimeUnit.SECONDS);
+		
+		client.setFollowRedirects(true);
+		client.setFollowSslRedirects(true);
     }
 
     public void cancel() {
         this.isCancelled = true;
         client.cancel(HTTP_REQUEST_TAG);
-
     }
 
     public boolean isCancelled () {
@@ -263,7 +267,7 @@ public class PageSaver {
 				.tag(HTTP_REQUEST_TAG)
                 .build();
         Response response = client.newCall(request).execute();
-        String out = response.body().toString();
+        String out = response.body().string();
         response.body().close();
         return out;
     }
