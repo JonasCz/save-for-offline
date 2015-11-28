@@ -27,6 +27,7 @@ package jonas.tool.saveForOffline;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
+import com.squareup.okhttp.Cache;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -48,10 +49,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.Iterator;
-import com.squareup.okhttp.*;
-import android.os.*;
-import android.content.*;
-import java.io.*;
 
 
 public class PageSaver {
@@ -62,7 +59,6 @@ public class PageSaver {
 
     private boolean isCancelled = false;
     private Options options = new Options();
-
 
     // filesToGrab - maintains all the links to files (eg images, scripts) which we are going to grab/download
     private List<String> filesToGrab = new ArrayList<String>();
@@ -361,6 +357,26 @@ public class PageSaver {
                     link.dataNodes().get(0).setWholeData(parsedCss);
                 }
             }
+			
+			//get input types with an image type
+			links = document.select("input[type=image]");
+			eventCallback.onLogMessage("Got " + links.size() + " input elements with type = image");
+			for (Element link : links) {
+                urlToGrab = link.attr("abs:src");
+                addLinkToList(urlToGrab, filesToGrab);
+                String replacedURL = getFileName(urlToGrab);
+                link.attr("src", replacedURL);
+            }
+			
+			//get everything which has a background attribute
+			links = document.select("[background]");
+			eventCallback.onLogMessage("Got " + links.size() + " elements with a background attribute");
+			for (Element link : links) {
+                urlToGrab = link.attr("abs:src");
+                addLinkToList(urlToGrab, filesToGrab);
+                String replacedURL = getFileName(urlToGrab);
+                link.attr("src", replacedURL);
+            }
 
             links = document.select("[style]");
             eventCallback.onLogMessage("Got " + links.size() + " elements with a style attribute, parsing CSS");
@@ -392,6 +408,7 @@ public class PageSaver {
 
                 String replacedURL = getFileName(urlToGrab);
                 link.attr("src", replacedURL);
+				link.removeAttr("srcset"); //we don't use this for now, so remove it.
             }
         }
 
@@ -448,7 +465,6 @@ public class PageSaver {
                 cssToParse = cssToParse.replace(matcher.group().replaceAll(patternString, "$2"), getFileName(matcher.group().replaceAll(patternString, "$2")));
 
             }
-
             addLinkToList(makeLinkAbsolute(matcher.group().replaceAll(patternString, "$2").trim(), baseUrl), filesToGrab);
         }
 
