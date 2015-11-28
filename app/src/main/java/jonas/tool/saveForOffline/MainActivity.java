@@ -169,13 +169,6 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 				startActivityForResult(settings, 1);
 
 				return true;
-
-			case R.id.ic_action_about:
-				Intent intent = new Intent(this, FirstRunDialog.class);
-				startActivity(intent);
-				return true;
-
-
 			default:
 				return super.onOptionsItemSelected(item);
 		}
@@ -351,29 +344,16 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 			ProgressDialog pd = null;
 			@Override
 			protected Integer doInBackground(Object[] selectedPositions) {
-				mHelper = new Database(MainActivity.this);
-				dataBase = mHelper.getWritableDatabase();
+				dataBase = new Database(MainActivity.this).getWritableDatabase();
 				
 				for (final Object position : selectedPositions) {
-					String fileLocation = gridAdapter.getPropertiesByPosition(position, Database.THUMBNAIL);
-					File file = new File(fileLocation);
-					file.delete();
-
-					//for compatibility with old versions
-					if (gridAdapter.getPropertiesByPosition(position, Database.FILE_LOCATION).endsWith("mht")) {
-						fileLocation = gridAdapter.getPropertiesByPosition(position, Database.FILE_LOCATION);
-						file = new File(fileLocation);
-						file.delete();
-					} else {
-						fileLocation = gridAdapter.getPropertiesByPosition(position, Database.FILE_LOCATION);
-						file = new File(fileLocation);
-						file = file.getParentFile();
-						DirectoryHelper.deleteDirectory(file);
-					}
-
+					String fileLocation = gridAdapter.getPropertiesByPosition(position, Database.FILE_LOCATION);
+					DirectoryHelper.deleteDirectory(new File(fileLocation).getParentFile());
+					
 					dataBase.delete(Database.TABLE_NAME, Database.ID + "=" + gridAdapter.getPropertiesByPosition(position, Database.ID), null);
 					publishProgress((Integer)position);
 				}
+				dataBase.close();
 				return selectedPositions.length;
 			}
 

@@ -20,15 +20,11 @@ public class FuzzyDateFormatter {
 
     private final Calendar currentTime;
 
-    private final FuzzyDateMessages fuzzyMessages;
-
-
-    public FuzzyDateFormatter(Calendar currentTime, FuzzyDateMessages fuzzyMessages) {
-        this.currentTime   = currentTime;
-        this.fuzzyMessages = fuzzyMessages;
+    public FuzzyDateFormatter(Calendar currentTime) {
+        this.currentTime = currentTime;
     }
 	
-	public String getFuzzy (String dateTime) throws ParseException{
+	public String getFuzzy (String dateTime) throws ParseException {
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
 		Calendar cal = Calendar.getInstance();
 		cal.setTime(sdf.parse(dateTime));
@@ -74,19 +70,19 @@ public class FuzzyDateFormatter {
     private String callMultiUnit(int unit, int difference) {
         switch (unit) {
             case SECONDS:
-                return fuzzyMessages.someSecondsAgo(difference);
+                return FuzzyMessages.someSecondsAgo(difference);
             case MINUTES:
-                return fuzzyMessages.someMinutesAgo(difference);
+                return FuzzyMessages.someMinutesAgo(difference);
             case HOURS:
-                return fuzzyMessages.someHoursAgo(difference);
+                return FuzzyMessages.someHoursAgo(difference);
             case DAYS:
-                return fuzzyMessages.someDaysAgo(difference);
+                return FuzzyMessages.someDaysAgo(difference);
             case WEEKS:
-                return fuzzyMessages.someWeeksAgo(difference);
+                return FuzzyMessages.someWeeksAgo(difference);
             case MONTHS:
-                return fuzzyMessages.someMonthsAgo(difference);
+                return FuzzyMessages.someMonthsAgo(difference);
             case YEARS:
-                return fuzzyMessages.someYearsAgo(difference);
+                return FuzzyMessages.someYearsAgo(difference);
             default:
                 throw new RuntimeException("Unknown multi unit");
         }
@@ -95,21 +91,84 @@ public class FuzzyDateFormatter {
     private String callSingleUnit(int unit) {
         switch (unit) {
             case SECONDS:
-                return fuzzyMessages.oneSecondAgo();
+                return FuzzyMessages.oneSecondAgo();
             case MINUTES:
-                return fuzzyMessages.oneMinuteAgo();
+                return FuzzyMessages.oneMinuteAgo();
             case HOURS:
-                return fuzzyMessages.oneHourAgo();
+                return FuzzyMessages.oneHourAgo();
             case DAYS:
-                return fuzzyMessages.oneDayAgo();
+                return FuzzyMessages.oneDayAgo();
             case WEEKS:
-                return fuzzyMessages.oneWeekAgo();
+                return FuzzyMessages.oneWeekAgo();
             case MONTHS:
-                return fuzzyMessages.oneMonthAgo();
+                return FuzzyMessages.oneMonthAgo();
             case YEARS:
-                return fuzzyMessages.oneYearAgo();
+                return FuzzyMessages.oneYearAgo();
             default:
                 throw new RuntimeException("Unknown single unit");
         }
     }
+	
+	private static class FuzzyMessages {
+
+		public static String oneSecondAgo() {
+			return "just now";
+		}
+
+		public static String someSecondsAgo(int numberOfSeconds) {
+			return "just now";
+		}
+
+		public static String oneMinuteAgo() {
+			return "just now";
+		}
+
+		public static String someMinutesAgo(int numberOfMinutes) {
+			if (numberOfMinutes <=  15) {
+				return "just now";
+			} else {
+				return "a few minutes ago";
+			}
+		}
+
+		public static String oneHourAgo() {
+			return "one hour ago";
+		}
+
+		public static String someHoursAgo(int numberOfHours) {
+			return "today";
+		}
+
+		public static String oneDayAgo() {
+			return "yesterday";
+		}
+
+		public static String someDaysAgo(int numberOfDays) {
+			return "this week";
+		}
+
+		public static String oneWeekAgo() {
+			return " last week";
+		}
+
+		public static String someWeeksAgo(int numberOfWeeks) {
+			return numberOfWeeks + " weeks ago";
+		}
+
+		public static String oneMonthAgo() {
+			return " one month ago";
+		}
+
+		public static String someMonthsAgo(int numberOfMonths) {
+			return numberOfMonths + " months ago";
+		}
+
+		public static String oneYearAgo() {
+			return "last year";
+		}
+
+		public static String someYearsAgo(int numberOfYears) {
+			return numberOfYears + " years ago";
+		}
+	}
 }

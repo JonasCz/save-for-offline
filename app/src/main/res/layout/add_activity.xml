@@ -10,7 +10,7 @@
 
 	<TextView
 		android:layout_height="wrap_content"
-		android:text="Tip: In your web browser, choose 'share' and then 'save for offline' to quickly save pages."
+		android:text="Tip: In your web browser, choose 'Share' and then 'Save For Offline' to quickly save pages."
 		android:layout_width="wrap_content"
 		
 		android:id="@+id/tipText"

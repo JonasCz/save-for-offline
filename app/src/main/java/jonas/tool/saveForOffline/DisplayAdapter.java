@@ -115,7 +115,7 @@ public class DisplayAdapter extends BaseAdapter {
 		this.mContext = c;
 
 		dataBase = new Database(c).getReadableDatabase();
-		fuzzyFormatter = new FuzzyDateFormatter(Calendar.getInstance(), new FuzzyDateMessages());
+		fuzzyFormatter = new FuzzyDateFormatter(Calendar.getInstance());
 
 		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(mContext);
 

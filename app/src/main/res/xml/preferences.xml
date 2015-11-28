@@ -70,6 +70,15 @@
 					android:defaultValue="true"
 					android:title="Enable JavaScript"/>
 			</PreferenceCategory>
+			<PreferenceCategory
+				android:title="Cache">
+				<EditTextPreference
+					android:key="cache_size"
+					android:defaultValue="50"
+					android:title="Cache size" 
+					android:summary="Size of the cache used when saving pages, speeds up saving pages from the same site (assets eg. CSS come from the cache instead of being downloaded multiple times). Default is 50MB." 
+					android:dialogTitle="Cache size, in Megabytes"/>
+			</PreferenceCategory>
 		</PreferenceScreen>
 	</PreferenceCategory>
 

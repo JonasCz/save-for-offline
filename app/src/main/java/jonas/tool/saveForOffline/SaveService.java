@@ -111,7 +111,7 @@ public class SaveService extends Service {
             pageSaver = new PageSaver(new PageSaveEventCallback());
 
             pageSaver.getOptions().setUserAgent(getUserAgent());
-			pageSaver.getOptions().setCache(getApplicationContext().getExternalCacheDir(), 52428800); //8mb of cache, hope i got this right..
+			pageSaver.getOptions().setCache(getApplicationContext().getExternalCacheDir(),1024 * 1024 * 50); //50mb of cache, hope i got this right..
             boolean success = pageSaver.getPage(originalUrl, destinationDirectory, "index.html");
 
 
@@ -140,8 +140,8 @@ public class SaveService extends Service {
             addToDb(destinationDirectory, pageSaver.getPageTitle(), originalUrl);
 
             Intent i = new Intent(SaveService.this, ScreenshotService.class);
-            i.putExtra("origurl", "file://" + destinationDirectory + "index.html");
-            i.putExtra("thumbnail", destinationDirectory + "saveForOffline_thumbnail.png");
+            i.putExtra(Database.FILE_LOCATION, "file://" + destinationDirectory + "index.html");
+            i.putExtra(Database.THUMBNAIL, destinationDirectory + "saveForOffline_thumbnail.png");
             startService(i);
 			
 			notificationTools.setTicker("Save completed: " + pageSaver.getPageTitle())
@@ -176,8 +176,8 @@ public class SaveService extends Service {
             }
 
             @Override
-            public void onCurrentFileChanged(final String fileName) {
-				notificationTools.setContentText("Saving file: " + fileName)
+            public void onProgressMessage(final String message) {
+				notificationTools.setContentText(message)
 					.createNotification();
             }
 

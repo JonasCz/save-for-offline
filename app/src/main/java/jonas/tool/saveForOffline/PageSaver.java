@@ -64,11 +64,11 @@ public class PageSaver {
     private Options options = new Options();
 
 
-    // filesToGrab - maintains all the links to files which we are going to grab/download
+    // filesToGrab - maintains all the links to files (eg images, scripts) which we are going to grab/download
     private List<String> filesToGrab = new ArrayList<String>();
-    //framesToGrab - list of html frame files to download
+    //framesToGrab - list of html frame files to download, as we parse these recursively
     private List<String> framesToGrab = new ArrayList<String>();
-    //cssToGrab - list of all css files to download an parse
+    //cssToGrab - list of all css files to download and parse, these need to be parsed to extract urls
     private List<String> cssToGrab = new ArrayList<String>();
 	
     private String title = "";
@@ -135,13 +135,13 @@ public class PageSaver {
 		}
 
         //download extra files, such as images / scripts
-        ExecutorService pool = Executors.newFixedThreadPool(5);
+        ExecutorService pool = Executors.newFixedThreadPool(3);
 
         for (String urlToDownload : filesToGrab) {
             if (isCancelled) break;
-            eventCallback.onCurrentFileChanged(urlToDownload.substring(urlToDownload.lastIndexOf("/") + 1));
+            eventCallback.onProgressMessage("Saving file: " + urlToDownload.substring(urlToDownload.lastIndexOf("/") + 1));
             eventCallback.onProgressChanged(filesToGrab.indexOf(urlToDownload), filesToGrab.size(), false);
-
+			
             pool.submit(new DownloadTask(urlToDownload, outputDir));
         }
 
@@ -172,7 +172,9 @@ public class PageSaver {
         }
 
         try {
+			eventCallback.onProgressMessage(isExtra ? "Downloading main HTML file" : "Downloading extra (frame) HTML file");
             String htmlContent = getStringFromUrl(url);
+			eventCallback.onProgressMessage(isExtra ? "Parsing main HTML file" : "Parsing extra (frame) HTML file");
             htmlContent = parseHtmlForLinks(htmlContent, baseUrl);
 
             File outputFile = new File(outputDir, filename);
@@ -204,7 +206,9 @@ public class PageSaver {
         File outputFile = new File(outputDir, filename);
 
         try {
+			eventCallback.onProgressMessage("Downloading CSS file :" + url.substring(url.lastIndexOf("/") + 1));
             String cssContent = getStringFromUrl(url);
+			eventCallback.onProgressMessage("Parsing CSS file :" + url.substring(url.lastIndexOf("/") + 1));
             cssContent = parseCssForLinks(cssContent, url);
             saveStringToFile(cssContent, outputFile);
         } catch (IOException e) {
@@ -583,7 +587,7 @@ public class PageSaver {
 interface EventCallback {
     public void onProgressChanged(int progress, int maxProgress, boolean indeterminate);
 
-    public void onCurrentFileChanged(String fileName);
+    public void onProgressMessage(String fileName);
 
     public void onLogMessage (String message);
 

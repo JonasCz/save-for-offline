@@ -22,8 +22,6 @@ public class ViewActivity extends Activity {
 	private String date;
 	private WebView webview;
 	private WebView.HitTestResult result;
-
-	private boolean save_in_background;
 	private boolean invertedRendering;
 
 	@Override
@@ -53,14 +51,7 @@ public class ViewActivity extends Activity {
 		setupWebView();
 		
 		invertedRendering = preferences.getBoolean("dark_mode", false);
-
-		if (fileLocation.endsWith("html") || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)) {
-			//we can load the file directly - either the file was saved as pure html, or it was saved under kitkat or later with saveWebArchive().
-			webview.loadUrl("file://" + fileLocation);
-		} else {
-			//otherwise, if it was saved under android older than 4.4 with saveWebArchive(), we need some magic - thanks to gregko's webArchiveReader.
-			loadWebView();
-		 }
+		webview.loadUrl("file://" + fileLocation);
     }
 
 	@Override
@@ -80,29 +71,10 @@ public class ViewActivity extends Activity {
 			webview.setLayerType(View.LAYER_TYPE_HARDWARE, mPaint);
 		}
 	}
-
-
-	private void loadWebView() {
-		try {
-			FileInputStream is = new FileInputStream(fileLocation);
-            WebArchiveReader wr = new WebArchiveReader() {
-                void onFinished(WebView v) {
-                    setProgressBarIndeterminateVisibility(false);
-                }
-            };
-            if (wr.readWebArchive(is)) {
-                wr.loadToWebView(webview);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-		super.onStart();
-	}
 	
 	private void setupWebView() {
 		String ua = preferences.getString("user_agent", "mobile");
 		boolean javaScriptEnabled = preferences.getBoolean("enable_javascript", true);
-		System.out.println(ua);
 		
 		registerForContextMenu(webview);
 		
@@ -187,11 +159,6 @@ public class ViewActivity extends Activity {
 				}
 				return true;
 
-			case R.id.ic_action_about:
-				Intent intent = new Intent(this, FirstRunDialog.class);
-				startActivity(intent);
-				return true;
-
 			case R.id.action_delete:
 
 				AlertDialog.Builder build;
@@ -201,36 +168,16 @@ public class ViewActivity extends Activity {
 				build.setPositiveButton("Delete",
 					new DialogInterface.OnClickListener() {
 
-						public void onClick(DialogInterface dialog,
-											int which) {
-
-
-							Database mHelper = new Database(ViewActivity.this);
-							SQLiteDatabase dataBase = mHelper.getWritableDatabase();
+						public void onClick(DialogInterface dialog, int which) {
+							SQLiteDatabase dataBase = new Database(ViewActivity.this).getWritableDatabase();
 							Intent incomingIntent2 = getIntent();
 
-							dataBase.delete(
-								Database.TABLE_NAME,
-								Database.ID + "=" + incomingIntent2.getStringExtra(Database.ID), null);
+							dataBase.delete(Database.TABLE_NAME, Database.ID + "=" + incomingIntent2.getStringExtra(Database.ID), null);
 
+							String fileLocation = incomingIntent2.getStringExtra(Database.FILE_LOCATION);
+							DirectoryHelper.deleteDirectory(new File(fileLocation).getParentFile());
 
-							File file = new File(incomingIntent2.getStringExtra(Database.THUMBNAIL));
-							file.delete();
-
-							if (incomingIntent2.getStringExtra(Database.FILE_LOCATION).endsWith("mht")) {
-								String fileLocation = incomingIntent2.getStringExtra(Database.FILE_LOCATION);
-								file = new File(fileLocation);
-								file.delete();
-							} else {
-								String fileLocation = incomingIntent2.getStringExtra(Database.FILE_LOCATION);
-								file = new File(fileLocation);
-								file = file.getParentFile();
-								DirectoryHelper.deleteDirectory(file);
-							}
-
-							Toast.makeText(
-								getApplicationContext(),
-								"Saved page deleted", Toast.LENGTH_LONG).show();
+							Toast.makeText(ViewActivity.this, "Saved page deleted", Toast.LENGTH_LONG).show();
 
 							finish();
 						}
@@ -238,16 +185,13 @@ public class ViewActivity extends Activity {
 
 				build.setNegativeButton("Cancel",
 					new DialogInterface.OnClickListener() {
-
-						public void onClick(DialogInterface dialog,
-											int which) {
+						public void onClick(DialogInterface dialog, int which) {
 							dialog.cancel();
 						}
 					});
 				AlertDialog alert = build.create();
 				alert.show();
 				return true;
-
 			default:
 				return super.onOptionsItemSelected(item);
 		}
@@ -266,13 +210,22 @@ public class ViewActivity extends Activity {
 		t.setText("Date & Time saved: \r\n" + date);
 		t = (TextView) layout.findViewById(R.id.properties_dialog_text_orig_url);
 		t.setText("Saved from: \r\n" + incomingIntent.getStringExtra(Database.ORIGINAL_URL));
-		build.setPositiveButton("OK",
+		build.setPositiveButton("Close",
 			new DialogInterface.OnClickListener() {
-
 				public void onClick(DialogInterface dialog, int which) {
 
 				}
 			});
+		build.setNeutralButton("Copy file location to clipboard", new DialogInterface.OnClickListener() {
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE); 
+					ClipData clip = ClipData.newPlainText(webview.getTitle(), fileLocation);
+					clipboard.setPrimaryClip(clip);
+					Toast.makeText(ViewActivity.this, "File location copied to clipboard", Toast.LENGTH_SHORT).show();
+					
+				}
+		});
 		AlertDialog alert = build.create();
 		alert.show();
 	}
@@ -306,18 +259,11 @@ public class ViewActivity extends Activity {
 			startActivity(Intent.createChooser(i, "Share Link via"));
 
 		} else if (item.getItemId() == 3) {
-			if (save_in_background) {
-				Intent intent = new Intent(this, SaveService.class);
-				intent.putExtra("origurl", result.getExtra());
-				startService(intent);
-			} else {
-				Intent intent = new Intent(this, SaveActivity.class);
-				intent.putExtra("origurl", result.getExtra());
-				startActivity(intent);
-			}
+			Intent intent = new Intent(this, SaveService.class);
+			intent.putExtra("origurl", result.getExtra());
+			startService(intent);
 
 		} else if (item.getItemId() == 6) {
-
 			ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE); 
 			ClipData clip = ClipData.newPlainText(webview.getTitle(), result.getExtra());
 			clipboard.setPrimaryClip(clip);

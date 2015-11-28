@@ -32,37 +32,46 @@ import java.util.*;
 //author: jonasCz (http://github.com/jonasCz)
 
 public class ScreenshotService extends Service {
-	private Looper mServiceLooper;
+	private final String TAG = "WebpageScreenshotService";
 	private ServiceHandler mServiceHandler;
-	private Message msg;
-	
+
 	private WebView webview;
 
 	// Handler that receives messages from the thread
 	private final class ServiceHandler extends Handler {
+		private int currentStartId;
+		
+		private boolean webviewScreenshotTaken = false;
+		private boolean websiteIconTaken = false;
+		
 		public ServiceHandler(Looper looper) {
 			super(looper);
 		}
+
 		@Override
 		public void handleMessage(final Message msg) {
+			currentStartId = msg.arg1;
+			
 			webview = new WebView(ScreenshotService.this);
 
 			//without this toast message, screenshot will be blank, dont ask me why...
 			Toast.makeText(ScreenshotService.this, "Save completed.", Toast.LENGTH_SHORT).show();
-			
-			// This is the important code :)   
+
+			// This is important, so that the webview will render and we don't get blank screenshot
 			webview.setDrawingCacheEnabled(true);
 
-			//width x height of your webview and the resulting screenshot
+			//width and height of your webview and the resulting screenshot
 			webview.measure(600, 400);
 			webview.layout(0, 0, 600, 400); 
 
 			final Intent intent = (Intent) msg.obj;
-			webview.loadUrl(intent.getStringExtra("origurl"));
+
+
 			boolean javaScriptEnabled  = PreferenceManager.getDefaultSharedPreferences(ScreenshotService.this).getBoolean("enable_javascript", true);
-			
 			webview.getSettings().setJavaScriptEnabled(javaScriptEnabled);
-			
+
+			webview.loadUrl(intent.getStringExtra(Database.FILE_LOCATION));
+
 			webview.setWebViewClient(new WebViewClient() {
 
 					@Override
@@ -72,60 +81,55 @@ public class ScreenshotService extends Service {
 
 					@Override
 					public void onPageFinished(WebView view, String url) {
-						new takeScreenshotTask().execute(intent.getStringExtra("thumbnail"));
-						stopSelf(msg.arg1);
-
-
+						takeWebviewScreenshot(intent.getStringExtra(Database.THUMBNAIL));
+						getSiteIcon(new File(intent.getStringExtra(Database.THUMBNAIL)).getParentFile().getPath());
 					}
 				});
-			
-			}		
-			
-		
-	}
-	
-	private class takeScreenshotTask extends AsyncTask<String, Void, Void> {
+		}
 
-		@Override
-		protected Void doInBackground(String[] thumblocation) {
+		private void takeWebviewScreenshot(final String outputFileLocation) {
+			new Thread(new Runnable() {
+					@Override
+					public void run() {
+						try {
+							TimeUnit.MILLISECONDS.sleep(1000);  //allow webview to render, otherwise screenshot may be blank or partial
+						} catch (InterruptedException e) {
+							//should never happen
+							Log.e(TAG, "InterruptedException when taking webview screenshot ", e);
+						}
+						saveBitmapToFile(webview.getDrawingCache(), new File(outputFileLocation));
+						webviewScreenshotTaken = true;
+						stopService();
+					}	
+				}).start();	
+		}
 
-			//allow the webview to render
-			try {
-				TimeUnit.MILLISECONDS.sleep(1000);
-			} catch (InterruptedException ex) {
-				Log.e("ScreenshotService", "InterruptedException while trying to save thumbnail!");
+		private void saveBitmapToFile(Bitmap bitmap, File outputFile) {
+			if (bitmap == null) {
+				return;
 			}
+			outputFile.getParentFile().mkdirs();
 
-			//here I save the bitmap to file
-			Bitmap webviewScreenshotBitmap = webview.getDrawingCache();
 			try {
-				OutputStream out = new BufferedOutputStream(new FileOutputStream(new File(thumblocation[0])));
-				webviewScreenshotBitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
+				OutputStream out = new BufferedOutputStream(new FileOutputStream(outputFile));
+				bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
+
 				out.flush();
 				out.close();
-
 			} catch (IOException e) {
-				Log.e("ScreenshotService", "IOException while trying to save thumbnail, Is /sdcard/ writable?");
-				e.printStackTrace();
+				Log.e(TAG, "IoException while saving bitmap to file", e);
 			}
-			
-			getSiteIcon(new File(thumblocation[0]).getParentFile().getPath());
-
-			return null;
+			Log.i(TAG, "Saved Bitmap to file: " + outputFile.getPath());
 		}
-		
-		private void getSiteIcon (String directory) {
+
+		private void getSiteIcon(String directory) {
+			//try to get the favicon of the webpage, for our list, also some pages have some sort of high resolution icon, try to get that first, instead.
 			Bitmap siteIcon = null;
 			File[] iconBitmapFiles = new File(directory).listFiles(new FilenameFilter() {
-
 					@Override
 					public boolean accept(File directory, String filename) {
-						System.out.println(filename);
-						System.out.println((filename.endsWith("png") || filename.endsWith("ico")) && filename.contains("icon"));
 						return (filename.endsWith("png") || filename.endsWith("ico")) && (filename.contains("favicon") || filename.contains("apple-touch-icon") || filename.contains("logo"));
 					}
-
-
 				});
 
 			for (File f : iconBitmapFiles) {
@@ -137,66 +141,50 @@ public class ScreenshotService extends Service {
 						siteIcon = bitmap;
 					}
 				}
-
+			}
+			
+			if (siteIcon == null) {
+				//still null ? get it from the webview
+				siteIcon = webview.getFavicon();
 			}
 
 			if (siteIcon != null) {
 				File outputFile = new File(directory, "saveForOffline_icon.png");
-				try {
-
-					OutputStream out = new BufferedOutputStream(new FileOutputStream(outputFile));
-					siteIcon.compress(Bitmap.CompressFormat.PNG, 100, out);
-					out.flush();
-					out.close();
-
-				} catch (FileNotFoundException e) {
-					e.printStackTrace();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
+				saveBitmapToFile(siteIcon, outputFile);
+			}
+			
+			websiteIconTaken = true;
+			stopService();
+		}
+		
+		private void stopService () {
+			if (websiteIconTaken && webviewScreenshotTaken) {
+				Log.i(TAG, "Service stopped, with startId " + currentStartId + " completed");
+				stopSelf(currentStartId);
 			}
 		}
 	}
-	
-	//service related stuff below, its probably easier to use intentService...
 
 	@Override
 	public void onCreate() {
-		
-		HandlerThread thread = new HandlerThread("ServiceStartArguments", Process.THREAD_PRIORITY_BACKGROUND);
+		HandlerThread thread = new HandlerThread("WebpageScreenshotService", Process.THREAD_PRIORITY_BACKGROUND);
 		thread.start();
-		
-		// Get the HandlerThread's Looper and use it for our Handler 
-		mServiceLooper = thread.getLooper();
-		
-		mServiceHandler = new ServiceHandler(mServiceLooper);
+
+		mServiceHandler = new ServiceHandler(thread.getLooper());
 	}
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-
-		// For each start request, send a message to start a job and deliver the
-		// start ID so we know which request we're stopping when we finish the job
-		msg = mServiceHandler.obtainMessage();
+		Message msg = mServiceHandler.obtainMessage();
 		msg.arg1 = startId;
 		msg.obj = intent;
 		mServiceHandler.sendMessage(msg);
-		
-		
-		// If we get killed, after returning from here, restart
-		return START_NOT_STICKY;
+
+		return START_REDELIVER_INTENT;
 	}
 
 	@Override
 	public IBinder onBind(Intent intent) {
-		// We don't provide binding, so return null
 		return null;
 	}
-
-	@Override
-	public void onDestroy() {
-		
-	}
-	
-	
 }

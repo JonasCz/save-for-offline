@@ -26,20 +26,14 @@ import android.view.*;
 public class AddActivity extends Activity {
 	private Button btn_save;
 	private EditText edit_origurl;
-	private Intent incomingIntent ;
 
 	private String origurl ;
-
-
-
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
 		setTitle("Enter URL to save");
-		//init prefs
-		incomingIntent = getIntent();
+		
 		PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
         setContentView(R.layout.add_activity);
 
@@ -47,20 +41,21 @@ public class AddActivity extends Activity {
 		btn_save.setEnabled(false);
 
         edit_origurl = (EditText)findViewById(R.id.frst_editTxt);
-		edit_origurl.setText(incomingIntent.getStringExtra(Intent.EXTRA_TEXT));
+		edit_origurl.setText(getIntent().getStringExtra(Intent.EXTRA_TEXT));
 
-		//save directly if activity was tarted via intent
+		//save directly if activity was started via intent
 		origurl = edit_origurl.getText().toString().trim();
 		if (origurl.length() > 0) {
-			startSaveActivity();
+			startSave();
 		}
 
 		edit_origurl.addTextChangedListener(new TextWatcher(){
-				public void afterTextChanged(Editable s) {
-
+				public void afterTextChanged(Editable text) {
 					if (edit_origurl.length() == 0) {
 						btn_save.setEnabled(false);
-					} else {btn_save.setEnabled(true);}
+					} else {
+						btn_save.setEnabled(true);
+					}
 				}
 				public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 				public void onTextChanged(CharSequence s, int start, int before, int count) {}
@@ -68,8 +63,6 @@ public class AddActivity extends Activity {
 	}
 
 	public void cancelButtonClick(View view) {
-
-		//user clicked the cancel button, quit
 		finish();
 	}
 
@@ -78,33 +71,22 @@ public class AddActivity extends Activity {
 		edit_origurl.setText(clipboard.getText());
 	}
 
-	// saveButton click event 
+	// saveButton click event
 	public void okButtonClick(View view) {
-
 		origurl = edit_origurl.getText().toString().trim();
-		if (origurl.length() > 0 && (origurl.startsWith("http://") || origurl.startsWith("file://") || origurl.startsWith("https://"))) {
-			startSaveActivity();
+		if (origurl.length() > 0 && (origurl.startsWith("http"))) {
+			startSave();
 		} else if (origurl.length() > 0) {
 			origurl = "http://" + origurl;
-			startSaveActivity();
+			startSave();
 		}
 	}
 
 
-	private void startSaveActivity() {
-		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-		boolean save_in_background = sharedPref.getBoolean("save_in_background", true);
-		if (save_in_background) {
-			Intent intent = new Intent(this, SaveService.class);
-			intent.putExtra("origurl", origurl);
-			startService(intent);
-		} else {
-			Intent intent = new Intent(this, SaveActivity.class);
-			intent.putExtra("origurl", origurl);
-			startActivity(intent);
-		}
-
+	private void startSave() {
+		Intent intent = new Intent(this, SaveService.class);
+		intent.putExtra("origurl", origurl);
+		startService(intent);
 		finish();
 	}
-
 }
