@@ -69,6 +69,9 @@ public class ScreenshotService extends Service {
 
 			boolean javaScriptEnabled  = PreferenceManager.getDefaultSharedPreferences(ScreenshotService.this).getBoolean("enable_javascript", true);
 			webview.getSettings().setJavaScriptEnabled(javaScriptEnabled);
+			
+			webview.getSettings().setAllowFileAccessFromFileURLs(true);
+			webview.getSettings().setAllowUniversalAccessFromFileURLs(true);
 
 			webview.loadUrl(intent.getStringExtra(Database.FILE_LOCATION));
 

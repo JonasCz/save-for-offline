@@ -49,6 +49,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.Iterator;
+import java.io.*;
 
 
 public class PageSaver {
@@ -84,9 +85,9 @@ public class PageSaver {
     public PageSaver(EventCallback callback) {
         this.eventCallback = callback;
 		
-		client.setConnectTimeout(15, TimeUnit.SECONDS);
-		client.setReadTimeout(15, TimeUnit.SECONDS);
-		client.setWriteTimeout(15, TimeUnit.SECONDS);
+		client.setConnectTimeout(20, TimeUnit.SECONDS);
+		client.setReadTimeout(20, TimeUnit.SECONDS);
+		client.setWriteTimeout(20, TimeUnit.SECONDS);
 		
 		client.setFollowRedirects(true);
 		client.setFollowSslRedirects(true);
@@ -108,7 +109,7 @@ public class PageSaver {
         File outputDir = new File(outputDirPath);
 
         if (!outputDir.exists() && outputDir.mkdirs() == false) {
-            eventCallback.onFatalError("Storage not available");
+            eventCallback.onFatalError(new IOException("File " + outputDirPath + "could not be created"));
             return false;
         }
 
@@ -135,7 +136,7 @@ public class PageSaver {
 
         for (String urlToDownload : filesToGrab) {
             if (isCancelled) break;
-            eventCallback.onProgressMessage("Saving file: " + urlToDownload.substring(urlToDownload.lastIndexOf("/") + 1));
+            eventCallback.onProgressMessage("Saving file: " + getFileName(urlToDownload));
             eventCallback.onProgressChanged(filesToGrab.indexOf(urlToDownload), filesToGrab.size(), false);
 			
             pool.submit(new DownloadTask(urlToDownload, outputDir));
@@ -168,32 +169,24 @@ public class PageSaver {
         }
 
         try {
-			eventCallback.onProgressMessage(isExtra ? "Downloading main HTML file" : "Downloading extra (frame) HTML file");
+			eventCallback.onProgressMessage(isExtra ? "Getting HTML frame file: " + filename : "Getting main HTML file");
             String htmlContent = getStringFromUrl(url);
-			eventCallback.onProgressMessage(isExtra ? "Parsing main HTML file" : "Parsing extra (frame) HTML file");
+			eventCallback.onProgressMessage(isExtra ? "Processing HTML frame file: " + filename: "Processing main HTML file");
             htmlContent = parseHtmlForLinks(htmlContent, baseUrl);
 
             File outputFile = new File(outputDir, filename);
             saveStringToFile(htmlContent, outputFile);
             return true;
 
-        } catch (IOException e) {
+        } catch (IOException | IllegalStateException e) {
 			if (isExtra) {
-				eventCallback.onError(e.getMessage());
+				eventCallback.onError(e);
 			} else {
-				eventCallback.onFatalError(e.getMessage());
+				eventCallback.onFatalError(e);
 			}
 			e.printStackTrace();
             return false;
-        } catch (IllegalStateException e) {
-			if (isExtra) {
-				eventCallback.onError(e.getMessage());
-			} else {
-				eventCallback.onFatalError(e.getMessage());
-			}
-			e.printStackTrace();
-			return false;
-		}
+        }
     }
 
     private void downloadCssAndParse(final String url, final String outputDir) {
@@ -202,13 +195,13 @@ public class PageSaver {
         File outputFile = new File(outputDir, filename);
 
         try {
-			eventCallback.onProgressMessage("Downloading CSS file :" + url.substring(url.lastIndexOf("/") + 1));
+			eventCallback.onProgressMessage("Getting CSS file: " + filename);
             String cssContent = getStringFromUrl(url);
-			eventCallback.onProgressMessage("Parsing CSS file :" + url.substring(url.lastIndexOf("/") + 1));
+			eventCallback.onProgressMessage("Processing CSS file:'" + filename);
             cssContent = parseCssForLinks(cssContent, url);
             saveStringToFile(cssContent, outputFile);
         } catch (IOException e) {
-			eventCallback.onError(e.getMessage());
+			eventCallback.onError(e);
             e.printStackTrace();
         }
     }
@@ -250,12 +243,8 @@ public class PageSaver {
                 fos.close();
                 is.close();
 
-            } catch (IllegalArgumentException e) {
-				eventCallback.onError(e.getMessage());
-                e.printStackTrace();
-            } catch (IOException e) {
-				eventCallback.onError(e.getMessage());
-                e.printStackTrace();
+            } catch (IllegalArgumentException | IOException | FileNotFoundException e) {
+				eventCallback.onError(new IllegalStateException("File download failed, URL: " + url + ", Output file path: " + outputFile.getPath()).initCause(e));
             }
         }
     }
@@ -291,9 +280,7 @@ public class PageSaver {
 
     private String parseHtmlForLinks(String htmlToParse, String baseUrl) {
         //get all links from this webpage and add them to LinksToVisit ArrayList
-        Document document;
-
-        document = Jsoup.parse(htmlToParse, baseUrl);
+        Document document = Jsoup.parse(htmlToParse, baseUrl);
         document.outputSettings().escapeMode(Entities.EscapeMode.extended);
 		
 		if (title.equals("")) {
@@ -479,11 +466,9 @@ public class PageSaver {
             count++;
             if (matcher.group().replaceAll(patternString, "$2").contains("/")) {
                 cssToParse = cssToParse.replace(matcher.group().replaceAll(patternString, "$2"), getFileName(matcher.group().replaceAll(patternString, "$2")));
-
             }
             addLinkToList(makeLinkAbsolute(matcher.group().replaceAll(patternString, "$2").trim(), baseUrl), cssToGrab);
         }
-
         return cssToParse;
     }
 
@@ -503,7 +488,7 @@ public class PageSaver {
             URL u = new URL(new URL(baseurl), link);
             return u.toString();
         } catch (MalformedURLException e) {
-            e.printStackTrace();
+            eventCallback.onError(new MalformedURLException("Bad URL: " + link + ", with base URL: " + baseurl).initCause(e));
             return link;
         }
 
@@ -607,8 +592,8 @@ interface EventCallback {
 
     public void onLogMessage (String message);
 
-    public void onError(String errorMessage);
+    public void onError(Throwable error);
 	
-	public void onFatalError (String errorMessage);
+	public void onFatalError (Throwable error);
 }
 

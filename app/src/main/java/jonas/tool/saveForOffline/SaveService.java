@@ -45,16 +45,14 @@ public class SaveService extends Service {
 
     private Looper mServiceLooper;
     private ServiceHandler mServiceHandler;
-    
     private SharedPreferences sharedPref;
 
     private int waitingIntentCount = 0;
+	private int currentStartId = 0;
 
     private PageSaver pageSaver;
-	
 	private NotificationTools notificationTools;
-
-
+	
     private void addToDb(String destinationDirectory, String title, String originalUrl) {
 
         Database mHelper = new Database(SaveService.this);
@@ -92,6 +90,7 @@ public class SaveService extends Service {
         @Override
         public void handleMessage(final Message msg) {
 			
+			currentStartId = msg.arg1;
 			Intent intent = (Intent) msg.obj;
             waitingIntentCount--;
 
@@ -119,10 +118,12 @@ public class SaveService extends Service {
                 notificationTools.cancelAll();
                 File file = new File(destinationDirectory);
                 DirectoryHelper.deleteDirectory(file);
+				stopSelf(msg.arg1);
                 return;
             } else if (!success) { //something went wrong, leave the notification, and delete files.
                 File file = new File(destinationDirectory);
                 DirectoryHelper.deleteDirectory(file);
+				Log.i("SaveService", "Stopping service (cleaning up), with startId " + msg.arg1);
                 return;
             }
 
@@ -144,25 +145,31 @@ public class SaveService extends Service {
             i.putExtra(Database.THUMBNAIL, destinationDirectory + "saveForOffline_thumbnail.png");
             startService(i);
 			
+			stopSelf(msg.arg1);
+			Log.i("SaveService", "Stopping service, with startId " + msg.arg1);
+			
 			notificationTools.setTicker("Save completed: " + pageSaver.getPageTitle())
 				.setContentTitle("Save completed")
 				.setContentText(pageSaver.getPageTitle())
 				.setIcon(R.drawable.ic_notify_save)
 				.setShowProgress(false)
 				.setOngoing(false)
-				.createNotificationWithAlert();
+				.createNotificationWithAlert();	
         }
 		
 
         private class PageSaveEventCallback implements EventCallback {
 
 			@Override
-			public void onFatalError(String errorMessage) {
-				Log.e("PageSaverService", errorMessage);
+			public void onFatalError(final Throwable e) {
+				Log.e("PageSaverService", e.getMessage(), e);
 				
-				notificationTools.setTicker("Error, page not saved: " + errorMessage)
+				Log.i("SaveService", "Stopping service because of failure, with startId " + currentStartId);
+				stopSelf(currentStartId);
+				
+				notificationTools.setTicker("Error, page not saved: " + e.getMessage())
 					.setContentTitle("Error, page not saved")
-					.setContentText(errorMessage)
+					.setContentText(e.getMessage())
 					.setShowProgress(false)
 					.setOngoing(false)
 					.setIcon(android.R.drawable.stat_sys_warning)
@@ -187,8 +194,8 @@ public class SaveService extends Service {
             }
 
             @Override
-            public void onError(final String errorMessage) {
-                Log.e("PageSaverService", errorMessage);
+            public void onError(final Throwable e) {
+                Log.e("PageSaverService", e.getMessage(), e);
             }
         }
 
@@ -248,7 +255,7 @@ public class SaveService extends Service {
 			}
 			
 			public void createNotification () {
-				notificationManager.notify(NOTIFICATION_ID, builder.build());
+				startForeground(NOTIFICATION_ID, builder.build());
 			}
 			
 		    public void createNotificationWithAlert () {
@@ -270,8 +277,7 @@ public class SaveService extends Service {
         HandlerThread thread = new HandlerThread("SaveService", Process.THREAD_PRIORITY_BACKGROUND);
         thread.start();
 
-        mServiceLooper = thread.getLooper();
-        mServiceHandler = new ServiceHandler(mServiceLooper);
+        mServiceHandler = new ServiceHandler(thread.getLooper());
 		
         sharedPref = PreferenceManager.getDefaultSharedPreferences(SaveService.this);
     }
@@ -285,17 +291,19 @@ public class SaveService extends Service {
         }
 
         waitingIntentCount++;
-
-        // For each start request, send a message to start a job and deliver the
-        // start ID so we know which request we're stopping when we finish the job
+		
         Message msg = mServiceHandler.obtainMessage();
         msg.arg1 = startId;
         msg.obj = intent;
         mServiceHandler.sendMessage(msg);
 
         return START_NOT_STICKY;
-
     }
+
+	@Override
+	public void onDestroy() {
+		Log.i("SaveService", "Service destroyed");
+	}
 
     @Override
     public IBinder onBind(Intent intent) {

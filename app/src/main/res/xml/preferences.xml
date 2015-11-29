@@ -149,6 +149,9 @@
 				<PreferenceScreen
 					android:title="FuzzyDateFormatter"
 					android:summary="Slightly modified, for displaying the dates in the list, originally by Ionut G. Stan">
+					<intent android:action="android.intent.action.VIEW"
+						android:data="https://github.com/igstan/java-fuzzy-dates" />
+					
 				</PreferenceScreen>
 
 			</PreferenceCategory>
@@ -165,12 +168,20 @@
 				</PreferenceScreen>
 
 				<PreferenceScreen
-					android:title="Android Action Bar Style Generator"
+					android:title="Action Bar style generator"
 					android:summary="Web-based tool to make nice themes for your app, touch to visit">
-
+					<intent android:action="android.intent.action.VIEW"
+						android:data="https://jgilfelt.github.io/android-actionbarstylegenerator/" />
+					
 				</PreferenceScreen>
 
+				<PreferenceScreen
+					android:title="Android launcher icon generator"
+					android:summary="Android Asset Studio - Launcher Icon Generator, web based tool for make nice icons for your app, touch to visit">
+					<intent android:action="android.intent.action.VIEW"
+						android:data="https://romannurik.github.io/AndroidAssetStudio/icons-launcher.html" />
 
+				</PreferenceScreen>
 
 			</PreferenceCategory>
 
