@@ -118,39 +118,27 @@ public class PageSaver {
         if (isCancelled) return false;
 
         //download and parse html frames - use iterator because our list may be modified as frames can contain other frames
-		Iterator<String> i = framesToGrab.iterator();
-		while (i.hasNext()) {
+		for (Iterator<String> i = framesToGrab.iterator(); i.hasNext();) {
 			downloadHtmlAndParseLinks(i.next(), outputDirPath, true);
 			if (isCancelled) return true;
 		}
 
         //download and parse css files
-		i = cssToGrab.iterator();
-		while (i.hasNext()) {
+		for (Iterator<String> i = cssToGrab.iterator(); i.hasNext();) {
 			if (isCancelled) return true;
             downloadCssAndParse(i.next(), outputDirPath);
 		}
-
-        //download extra files, such as images / scripts
-        ExecutorService pool = Executors.newFixedThreadPool(3);
-
-        for (String urlToDownload : filesToGrab) {
-            if (isCancelled) break;
+		
+		for (Iterator<String> i = filesToGrab.iterator(); i.hasNext();) {
+			if (isCancelled) break;
+			String urlToDownload = i.next();
+			
             eventCallback.onProgressMessage("Saving file: " + getFileName(urlToDownload));
             eventCallback.onProgressChanged(filesToGrab.indexOf(urlToDownload), filesToGrab.size(), false);
-			
-            pool.submit(new DownloadTask(urlToDownload, outputDir));
-        }
 
-        pool.shutdown();
-
-        try {
-            pool.awaitTermination(20, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        return success;
+            new DownloadTask(urlToDownload, outputDir).run();
+		}
+		return success;
     }
 
     private boolean downloadHtmlAndParseLinks(final String url, final String outputDir, final boolean isExtra) {
@@ -174,6 +162,7 @@ public class PageSaver {
 			eventCallback.onProgressMessage(isExtra ? "Processing HTML frame file: " + filename: "Processing main HTML file");
             htmlContent = parseHtmlForLinks(htmlContent, baseUrl);
 
+			eventCallback.onProgressMessage(isExtra ? "Saving HTML frame file: " + filename: "Saving main HTML file");
             File outputFile = new File(outputDir, filename);
             saveStringToFile(htmlContent, outputFile);
             return true;
@@ -197,8 +186,11 @@ public class PageSaver {
         try {
 			eventCallback.onProgressMessage("Getting CSS file: " + filename);
             String cssContent = getStringFromUrl(url);
-			eventCallback.onProgressMessage("Processing CSS file:'" + filename);
+			
+			eventCallback.onProgressMessage("Processing CSS file: " + filename);
             cssContent = parseCssForLinks(cssContent, url);
+			
+			eventCallback.onProgressMessage("Saving CSS file: " + filename);
             saveStringToFile(cssContent, outputFile);
         } catch (IOException e) {
 			eventCallback.onError(e);
@@ -274,8 +266,6 @@ public class PageSaver {
 
         fos.flush();
         fos.close();
-
-
     }
 
     private String parseHtmlForLinks(String htmlToParse, String baseUrl) {
@@ -471,11 +461,21 @@ public class PageSaver {
         }
         return cssToParse;
     }
+	
+	private boolean isLinkValid (String url) {
+		if (url == null || url.length() == 0) {
+			return false;
+		} else if (!url.startsWith("http")) {
+			return false;
+		} else {
+			return true;
+		}
+	}
 
     private void addLinkToList(String link, List<String> list) {
-        if (link == null) {
-            return;
-        }
+        if (!isLinkValid(link)) {
+			return;
+		}
 
         if (!list.contains(link)) {
             list.add(link);
@@ -483,12 +483,15 @@ public class PageSaver {
     }
 
     private String makeLinkAbsolute(String link, String baseurl) {
-
         try {
             URL u = new URL(new URL(baseurl), link);
             return u.toString();
         } catch (MalformedURLException e) {
-            eventCallback.onError(new MalformedURLException("Bad URL: " + link + ", with base URL: " + baseurl).initCause(e));
+			if (link.length() >= 100) {
+				eventCallback.onError(new MalformedURLException("Bad URL: " + link.substring(0, 100) + " (...), with base URL: " + baseurl).initCause(e));
+			} else {
+				eventCallback.onError(new MalformedURLException("Bad URL: " + link + ", with base URL: " + baseurl).initCause(e));
+			}
             return link;
         }
 
@@ -497,6 +500,10 @@ public class PageSaver {
     private String getFileName(String url) {
 
         String filename = url.substring(url.lastIndexOf('/') + 1);
+		
+		if (filename.trim().length() == 0) {
+			filename = String.valueOf(url.hashCode());
+		}
 
         if (filename.contains("?")) {
             filename = filename.substring(0, filename.indexOf("?"));
@@ -593,6 +600,8 @@ interface EventCallback {
     public void onLogMessage (String message);
 
     public void onError(Throwable error);
+	
+	public void onError(String errorMessage);
 	
 	public void onFatalError (Throwable error);
 }
