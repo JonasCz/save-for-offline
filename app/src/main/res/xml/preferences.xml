@@ -54,10 +54,10 @@
     </PreferenceCategory>
 
 	<PreferenceCategory
-		android:title="Advanced Settings">
+		android:title="Other">
 		<PreferenceScreen
 			android:title="Advanced Settings"
-			android:summary="Use with care. Enabling these may cause dragons to materialize, unexpected behaviour by the app, or crashes.">
+			android:summary="Other settings which you may want to change.">
 			<PreferenceCategory
 				android:title="Privacy">
 				<CheckBoxPreference
@@ -76,7 +76,7 @@
 					android:key="cache_size"
 					android:defaultValue="50"
 					android:title="Cache size" 
-					android:summary="Size of the cache used when saving pages, speeds up saving pages from the same site (assets eg. CSS come from the cache instead of being downloaded multiple times). Default is 50MB." 
+					android:summary="Size of the cache used when saving pages, speeds up saving pages from the same site (assets eg. CSS come from the cache instead of being downloaded multiple times). Default is 30MB. Cache may be cleared if this is changed." 
 					android:dialogTitle="Cache size, in Megabytes"/>
 			</PreferenceCategory>
 		</PreferenceScreen>
