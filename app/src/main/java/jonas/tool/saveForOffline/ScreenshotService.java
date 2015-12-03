@@ -53,6 +53,7 @@ public class ScreenshotService extends Service {
 			currentStartId = msg.arg1;
 			
 			webview = new WebView(ScreenshotService.this);
+			Log.i(TAG, "Creating WebView");
 
 			//without this toast message, screenshot will be blank, dont ask me why...
 			Toast.makeText(ScreenshotService.this, "Save completed.", Toast.LENGTH_SHORT).show();
@@ -66,7 +67,6 @@ public class ScreenshotService extends Service {
 
 			final Intent intent = (Intent) msg.obj;
 
-
 			boolean javaScriptEnabled  = PreferenceManager.getDefaultSharedPreferences(ScreenshotService.this).getBoolean("enable_javascript", true);
 			webview.getSettings().setJavaScriptEnabled(javaScriptEnabled);
 			
@@ -74,17 +74,21 @@ public class ScreenshotService extends Service {
 			webview.getSettings().setAllowUniversalAccessFromFileURLs(true);
 
 			webview.loadUrl(intent.getStringExtra(Database.FILE_LOCATION));
+			Log.i(TAG, "Loading URL: " + intent.getStringExtra(Database.FILE_LOCATION));
 
 			webview.setWebViewClient(new WebViewClient() {
 
 					@Override
 					public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+						Log.w(TAG, "Recieved error from WebView, description: " + description + ", Failing url: " + failingUrl);
 						//without this method, your app may crash...
 					}
 
 					@Override
 					public void onPageFinished(WebView view, String url) {
+						Log.i(TAG, "Page finished, getting thumbnail");
 						takeWebviewScreenshot(intent.getStringExtra(Database.THUMBNAIL));
+						Log.i(TAG, "Page finished, getting site icon");
 						getSiteIcon(new File(intent.getStringExtra(Database.THUMBNAIL)).getParentFile().getPath());
 					}
 				});
@@ -134,11 +138,15 @@ public class ScreenshotService extends Service {
 						return (filename.endsWith("png") || filename.endsWith("ico")) && (filename.contains("favicon") || filename.contains("apple-touch-icon") || filename.contains("logo"));
 					}
 				});
+				
+			Log.i(TAG, "Got " + iconBitmapFiles.length + " potential site icons");
 
 			for (File f : iconBitmapFiles) {
 				Bitmap bitmap = BitmapFactory.decodeFile(f.getPath());
+				Log.i(TAG, "Getting bitmap from: " + f.getPath());
 				if (bitmap != null && bitmap.getHeight() == bitmap.getWidth()) {
-					if (siteIcon != null && siteIcon.getWidth() <= bitmap.getWidth()) {
+					Log.i(TAG, "Bitmap from " + f.getPath() + " is not null and is also square, potential candidate");
+					if ((siteIcon != null) && (siteIcon.getWidth() <= bitmap.getWidth())) {
 						siteIcon = bitmap;	
 					} else if (siteIcon == null) {
 						siteIcon = bitmap;

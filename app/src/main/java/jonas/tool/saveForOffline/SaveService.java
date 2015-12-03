@@ -42,8 +42,8 @@ import java.io.File;
 //this is a mess...
 
 public class SaveService extends Service {
-
-    private Looper mServiceLooper;
+	private final String TAG = "SaveService";
+	
     private ServiceHandler mServiceHandler;
     private SharedPreferences sharedPref;
 
@@ -110,39 +110,39 @@ public class SaveService extends Service {
             pageSaver = new PageSaver(new PageSaveEventCallback());
 
             pageSaver.getOptions().setUserAgent(getUserAgent());
-			pageSaver.getOptions().setCache(getApplicationContext().getExternalCacheDir(),1024 * 1024 * 50); //50mb of cache, hope i got this right..
+			pageSaver.getOptions().setCache(getApplicationContext().getExternalCacheDir(),1024 * 1024 * Integer.valueOf(sharedPref.getString("cache_size", "30")));
             boolean success = pageSaver.getPage(originalUrl, destinationDirectory, "index.html");
-
 
             if (pageSaver.isCancelled()) { //user cancelled, remove the notification, and delete files.
                 notificationTools.cancelAll();
                 File file = new File(destinationDirectory);
                 DirectoryHelper.deleteDirectory(file);
+				Log.e("SaveService", "Stopping service. Saving cancelled (by user), with startId " + msg.arg1);
 				stopSelf(msg.arg1);
                 return;
             } else if (!success) { //something went wrong, leave the notification, and delete files.
                 File file = new File(destinationDirectory);
                 DirectoryHelper.deleteDirectory(file);
-				Log.i("SaveService", "Stopping service (cleaning up), with startId " + msg.arg1);
+				Log.e("SaveService", "Stopping service. Deleting files in: " + destinationDirectory + ", from: " + originalUrl + ", because of failure, with startId " + msg.arg1);
                 return;
             }
-
-
-            File oldFile = new File(destinationDirectory);
-            oldFile.renameTo(new File(getNewDirectoryPath(pageSaver.getPageTitle(), destinationDirectory)));
-            System.out.println("original: "  + destinationDirectory);
-            System.out.println("rename to: "  + getNewDirectoryPath(pageSaver.getPageTitle(), destinationDirectory));
-
-            destinationDirectory = getNewDirectoryPath(pageSaver.getPageTitle(), destinationDirectory);
-
+			
 			notificationTools.setContentText("Finishing..")
 				.createNotification();
 
-            addToDb(destinationDirectory, pageSaver.getPageTitle(), originalUrl);
+            File oldSavedPageDirectory = new File(destinationDirectory);
+			Log.i(TAG, "Original saved page directory: "  + oldSavedPageDirectory.getPath());
+			
+			File newSavedPageDirectory = new File(getNewDirectoryPath(pageSaver.getPageTitle(), oldSavedPageDirectory.getPath()));
+			Log.i(TAG, "Rename to: "  + newSavedPageDirectory.getPath());
+			
+            oldSavedPageDirectory.renameTo(newSavedPageDirectory);
+
+            addToDb(newSavedPageDirectory.getPath() + File.separator, pageSaver.getPageTitle(), originalUrl);
 
             Intent i = new Intent(SaveService.this, ScreenshotService.class);
-            i.putExtra(Database.FILE_LOCATION, "file://" + destinationDirectory + "index.html");
-            i.putExtra(Database.THUMBNAIL, destinationDirectory + "saveForOffline_thumbnail.png");
+            i.putExtra(Database.FILE_LOCATION, "file://" + newSavedPageDirectory.getPath() + File.separator + "index.html");
+            i.putExtra(Database.THUMBNAIL, newSavedPageDirectory + File.separator + "saveForOffline_thumbnail.png");
             startService(i);
 			
 			stopSelf(msg.arg1);
@@ -197,6 +197,11 @@ public class SaveService extends Service {
             public void onError(final Throwable e) {
                 Log.e("PageSaverService", e.getMessage(), e);
             }
+			
+			@Override
+			public void onError(String errorMessage) {
+				Log.e(TAG, errorMessage);
+			}
         }
 
     }
