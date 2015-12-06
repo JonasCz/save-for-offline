@@ -29,7 +29,15 @@ private NotificationTools notificationTools;
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		if (intent.getBooleanExtra("USER_CANCELLED", false)) {
-			pageSaver.cancel();
+			//cancelling okhttp seems to cause networkOnMainThreadException, hence this.
+			Log.w(TAG, "Cancelled");
+			new Thread(new Runnable() {
+				@Override
+				public void run() {
+					pageSaver.cancel();
+				}			
+			}).start();
+			
 			return START_NOT_STICKY;
 		}
 		
@@ -62,19 +70,18 @@ private NotificationTools notificationTools;
                 DirectoryHelper.deleteDirectory(new File(destinationDirectory));
 				Log.e("SaveService", "Stopping Service, (Cancelled). Deleting files in: " + destinationDirectory + ", from: " + pageUrl);
 				notificationTools.cancelAll();
+				stopService();
                 return;
             } else if (!success) { //something went wrong, leave the notification, and delete files.
                 DirectoryHelper.deleteDirectory(new File(destinationDirectory));
 				Log.e("SaveService", "Failed. Deleting files in: " + destinationDirectory + ", from: " + pageUrl);
                 return;
             }
+			
+			notificationTools.updateSmallText("Finishing");
 
             File oldSavedPageDirectory = new File(destinationDirectory);
-			Log.i(TAG, "Original saved page directory: "  + oldSavedPageDirectory.getPath());
-
 			File newSavedPageDirectory = new File(getNewDirectoryPath(pageSaver.getPageTitle(), oldSavedPageDirectory.getPath()));
-			Log.i(TAG, "Rename to: "  + newSavedPageDirectory.getPath());
-
             oldSavedPageDirectory.renameTo(newSavedPageDirectory);
 
             new Database(SaveService.this).addToDatabase(newSavedPageDirectory.getPath() + File.separator, pageSaver.getPageTitle(), pageUrl);
@@ -84,9 +91,7 @@ private NotificationTools notificationTools;
             i.putExtra(Database.THUMBNAIL, newSavedPageDirectory + File.separator + "saveForOffline_thumbnail.png");
             startService(i);
 			
-			if (executor.getQueue().isEmpty() == true) {
-				stopSelf();
-			}
+			stopService();
 			
 			notificationTools.notifyFinished(pageSaver.getPageTitle());	
 		}
@@ -104,14 +109,14 @@ private NotificationTools notificationTools;
 		@Override
 		public void onFatalError(final Throwable e, String pageUrl) {
 			Log.e("PageSaverService", e.getMessage(), e);
-
+			stopService();
+			
 			notificationTools.notifyFailure(e.getMessage(), pageUrl);
 		}
-
-
+		
 		@Override
 		public void onProgressChanged(final int progress, final int maxProgress, final boolean indeterminate) {
-			notificationTools.updateProgress(progress, maxProgress, indeterminate);
+			notificationTools.updateProgress(progress, maxProgress, indeterminate, executor.getQueue().size());
 		}
 
 		@Override
@@ -132,6 +137,12 @@ private NotificationTools notificationTools;
 		@Override
 		public void onError(String errorMessage) {
 			Log.e(TAG, errorMessage);
+		}
+	}
+	
+	private void stopService (){
+		if (executor.getQueue().isEmpty()) {
+			stopSelf();
 		}
 	}
 

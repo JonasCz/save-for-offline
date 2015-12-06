@@ -145,10 +145,10 @@ public class PageSaver {
 		for (Iterator<String> i = filesToGrab.iterator(); i.hasNext();) {
 			if (isCancelled) {
 				eventCallback.onProgressMessage("Cancelling...");
-				
 				shutdownExecutor(pool, 10, TimeUnit.SECONDS);
 				return success;
 			}
+			
 			String urlToDownload = i.next();
 			
             eventCallback.onProgressMessage("Saving file: " + getFileName(urlToDownload));
@@ -156,6 +156,7 @@ public class PageSaver {
 			
 			pool.submit(new DownloadTask(urlToDownload, outputDir));
 		}
+		eventCallback.onProgressMessage("Finishing file downloads...");
 		
 		shutdownExecutor(pool, 60, TimeUnit.SECONDS);
 		

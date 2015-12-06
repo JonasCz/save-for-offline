@@ -30,7 +30,8 @@ public class NotificationTools {
 			context.startForeground(NOTIFICATION_ID, builder.build());	
 		}
 		
-		public void updateProgress (int progress, int maxProgress, boolean indeterminate) {
+		public void updateProgress (int progress, int maxProgress, boolean indeterminate, int saveQueueSize) {
+			builder.setNumber(saveQueueSize);
 			builder.setProgress(maxProgress, progress, indeterminate);
 			notificationManager.notify(NOTIFICATION_ID, builder.build());
 		}
