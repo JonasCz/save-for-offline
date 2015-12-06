@@ -38,6 +38,7 @@ import org.jsoup.select.Elements;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -49,7 +50,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.Iterator;
-import java.io.*;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.SynchronousQueue;
 
 
 public class PageSaver {
@@ -97,6 +99,15 @@ public class PageSaver {
         this.isCancelled = true;
         client.cancel(HTTP_REQUEST_TAG);
     }
+	
+	public void resetState () {
+		filesToGrab.clear();
+		framesToGrab.clear();
+		cssToGrab.clear();
+		
+		title = "";
+		isCancelled = false;
+	}
 
     public boolean isCancelled () {
         return this.isCancelled;
@@ -109,7 +120,7 @@ public class PageSaver {
         File outputDir = new File(outputDirPath);
 
         if (!outputDir.exists() && outputDir.mkdirs() == false) {
-            eventCallback.onFatalError(new IOException("File " + outputDirPath + "could not be created"));
+            eventCallback.onFatalError(new IOException("File " + outputDirPath + "could not be created"), url);
             return false;
         }
 
@@ -129,15 +140,25 @@ public class PageSaver {
             downloadCssAndParse(i.next(), outputDirPath);
 		}
 		
+		ThreadPoolExecutor pool = new ThreadPoolExecutor(5, 5, 60, TimeUnit.SECONDS, new BlockingDownloadTaskQueue<Runnable>());
+		
 		for (Iterator<String> i = filesToGrab.iterator(); i.hasNext();) {
-			if (isCancelled) break;
+			if (isCancelled) {
+				eventCallback.onProgressMessage("Cancelling...");
+				
+				shutdownExecutor(pool, 10, TimeUnit.SECONDS);
+				return success;
+			}
 			String urlToDownload = i.next();
 			
             eventCallback.onProgressMessage("Saving file: " + getFileName(urlToDownload));
             eventCallback.onProgressChanged(filesToGrab.indexOf(urlToDownload), filesToGrab.size(), false);
-
-            new DownloadTask(urlToDownload, outputDir).run();
+			
+			pool.submit(new DownloadTask(urlToDownload, outputDir));
 		}
+		
+		shutdownExecutor(pool, 60, TimeUnit.SECONDS);
+		
 		return success;
     }
 
@@ -171,7 +192,7 @@ public class PageSaver {
 			if (isExtra) {
 				eventCallback.onError(e);
 			} else {
-				eventCallback.onFatalError(e);
+				eventCallback.onFatalError(e, url);
 			}
 			e.printStackTrace();
             return false;
@@ -224,7 +245,7 @@ public class PageSaver {
                 InputStream is = response.body().byteStream();
 				
                 FileOutputStream fos = new FileOutputStream(outputFile);
-                final byte[] buffer = new byte[1024 * 16]; // read in batches of 16K
+                final byte[] buffer = new byte[1024 * 32]; // read in batches of 32K
                 int length;
                 while ((length = is.read(buffer)) != -1) {
                     fos.write(buffer, 0, length);
@@ -236,7 +257,14 @@ public class PageSaver {
                 is.close();
 
             } catch (IllegalArgumentException | IOException | FileNotFoundException e) {
-				eventCallback.onError(new IllegalStateException("File download failed, URL: " + url + ", Output file path: " + outputFile.getPath()).initCause(e));
+				IOException ex = new IOException("File download failed, URL: " + url + ", Output file path: " + outputFile.getPath());
+				
+				if (isCancelled) {
+					ex.initCause(new IOException("Save was cancelled, isCancelled is true").initCause(e));
+					eventCallback.onError(ex);
+				} else {
+					eventCallback.onError(ex.initCause(e));
+				}
             }
         }
     }
@@ -513,8 +541,39 @@ public class PageSaver {
 
         return filename;
     }
-
-    class Options {
+	
+	private void shutdownExecutor (ExecutorService e, int waitTime, TimeUnit waitTimeUnit) {
+		e.shutdown();
+		try {
+            if (!e.awaitTermination(waitTime, waitTimeUnit)) {
+				eventCallback.onError("Executor pool did not termimate after " + waitTime + " " + waitTimeUnit.toString() +", doing shutdownNow()");
+				e.shutdownNow();
+			}
+        } catch (InterruptedException ie) {
+            eventCallback.onError(ie);
+        }
+	}
+	
+	private class BlockingDownloadTaskQueue<E> extends SynchronousQueue<E> {
+		public BlockingDownloadTaskQueue () {
+			super();
+		}
+		
+		@Override
+		public boolean offer (E e) {
+			try {
+				put(e);
+				return true;
+			} catch (InterruptedException ie) {
+				Thread.currentThread().interrupt();
+				eventCallback.onError(ie);
+				
+				return false;
+			}
+		}
+	}
+	
+	class Options {
         private boolean makeLinksAbsolute = true;
 
         private boolean saveImages = true;
@@ -523,13 +582,13 @@ public class PageSaver {
         private boolean saveScripts = true;
         private boolean saveVideo = false;
 
-        private String userAgent = "mozilla chrome webkit";
-		
+        private String userAgent = " ";
+
 		public void setCache (File cacheDirectory, long maxCacheSize) {
 			Cache cache = (new Cache(cacheDirectory, maxCacheSize));
 			client.setCache(cache);
 		}
-		
+
 		public void clearCache () throws IOException {
 			client.getCache().evictAll();
 		}
@@ -603,6 +662,6 @@ interface EventCallback {
 	
 	public void onError(String errorMessage);
 	
-	public void onFatalError (Throwable error);
+	public void onFatalError (Throwable error, String pageUrl);
 }
 

@@ -191,7 +191,7 @@ public class ScreenshotService extends Service {
 		msg.obj = intent;
 		mServiceHandler.sendMessage(msg);
 
-		return START_REDELIVER_INTENT;
+		return START_NOT_STICKY;
 	}
 
 	@Override

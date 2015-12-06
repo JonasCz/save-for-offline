@@ -49,7 +49,7 @@
 			android:switchTextOn="On"
 			android:switchTextOff="Off"
 			android:title="Night mode" 
-			android:summary="Use a dark theme, and also use inverted rendering in the viewer (Black becomes white and vice versa)"/>
+			android:summary="Use a dark theme, and also use inverted rendering in the viewer (Black becomes white and vice versa). May require app restart to take effect."/>
 
     </PreferenceCategory>
 
@@ -62,7 +62,7 @@
 				android:title="Privacy">
 				<CheckBoxPreference
 					android:key = "offline_sandbox_mode"
-					android:defaultValue="false"
+					android:defaultValue="true"
 					android:title="Block network access when viewing pages"
 					android:summary="Prevents saved pages from communicating with web servers and loading scripts, content, ads, or tracking." />
 				<CheckBoxPreference

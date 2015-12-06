@@ -4,6 +4,7 @@ package jonas.tool.saveForOffline;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.content.*;
 
 
 public class Database extends SQLiteOpenHelper {
@@ -43,6 +44,22 @@ public class Database extends SQLiteOpenHelper {
 		db.execSQL("DROP TABLE IF EXISTS "+TABLE_NAME);
 		onCreate(db);
 
+	}
+	
+	public void addToDatabase(String destinationDirectory, String pageTitle, String originalUrl) {
+
+		SQLiteDatabase dataBase = getWritableDatabase();
+		ContentValues values = new ContentValues();
+
+		values.put(Database.FILE_LOCATION, destinationDirectory + "index.html");
+		values.put(Database.SAVED_PAGE_BASE_DIRECTORY, destinationDirectory);
+		values.put(Database.TITLE, pageTitle);
+		values.put(Database.THUMBNAIL, destinationDirectory + "saveForOffline_thumbnail.png");
+		values.put(Database.ORIGINAL_URL, originalUrl);
+
+		dataBase.insert(Database.TABLE_NAME, null, values);
+
+		dataBase.close();
 	}
 
 }

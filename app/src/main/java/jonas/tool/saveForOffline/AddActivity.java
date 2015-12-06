@@ -85,7 +85,7 @@ public class AddActivity extends Activity {
 
 	private void startSave() {
 		Intent intent = new Intent(this, SaveService.class);
-		intent.putExtra("origurl", origurl);
+		intent.putExtra(Intent.EXTRA_TEXT, origurl);
 		startService(intent);
 		finish();
 	}
