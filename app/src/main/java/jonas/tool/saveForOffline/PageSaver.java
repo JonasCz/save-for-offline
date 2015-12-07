@@ -126,7 +126,9 @@ public class PageSaver {
 
         //download main html and parse -- isExtra parameter should be false
         boolean success = downloadHtmlAndParseLinks(url, outputDirPath, false);
-        if (isCancelled) return false;
+        if (isCancelled || !success) {
+			return false;
+		}
 
         //download and parse html frames - use iterator because our list may be modified as frames can contain other frames
 		for (Iterator<String> i = framesToGrab.iterator(); i.hasNext();) {

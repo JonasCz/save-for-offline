@@ -75,7 +75,6 @@ public class NotificationTools {
 		
 		public void cancelAll() {
 			context.stopForeground(true);
-			notificationManager.cancelAll();
 		}
 		
 		private void addCancelAction () {

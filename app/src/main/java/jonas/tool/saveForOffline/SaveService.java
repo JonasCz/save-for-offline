@@ -66,19 +66,19 @@ private NotificationTools notificationTools;
 			pageSaver.getOptions().setCache(getApplicationContext().getExternalCacheDir(),1024 * 1024 * Integer.valueOf(sharedPreferences.getString("cache_size", "30")));
             boolean success = pageSaver.getPage(pageUrl, destinationDirectory, "index.html");
 			
-			if (pageSaver.isCancelled()) { //user cancelled, remove the notification, and delete files.
-                DirectoryHelper.deleteDirectory(new File(destinationDirectory));
-				Log.e("SaveService", "Stopping Service, (Cancelled). Deleting files in: " + destinationDirectory + ", from: " + pageUrl);
-				notificationTools.cancelAll();
-				stopService();
-                return;
-            } else if (!success) { //something went wrong, leave the notification, and delete files.
-                DirectoryHelper.deleteDirectory(new File(destinationDirectory));
-				Log.e("SaveService", "Failed. Deleting files in: " + destinationDirectory + ", from: " + pageUrl);
-                return;
-            }
+			if (pageSaver.isCancelled() || !success) {
+				DirectoryHelper.deleteDirectory(new File(destinationDirectory));
+				if (pageSaver.isCancelled()) { //user cancelled, remove the notification, and delete files.
+					Log.e("SaveService", "Stopping Service, (Cancelled). Deleting files in: " + destinationDirectory + ", from: " + pageUrl);
+					notificationTools.cancelAll();
+					stopService();
+				} else if (!success) { //something went wrong, leave the notification, and delete files.
+					Log.e("SaveService", "Failed. Deleting files in: " + destinationDirectory + ", from: " + pageUrl);
+				}
+				return;
+			}
 			
-			notificationTools.updateSmallText("Finishing");
+			notificationTools.updateSmallText("Finishing...");
 
             File oldSavedPageDirectory = new File(destinationDirectory);
 			File newSavedPageDirectory = new File(getNewDirectoryPath(pageSaver.getPageTitle(), oldSavedPageDirectory.getPath()));
