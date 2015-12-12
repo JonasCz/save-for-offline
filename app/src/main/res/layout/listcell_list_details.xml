@@ -40,12 +40,13 @@
 		android:id="@+id/txt_date"
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
-		android:text="Saved one week ago"
+		android:text="Date unavailable"
 		android:layout_toRightOf="@id/listimage"
 		android:layout_below="@id/txt_orig_url"
 		android:textSize="12sp"
 		android:layout_alignParentBottom="true"
-		android:gravity="bottom"/>
+		android:gravity="bottom"
+		android:tag="show:date"/>
 
 	<TextView
 		android:id="@+id/txt_id"

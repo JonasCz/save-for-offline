@@ -1,6 +1,7 @@
 package jonas.tool.saveForOffline;
 import android.app.*;
 import android.content.*;
+import android.util.*;
 
 public class NotificationTools {
 
@@ -57,6 +58,7 @@ public class NotificationTools {
 		}
 		
 		public void notifyFailure (String message, String pageUrl) {
+			Log.w("NotificationTools", "notifyFailure called");
 			builder = new Notification.Builder(context);
 			
 			builder.setTicker("Error, page not saved: " + message)
@@ -64,12 +66,12 @@ public class NotificationTools {
 				.setContentText(message)
 				.setProgress(0,0,false)
 				.setOngoing(false)
-				.setOnlyAlertOnce(false)
+				.setOnlyAlertOnce(true)
 				.setSmallIcon(android.R.drawable.stat_sys_warning);
 				
 			addRetryAction(pageUrl);
 			
-			context.stopForeground(true);
+			context.stopForeground(false);
 			notificationManager.notify(NOTIFICATION_ID, builder.build());
 		}
 		

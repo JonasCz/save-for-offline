@@ -88,6 +88,7 @@ private NotificationTools notificationTools;
 
             Intent i = new Intent(SaveService.this, ScreenshotService.class);
             i.putExtra(Database.FILE_LOCATION, "file://" + newSavedPageDirectory.getPath() + File.separator + "index.html");
+			i.putExtra(Database.ORIGINAL_URL, pageUrl);
             i.putExtra(Database.THUMBNAIL, newSavedPageDirectory + File.separator + "saveForOffline_thumbnail.png");
             startService(i);
 			

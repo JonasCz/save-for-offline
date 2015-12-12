@@ -74,7 +74,7 @@ public class DisplayAdapter extends BaseAdapter {
 		}
 		
 		public static boolean hasDate (Layout l) {
-			return l == Layout.DETAILS_THUMBNAILS || l == Layout.SMALL_TEXT_ONLY;
+			return l == Layout.DETAILS_THUMBNAILS || l == Layout.SMALL_TEXT_ONLY || l == Layout.DEFAULT;
 		}
 	}
 
@@ -240,7 +240,7 @@ public class DisplayAdapter extends BaseAdapter {
 			}
 		}
 
-		if (Layout.hasDate(Layout.getCurrentLayout())) {
+		if (Layout.hasDate(Layout.getCurrentLayout()) && "show:date".equals(mHolder.txt_date.getTag())) {
 			try {
 				mHolder.txt_date.setText("Saved " + fuzzyFormatter.getFuzzy(dbCursor.getString(dbCursor.getColumnIndex(Database.TIMESTAMP))));
 			} catch (ParseException e) {

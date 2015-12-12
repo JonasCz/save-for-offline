@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.io.*;
 import android.graphics.*;
 import java.util.*;
+import com.squareup.okhttp.*;
 
 //this is an example of how to take a screenshot of a webpage in a background service
 //not very elegant, but it works (for me anyway)
@@ -40,10 +41,10 @@ public class ScreenshotService extends Service {
 	// Handler that receives messages from the thread
 	private final class ServiceHandler extends Handler {
 		private int currentStartId;
-		
+
 		private boolean webviewScreenshotTaken = false;
 		private boolean websiteIconTaken = false;
-		
+
 		public ServiceHandler(Looper looper) {
 			super(looper);
 		}
@@ -51,7 +52,7 @@ public class ScreenshotService extends Service {
 		@Override
 		public void handleMessage(final Message msg) {
 			currentStartId = msg.arg1;
-			
+
 			webview = new WebView(ScreenshotService.this);
 			Log.i(TAG, "Creating WebView");
 
@@ -69,7 +70,7 @@ public class ScreenshotService extends Service {
 
 			boolean javaScriptEnabled  = PreferenceManager.getDefaultSharedPreferences(ScreenshotService.this).getBoolean("enable_javascript", true);
 			webview.getSettings().setJavaScriptEnabled(javaScriptEnabled);
-			
+
 			webview.getSettings().setAllowFileAccessFromFileURLs(true);
 			webview.getSettings().setAllowUniversalAccessFromFileURLs(true);
 
@@ -88,8 +89,7 @@ public class ScreenshotService extends Service {
 					public void onPageFinished(WebView view, String url) {
 						Log.i(TAG, "Page finished, getting thumbnail");
 						takeWebviewScreenshot(intent.getStringExtra(Database.THUMBNAIL));
-						Log.i(TAG, "Page finished, getting site icon");
-						getSiteIcon(new File(intent.getStringExtra(Database.THUMBNAIL)).getParentFile().getPath());
+					
 					}
 				});
 		}
@@ -129,46 +129,8 @@ public class ScreenshotService extends Service {
 			Log.i(TAG, "Saved Bitmap to file: " + outputFile.getPath());
 		}
 
-		private void getSiteIcon(String directory) {
-			//try to get the favicon of the webpage, for our list, also some pages have some sort of high resolution icon, try to get that first, instead.
-			Bitmap siteIcon = null;
-			File[] iconBitmapFiles = new File(directory).listFiles(new FilenameFilter() {
-					@Override
-					public boolean accept(File directory, String filename) {
-						return (filename.endsWith("png") || filename.endsWith("ico")) && (filename.contains("favicon") || filename.contains("apple-touch-icon") || filename.contains("logo"));
-					}
-				});
-				
-			Log.i(TAG, "Got " + iconBitmapFiles.length + " potential site icons");
-
-			for (File f : iconBitmapFiles) {
-				Bitmap bitmap = BitmapFactory.decodeFile(f.getPath());
-				Log.i(TAG, "Getting bitmap from: " + f.getPath());
-				if (bitmap != null && bitmap.getHeight() == bitmap.getWidth()) {
-					Log.i(TAG, "Bitmap from " + f.getPath() + " is not null and is also square, potential candidate");
-					if ((siteIcon != null) && (siteIcon.getWidth() <= bitmap.getWidth())) {
-						siteIcon = bitmap;	
-					} else if (siteIcon == null) {
-						siteIcon = bitmap;
-					}
-				}
-			}
-			
-			if (siteIcon == null) {
-				//still null ? get it from the webview
-				siteIcon = webview.getFavicon();
-			}
-
-			if (siteIcon != null) {
-				File outputFile = new File(directory, "saveForOffline_icon.png");
-				saveBitmapToFile(siteIcon, outputFile);
-			}
-			
-			websiteIconTaken = true;
-			stopService();
-		}
 		
-		private void stopService () {
+		private void stopService() {
 			if (websiteIconTaken && webviewScreenshotTaken) {
 				Log.i(TAG, "Service stopped, with startId " + currentStartId + " completed");
 				stopSelf(currentStartId);

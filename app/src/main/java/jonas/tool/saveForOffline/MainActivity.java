@@ -94,8 +94,13 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
         mSearchView = (SearchView) searchItem.getActionView();
 		mSearchView.setIconifiedByDefault(true);
 		mSearchView.setOnQueryTextListener(this);
+		mSearchView.setOnSearchClickListener(new View.OnClickListener() {
+				@Override
+				public void onClick(View view) {
+					onQueryTextChange(mSearchView.getQuery().toString());
+				}
+		});
 		return super.onCreateOptionsMenu(menu);
-
 	}
 
 

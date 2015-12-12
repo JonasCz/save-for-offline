@@ -158,6 +158,9 @@ public class PageSaver {
 			
 			pool.submit(new DownloadTask(urlToDownload, outputDir));
 		}
+		eventCallback.onProgressMessage("Getting icon...");
+		pool.submit(new DownloadTask(FaviconFetcher.getInstance().getFaviconUrl(url, getOptions().getUserAgent()), outputDir, "saveForOffline_icon.png"));
+		
 		eventCallback.onProgressMessage("Finishing file downloads...");
 		
 		shutdownExecutor(pool, 60, TimeUnit.SECONDS);
@@ -226,16 +229,26 @@ public class PageSaver {
 
         private String url;
         private File outputDir;
+		private String fileName;
 
         public DownloadTask(String url, File toPath) {
             this.url = url;
             this.outputDir = toPath;
         }
+		
+		public DownloadTask(String url, File toPath, String fileName) {
+            this.url = url;
+            this.outputDir = toPath;
+			this.fileName = fileName;
+        }
 
         @Override
         public void run() {
-            String filename = getFileName(url);
-            File outputFile = new File(outputDir, filename);
+			if (fileName == null) {
+				fileName = getFileName(url);
+			}
+			
+            File outputFile = new File(outputDir, fileName);
 
             Request request = new Request.Builder()
                     .url(url)
@@ -331,8 +344,6 @@ public class PageSaver {
 
                 String replacedURL = getFileName(urlToGrab);
                 link.attr("src", replacedURL);
-
-
             }
         }
 
@@ -352,7 +363,6 @@ public class PageSaver {
 
                 String replacedURL = getFileName(urlToGrab);
                 link.attr("href", replacedURL);
-
             }
 
             //get links in embedded css also, and modify the links to point to local files
@@ -418,6 +428,17 @@ public class PageSaver {
                 link.attr("src", replacedURL);
 				link.removeAttr("srcset"); //we don't use this for now, so remove it.
             }
+			
+			links = document.select("img[data-canonical-src]");
+            eventCallback.onLogMessage("Got " + links.size() + " image elements");
+            for (Element link : links) {
+                urlToGrab = link.attr("abs:data-canonical-src");
+                addLinkToList(urlToGrab, filesToGrab);
+
+                String replacedURL = getFileName(urlToGrab);
+                link.attr("data-canonical-src", replacedURL);
+				link.removeAttr("srcset"); //we don't use this for now, so remove it.
+            }
         }
 
         if (getOptions().saveVideo()) {
@@ -464,11 +485,8 @@ public class PageSaver {
 
         eventCallback.onLogMessage("Parsing CSS");
 
-        int count = 0;
         //find everything inside url(" ... ")
         while (matcher.find()) {
-            count++;
-
             if (matcher.group().replaceAll(patternString, "$2").contains("/")) {
                 cssToParse = cssToParse.replace(matcher.group().replaceAll(patternString, "$2"), getFileName(matcher.group().replaceAll(patternString, "$2")));
 
@@ -482,9 +500,8 @@ public class PageSaver {
         pattern = Pattern.compile(importString);
         matcher = pattern.matcher(cssToParse);
         matcher.reset();
-        count = 0;
+		
         while (matcher.find()) {
-            count++;
             if (matcher.group().replaceAll(patternString, "$2").contains("/")) {
                 cssToParse = cssToParse.replace(matcher.group().replaceAll(patternString, "$2"), getFileName(matcher.group().replaceAll(patternString, "$2")));
             }
@@ -504,13 +521,11 @@ public class PageSaver {
 	}
 
     private void addLinkToList(String link, List<String> list) {
-        if (!isLinkValid(link)) {
+        if (!isLinkValid(link) || list.contains(link)) {
 			return;
+		} else {
+			list.add(link);
 		}
-
-        if (!list.contains(link)) {
-            list.add(link);
-        }
     }
 
     private String makeLinkAbsolute(String link, String baseurl) {
@@ -525,7 +540,6 @@ public class PageSaver {
 			}
             return link;
         }
-
     }
 
     private String getFileName(String url) {
@@ -592,7 +606,7 @@ public class PageSaver {
 			client.setCache(cache);
 		}
 
-		public void clearCache () throws IOException {
+		public void clearCache() throws IOException {
 			client.getCache().evictAll();
 		}
 

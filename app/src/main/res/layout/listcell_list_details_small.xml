@@ -30,7 +30,8 @@
 		android:layout_below="@id/txt_orig_url"
 		android:textSize="12sp"
 		android:gravity="bottom"
-		android:text="Date unavailable"/>
+		android:text="Date unavailable"
+		android:tag="show:date"/>
 
 	<TextView
 		android:id="@+id/txt_id"

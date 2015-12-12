@@ -22,6 +22,7 @@ import android.app.*;
 import android.preference.*;
 import android.widget.*;
 import android.view.*;
+import android.view.inputmethod.*;
 
 public class AddActivity extends Activity {
 	private Button btn_save;
@@ -59,7 +60,15 @@ public class AddActivity extends Activity {
 				}
 				public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 				public void onTextChanged(CharSequence s, int start, int before, int count) {}
-			}); 
+		});
+		
+		edit_origurl.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+				@Override
+				public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+					okButtonClick(null);
+					return true;
+				}
+		});
 	}
 
 	public void cancelButtonClick(View view) {
