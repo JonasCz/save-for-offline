@@ -2,6 +2,9 @@ package jonas.tool.saveForOffline;
 import android.app.*;
 import android.content.*;
 import android.util.*;
+import android.graphics.*;
+import java.io.*;
+import android.content.res.*;
 
 public class NotificationTools {
 
@@ -42,7 +45,7 @@ public class NotificationTools {
 			notificationManager.notify(NOTIFICATION_ID, builder.build());
 		}
 		
-		public void notifyFinished (String pageTitle) {
+		public void notifyFinished (String pageTitle, String savedPageDirectoryLocation) {
 			builder = new Notification.Builder(context);
 			
 			builder.setTicker("Save completed: " + pageTitle)
@@ -53,7 +56,12 @@ public class NotificationTools {
 				.setOnlyAlertOnce(false)
 				.setOngoing(false);
 				
-			context.stopForeground(true);
+			int maxLargeIconWidth = context.getResources().getDimensionPixelSize(android.R.dimen.notification_large_icon_width);
+			Bitmap largeIconBitmap = BitmapFactory.decodeFile(savedPageDirectoryLocation + File.separator + "saveForOffline_icon.png");
+			
+			builder.setLargeIcon(Bitmap.createScaledBitmap(largeIconBitmap, maxLargeIconWidth / 2, maxLargeIconWidth / 2, false));
+			
+			context.stopForeground(false);
 			notificationManager.notify(NOTIFICATION_ID, builder.build());
 		}
 		

@@ -12,6 +12,7 @@ import java.io.*;
 import java.util.regex.*;
 import android.graphics.*;
 import org.jsoup.*;
+import android.os.*;
 
 public class FaviconFetcher {
 	private static FaviconFetcher INSTANCE = new FaviconFetcher();
@@ -20,7 +21,7 @@ public class FaviconFetcher {
 	private final String[] htmlIconCssQueries = {
 		"meta[property=\"og:image\"]",
 		"meta[name=\"msapplication-TileImage\"]",
-		"link[rel=\"fluid-icon\"]",
+//		"link[rel=\"fluid-icon\"]",
 		"link[rel=\"icon\"]",
 		"link[rel=\"shortcut icon\"]",
 		"link[rel=\"apple-touch-icon\"]",
@@ -35,22 +36,16 @@ public class FaviconFetcher {
 		"/apple-touch-icon-precomposed.png",
 	};
 	
-	private FaviconFetcher() {}
+	private FaviconFetcher() {
+	}
 	
 	public static FaviconFetcher getInstance () {
 		return INSTANCE;
 	}
 	
-	public String getFaviconUrl (String pageUrl, String userAgent) {
-		try {
-			Document document = Jsoup.parse(getStringFromUrl(pageUrl, userAgent), pageUrl);
-			List <String> potentialIconUrls = getPotentialFaviconUrls(document);
-			
-			return pickBestIconUrl(potentialIconUrls);
-		} catch (IllegalStateException | IOException e) {
-			e.printStackTrace();
-			return null;
-		}
+	public String getFaviconUrl (Document document) {
+		List <String> potentialIconUrls = getPotentialFaviconUrls(document);
+		return pickBestIconUrl(potentialIconUrls);
 	}
 	
 	public List<String> getPotentialFaviconUrls (Document document) {
@@ -101,7 +96,7 @@ public class FaviconFetcher {
 			if (options != null && options.outHeight == options.outHeight) {
 				if ((bestIconUrl != null) && (currentBestWidth <= options.outWidth)) {
 					bestIconUrl = url;
-					currentBestWidth = options.outWidth;
+					currentBestWidth = options.outWidth;	
 				} else if (bestIconUrl == null) {
 					bestIconUrl = url;
 					currentBestWidth = options.outWidth;
@@ -136,15 +131,4 @@ public class FaviconFetcher {
 			return null;
 		}
 	}
-	
-	private String getStringFromUrl(String url, String userAgent) throws IOException, IllegalStateException {
-        Request request = new Request.Builder()
-			.url(url)
-			.addHeader("User-Agent", userAgent)
-			.build();
-        Response response = client.newCall(request).execute();
-        String out = response.body().string();
-        response.body().close();
-        return out;
-    }
 }

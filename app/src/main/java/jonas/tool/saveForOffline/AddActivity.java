@@ -23,6 +23,7 @@ import android.preference.*;
 import android.widget.*;
 import android.view.*;
 import android.view.inputmethod.*;
+import java.util.*;
 
 public class AddActivity extends Activity {
 	private Button btn_save;
@@ -47,7 +48,7 @@ public class AddActivity extends Activity {
 		//save directly if activity was started via intent
 		origurl = edit_origurl.getText().toString().trim();
 		if (origurl.length() > 0) {
-			startSave();
+			startSave(origurl);
 		}
 
 		edit_origurl.addTextChangedListener(new TextWatcher(){
@@ -60,14 +61,6 @@ public class AddActivity extends Activity {
 				}
 				public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 				public void onTextChanged(CharSequence s, int start, int before, int count) {}
-		});
-		
-		edit_origurl.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-				@Override
-				public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-					okButtonClick(null);
-					return true;
-				}
 		});
 	}
 
@@ -83,18 +76,22 @@ public class AddActivity extends Activity {
 	// saveButton click event
 	public void okButtonClick(View view) {
 		origurl = edit_origurl.getText().toString().trim();
-		if (origurl.length() > 0 && (origurl.startsWith("http"))) {
-			startSave();
-		} else if (origurl.length() > 0) {
-			origurl = "http://" + origurl;
-			startSave();
+		String[] urls = origurl.split("[\\r\\n]+");
+		for (String url : urls) {
+			if (url.length() > 0 && (url.startsWith("http"))) {
+				startSave(url);
+			} else if (url.length() > 0) {
+				url = "http://" + url;
+				startSave(url);
+			}
 		}
+		
 	}
 
 
-	private void startSave() {
+	private void startSave(String url) {
 		Intent intent = new Intent(this, SaveService.class);
-		intent.putExtra(Intent.EXTRA_TEXT, origurl);
+		intent.putExtra(Intent.EXTRA_TEXT, url);
 		startService(intent);
 		finish();
 	}

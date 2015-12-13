@@ -94,7 +94,7 @@ private NotificationTools notificationTools;
 			
 			stopService();
 			
-			notificationTools.notifyFinished(pageSaver.getPageTitle());	
+			notificationTools.notifyFinished(pageSaver.getPageTitle(), newSavedPageDirectory.getPath());	
 		}
 		
 		private String getNewDirectoryPath (String title, String oldDirectoryPath) {

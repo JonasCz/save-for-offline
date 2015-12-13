@@ -71,6 +71,7 @@ public class PageSaver {
     private List<String> cssToGrab = new ArrayList<String>();
 	
     private String title = "";
+	private String pageIconUrl = "";
 
     private String indexFileName = "index.html";
 
@@ -142,7 +143,7 @@ public class PageSaver {
             downloadCssAndParse(i.next(), outputDirPath);
 		}
 		
-		ThreadPoolExecutor pool = new ThreadPoolExecutor(5, 5, 60, TimeUnit.SECONDS, new BlockingDownloadTaskQueue<Runnable>());
+		ThreadPoolExecutor pool = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), Runtime.getRuntime().availableProcessors(), 60, TimeUnit.SECONDS, new BlockingDownloadTaskQueue<Runnable>());
 		
 		for (Iterator<String> i = filesToGrab.iterator(); i.hasNext();) {
 			if (isCancelled) {
@@ -158,11 +159,9 @@ public class PageSaver {
 			
 			pool.submit(new DownloadTask(urlToDownload, outputDir));
 		}
-		eventCallback.onProgressMessage("Getting icon...");
-		pool.submit(new DownloadTask(FaviconFetcher.getInstance().getFaviconUrl(url, getOptions().getUserAgent()), outputDir, "saveForOffline_icon.png"));
+		pool.submit(new DownloadTask(pageIconUrl, outputDir, "saveForOffline_icon.png"));
 		
 		eventCallback.onProgressMessage("Finishing file downloads...");
-		
 		shutdownExecutor(pool, 60, TimeUnit.SECONDS);
 		
 		return success;
@@ -317,9 +316,16 @@ public class PageSaver {
         Document document = Jsoup.parse(htmlToParse, baseUrl);
         document.outputSettings().escapeMode(Entities.EscapeMode.extended);
 		
-		if (title.equals("")) {
+		if (title.isEmpty()) {
 			title = document.title();
 		}
+		
+		if (pageIconUrl.isEmpty()) {
+			eventCallback.onProgressMessage("Getting icon...");
+			pageIconUrl = FaviconFetcher.getInstance().getFaviconUrl(document);
+		}
+		
+		eventCallback.onProgressMessage("Processing HTML...");
 
         String urlToGrab;
 
@@ -430,7 +436,7 @@ public class PageSaver {
             }
 			
 			links = document.select("img[data-canonical-src]");
-            eventCallback.onLogMessage("Got " + links.size() + " image elements");
+            eventCallback.onLogMessage("Got " + links.size() + " image elements, w. data-canonical-src");
             for (Element link : links) {
                 urlToGrab = link.attr("abs:data-canonical-src");
                 addLinkToList(urlToGrab, filesToGrab);
