@@ -21,7 +21,6 @@ public class FaviconFetcher {
 	private final String[] htmlIconCssQueries = {
 		"meta[property=\"og:image\"]",
 		"meta[name=\"msapplication-TileImage\"]",
-//		"link[rel=\"fluid-icon\"]",
 		"link[rel=\"icon\"]",
 		"link[rel=\"shortcut icon\"]",
 		"link[rel=\"apple-touch-icon\"]",
