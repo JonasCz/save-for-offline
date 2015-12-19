@@ -70,7 +70,11 @@ public class AddActivity extends Activity {
 
 	public void btn_paste(View view) {
 		ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-		edit_origurl.append(System.lineSeparator() + clipboard.getText());
+		if (edit_origurl.getText().length() == 0) {
+			edit_origurl.append(clipboard.getText());
+		} else {
+			edit_origurl.append(System.lineSeparator() + clipboard.getText());
+		}
 	}
 
 	// saveButton click event
@@ -79,7 +83,7 @@ public class AddActivity extends Activity {
 		String[] urls = origurl.split("[\\r\\n]+");
 		for (String url : urls) {
 			if (url.length() > 0 && (url.startsWith("http"))) {
-				startSave(url);
+				startSave(url);	
 			} else if (url.length() > 0) {
 				url = "http://" + url;
 				startSave(url);
