@@ -71,13 +71,12 @@
 					android:title="Enable JavaScript"/>
 			</PreferenceCategory>
 			<PreferenceCategory
-				android:title="Cache">
-				<EditTextPreference
-					android:key="cache_size"
-					android:defaultValue="50"
-					android:title="Cache size" 
-					android:summary="Size of the cache used when saving pages, speeds up saving pages from the same site (assets eg. CSS come from the cache instead of being downloaded multiple times). Default is 30MB. Cache may be cleared if this is changed." 
-					android:dialogTitle="Cache size, in Megabytes"/>
+				android:title="Performance">
+				<CheckBoxPreference
+					android:key = "generate_saved_page_thumbnails"
+					android:defaultValue="true"
+					android:title="Generate page thumbnails"
+					android:summary="Weather to enable the creation of the thumbnails shown in the list. Disabling this results in improved performace if you don't need them."/>
 			</PreferenceCategory>
 		</PreferenceScreen>
 	</PreferenceCategory>

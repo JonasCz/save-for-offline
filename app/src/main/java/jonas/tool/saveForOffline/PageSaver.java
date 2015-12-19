@@ -107,6 +107,7 @@ public class PageSaver {
 		cssToGrab.clear();
 		
 		title = "";
+		pageIconUrl = "";
 		isCancelled = false;
 	}
 
@@ -318,6 +319,7 @@ public class PageSaver {
 		
 		if (title.isEmpty()) {
 			title = document.title();
+			eventCallback.onPageTitleAvailable("Saving page: " + title);
 		}
 		
 		if (pageIconUrl.isEmpty()) {
@@ -678,6 +680,8 @@ interface EventCallback {
     public void onProgressChanged(int progress, int maxProgress, boolean indeterminate);
 
     public void onProgressMessage(String fileName);
+	
+	public void onPageTitleAvailable (String pageTitle);
 
     public void onLogMessage (String message);
 

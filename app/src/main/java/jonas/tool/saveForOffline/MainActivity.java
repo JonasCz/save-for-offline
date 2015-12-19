@@ -41,6 +41,7 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 		
 		PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 		SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+		
 		if (sharedPref.getBoolean("dark_mode", false)) {
 			setTheme(android.R.style.Theme_Holo);
 		}
@@ -61,7 +62,8 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 			case 6: mainGrid.setNumColumns(1); break;
 			default:
 		}
-
+		
+		sortOrder = sortOrder.fromInt(sharedPref.getInt("current_sort_order", 0));
 
 		pageLoadDialog = new ProgressDialog(MainActivity.this);
 		actionbar = getActionBar();
@@ -160,6 +162,11 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 				builder.setSingleChoiceItems(R.array.sort_by, DisplayAdapter.SortOrder.toInt(sortOrder), new DialogInterface.OnClickListener() {
 						public void onClick(DialogInterface dialog, int which) {
 							sortOrder = DisplayAdapter.SortOrder.fromInt(which);
+							
+							SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit();
+							editor.putInt("current_sort_order", which);
+							editor.commit();
+							
 							displayData(searchQuery);
 							dialogSortItemsBy.cancel();
 						}

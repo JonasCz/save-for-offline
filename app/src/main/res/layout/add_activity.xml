@@ -8,79 +8,76 @@
 	android:id="@+id/addActivityLayout"
 	android:padding="5dp">
 
-	<TextView
-		android:layout_height="wrap_content"
-		android:text="Tip: In your web browser, choose 'Share' and then 'Save For Offline' to quickly save pages. You can save multiple URLs, separated by newline."
-		android:layout_width="wrap_content"
-		android:id="@+id/tipText"
-		android:paddingTop="10dp"
-		android:paddingLeft="10dp"
-		android:paddingRight="10dp"/>
-
-	<EditText
-		android:id="@+id/frst_editTxt"
-		android:layout_width="match_parent"
-		android:layout_height="wrap_content"
-		android:layout_marginTop="10dp"
-		android:hint="http://example.com/example"
-		android:inputType="textMultiLine|textUri"
-		android:layout_below="@id/tipText"
-		android:layout_marginBottom="10dp"
-		android:layout_marginRight="60dp"
-		android:imeOptions="actionNone"/>
-
-	<Button
-		android:layout_height="40dp"
-		style="?android:attr/buttonStyleSmall"
-		android:text="Paste"
-		android:layout_width="wrap_content"
-		android:layout_below="@id/tipText"
-		android:layout_marginTop="10dp"
-		android:layout_alignParentRight="true"
-		android:onClick="btn_paste"
-		android:id="@+id/pasteButton"/>
-
-	<LinearLayout
-		style="?android:attr/buttonBarStyle"
+	<ScrollView
 		android:layout_height="wrap_content"
 		android:layout_width="match_parent"
-		android:orientation="horizontal"
-		android:layout_below="@id/frst_editTxt"
-		android:id="@+id/addactivityLinearLayout1">
+		android:id="@+id/add_activity_editor_scrollview">
 
-		<Button
-			style="?android:attr/buttonBarButtonStyle"
-			android:id="@+id/cancel_btn"
+		<RelativeLayout
 			android:layout_height="wrap_content"
-			android:text="Cancel"
-			android:layout_width="match_parent"
-			android:onClick="cancelButtonClick"
-			android:layout_weight="0.5"
-			android:background="@drawable/normal_button_selector"/>
+			android:layout_width="wrap_content"
+			android:orientation="vertical">
 
-		<Button
-			style="?android:attr/buttonBarButtonStyle"
-			android:id="@+id/save_btn"
-			android:layout_width="match_parent"
-			android:layout_height="wrap_content"
-			android:text="OK"
-			android:onClick="okButtonClick"
-			android:layout_weight="0.5"
-			android:background="@drawable/normal_button_selector"/>
+			<TextView
+				android:layout_height="wrap_content"
+				android:text="Tip: In your web browser, choose 'Share' and then 'Save For Offline' to quickly save pages. You can save multiple URLs, separated by newline."
+				android:layout_width="wrap_content"
+				android:id="@+id/tipText"
+				android:layout_marginRight="146dp"
+				android:layout_marginLeft="5dp"/>
 
-	</LinearLayout>
+			<Button
+				android:layout_height="wrap_content"
+				style="?android:attr/buttonStyleSmall"
+				android:text="Add from Clipboard"
+				android:layout_width="wrap_content"
+				android:layout_alignParentRight="true"
+				android:onClick="btn_paste"
+				android:id="@+id/pasteButton"
+				android:height="40dp"/>
 
-	<View
-		android:layout_width="match_parent"
-		android:layout_height="1dp"
-		android:background="?android:attr/dividerHorizontal"
-		android:layout_above="@id/addactivityLinearLayout1"/>
+			<EditText
+				android:id="@+id/frst_editTxt"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:hint="http://example.com/example"
+				android:inputType="textMultiLine|textUri"
+				android:imeOptions="actionNone"
+				android:layout_below="@id/tipText"/>
 
-	<View
-		android:layout_width="match_parent"
-		android:layout_height="1dp"
-		android:background="?android:attr/dividerHorizontal"
-		android:layout_below="@id/addactivityLinearLayout1"/>
+			<LinearLayout
+				style="?android:attr/buttonBarStyle"
+				android:layout_height="wrap_content"
+				android:layout_width="match_parent"
+				android:orientation="horizontal"
+				android:layout_below="@id/frst_editTxt"
+				android:id="@+id/addactivityLinearLayout1">
+
+				<Button
+					style="?android:attr/buttonBarButtonStyle"
+					android:id="@+id/cancel_btn"
+					android:layout_height="wrap_content"
+					android:text="Cancel"
+					android:layout_width="match_parent"
+					android:onClick="cancelButtonClick"
+					android:layout_weight="0.5"
+					android:background="@drawable/normal_button_selector"/>
+
+				<Button
+					style="?android:attr/buttonBarButtonStyle"
+					android:id="@+id/save_btn"
+					android:layout_width="match_parent"
+					android:layout_height="wrap_content"
+					android:text="OK"
+					android:onClick="okButtonClick"
+					android:layout_weight="0.5"
+					android:background="@drawable/normal_button_selector"/>
+
+			</LinearLayout>
+
+		</RelativeLayout>
+
+	</ScrollView>
 
 </RelativeLayout>
 

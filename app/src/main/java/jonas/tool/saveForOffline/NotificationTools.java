@@ -21,7 +21,7 @@ public class NotificationTools {
 			builder = new Notification.Builder(context);
 		}
 		
-		public void notifySaveStarted () {
+		public void notifySaveStarted (int saveQueueSize) {
 			builder = new Notification.Builder(context);
 			builder.setTicker("Saving page...")
 				.setContentTitle("Saving page...")
@@ -31,6 +31,10 @@ public class NotificationTools {
 				.setOnlyAlertOnce(true)
 				.setOngoing(true);
 			addCancelAction();
+			
+			if (saveQueueSize > 0) {
+				addCancelAllAction();
+			}
 			context.startForeground(NOTIFICATION_ID, builder.build());	
 		}
 		
@@ -40,8 +44,16 @@ public class NotificationTools {
 			notificationManager.notify(NOTIFICATION_ID, builder.build());
 		}
 		
-		public void updateSmallText (String newText) {
-			builder.setContentText(newText);
+	public void updateText (String newTitle, String newContentText, int saveQueueSize) {
+			if (newTitle != null) {
+				builder.setContentTitle(newTitle);
+			}
+			
+			if (newContentText != null) {
+				builder.setContentText(newContentText);
+			}
+			
+			builder.setNumber(saveQueueSize);
 			notificationManager.notify(NOTIFICATION_ID, builder.build());
 		}
 		
@@ -76,8 +88,10 @@ public class NotificationTools {
 				.setOngoing(false)
 				.setOnlyAlertOnce(true)
 				.setSmallIcon(android.R.drawable.stat_sys_warning);
-				
-			addRetryAction(pageUrl);
+			
+			if (pageUrl != null) {
+				addRetryAction(pageUrl);
+			}
 			
 			context.stopForeground(false);
 			notificationManager.notify(NOTIFICATION_ID, builder.build());
@@ -93,6 +107,13 @@ public class NotificationTools {
 			PendingIntent pendingIntent = PendingIntent.getService(context, 0, cancelIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 			builder.addAction(R.drawable.ic_notify_discard, "Cancel", pendingIntent);
 		}
+		
+	private void addCancelAllAction () {
+		Intent cancelIntent = new Intent(context, SaveService.class);
+		cancelIntent.putExtra("USER_CANCELLED_ALL", true);
+		PendingIntent pendingIntent = PendingIntent.getService(context, 0, cancelIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+		builder.addAction(R.drawable.ic_notify_discard, "Cancel all", pendingIntent);
+	}
 
 		private void addRetryAction (String url) {
 			Intent intent = new Intent(context, SaveService.class);

@@ -70,7 +70,7 @@ public class AddActivity extends Activity {
 
 	public void btn_paste(View view) {
 		ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-		edit_origurl.setText(clipboard.getText());
+		edit_origurl.append(System.lineSeparator() + clipboard.getText());
 	}
 
 	// saveButton click event

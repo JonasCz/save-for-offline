@@ -35,16 +35,15 @@ public class FaviconFetcher {
 		"/apple-touch-icon-precomposed.png",
 	};
 	
-	private FaviconFetcher() {
-	}
+	private FaviconFetcher() {}
 	
 	public static FaviconFetcher getInstance () {
 		return INSTANCE;
 	}
 	
 	public String getFaviconUrl (Document document) {
-		List <String> potentialIconUrls = getPotentialFaviconUrls(document);
-		return pickBestIconUrl(potentialIconUrls);
+		List <String> potentialIcons = getPotentialFaviconUrls(document);
+		return pickBestIconUrl(potentialIcons);
 	}
 	
 	public List<String> getPotentialFaviconUrls (Document document) {

@@ -260,7 +260,7 @@ public class ViewActivity extends Activity {
 
 		} else if (item.getItemId() == 3) {
 			Intent intent = new Intent(this, SaveService.class);
-			intent.putExtra("origurl", result.getExtra());
+			intent.putExtra(Intent.EXTRA_TEXT, result.getExtra());
 			startService(intent);
 
 		} else if (item.getItemId() == 6) {

@@ -28,7 +28,10 @@ private NotificationTools notificationTools;
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		if (intent.getBooleanExtra("USER_CANCELLED", false)) {
+		if (intent.getBooleanExtra("USER_CANCELLED", false) || intent.getBooleanExtra("USER_CANCELLED_ALL", false)) {
+			if (intent.getBooleanExtra("USER_CANCELLED_ALL", false)) {
+				executor.getQueue().clear();
+			}
 			//cancelling okhttp seems to cause networkOnMainThreadException, hence this.
 			Log.w(TAG, "Cancelled");
 			new Thread(new Runnable() {
@@ -42,7 +45,16 @@ private NotificationTools notificationTools;
 		}
 		
 		String pageUrl = intent.getStringExtra(Intent.EXTRA_TEXT);
-		executor.submit(new PageSaveTask(pageUrl));
+		
+		if (pageUrl != null && pageUrl.startsWith("http")) {
+			executor.submit(new PageSaveTask(pageUrl));
+		} else {
+			if (pageUrl == null) {
+				notificationTools.notifyFailure("URL null, this is probably a bug", null);
+			} else {
+				notificationTools.notifyFailure("URL not valid: " + pageUrl, null);
+			}
+		}
 		
 		return START_NOT_STICKY;
 	}
@@ -60,10 +72,10 @@ private NotificationTools notificationTools;
 		public void run() {
 			pageSaver.resetState();
 			
-			notificationTools.notifySaveStarted();
+			notificationTools.notifySaveStarted(executor.getQueue().size());
 				
 			pageSaver.getOptions().setUserAgent(sharedPreferences.getString("user_agent", getResources().getStringArray(R.array.entries_list_preference)[1]));
-			pageSaver.getOptions().setCache(getApplicationContext().getExternalCacheDir(),1024 * 1024 * Integer.valueOf(sharedPreferences.getString("cache_size", "30")));
+			pageSaver.getOptions().setCache(getApplicationContext().getExternalCacheDir(),1024 * 1024 * 30);
             boolean success = pageSaver.getPage(pageUrl, destinationDirectory, "index.html");
 			
 			if (pageSaver.isCancelled() || !success) {
@@ -78,19 +90,21 @@ private NotificationTools notificationTools;
 				return;
 			}
 			
-			notificationTools.updateSmallText("Finishing...");
+			notificationTools.updateText(null, "Finishing...", executor.getQueue().size());
 
             File oldSavedPageDirectory = new File(destinationDirectory);
 			File newSavedPageDirectory = new File(getNewDirectoryPath(pageSaver.getPageTitle(), oldSavedPageDirectory.getPath()));
             oldSavedPageDirectory.renameTo(newSavedPageDirectory);
 
             new Database(SaveService.this).addToDatabase(newSavedPageDirectory.getPath() + File.separator, pageSaver.getPageTitle(), pageUrl);
-
-            Intent i = new Intent(SaveService.this, ScreenshotService.class);
-            i.putExtra(Database.FILE_LOCATION, "file://" + newSavedPageDirectory.getPath() + File.separator + "index.html");
-			i.putExtra(Database.ORIGINAL_URL, pageUrl);
-            i.putExtra(Database.THUMBNAIL, newSavedPageDirectory + File.separator + "saveForOffline_thumbnail.png");
-            startService(i);
+			
+			if (sharedPreferences.getBoolean("generate_saved_page_thumbnails", true)) {
+				Intent i = new Intent(SaveService.this, ScreenshotService.class);
+				i.putExtra(Database.FILE_LOCATION, "file://" + newSavedPageDirectory.getPath() + File.separator + "index.html");
+				i.putExtra(Database.ORIGINAL_URL, pageUrl);
+				i.putExtra(Database.THUMBNAIL, newSavedPageDirectory + File.separator + "saveForOffline_thumbnail.png");
+				startService(i);
+			}
 			
 			stopService();
 			
@@ -122,7 +136,12 @@ private NotificationTools notificationTools;
 
 		@Override
 		public void onProgressMessage(final String message) {
-			notificationTools.updateSmallText(message);
+			notificationTools.updateText(null, message, executor.getQueue().size());
+		}
+		
+		@Override
+		public void onPageTitleAvailable(String pageTitle) {
+			notificationTools.updateText(pageTitle, null, executor.getQueue().size());
 		}
 
 		@Override

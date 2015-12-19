@@ -31,7 +31,7 @@ public class Preferences extends PreferenceActivity implements OnSharedPreferenc
 		ActionBar actionbar = getActionBar();
 		actionbar.setDisplayHomeAsUpEnabled(true);
 		actionbar.setSubtitle("Preferences");
-
+		
         addPreferencesFromResource(R.xml.preferences);
 		
 		list_appearance = getPreferenceScreen().getSharedPreferences().getString("layout" , "1");
