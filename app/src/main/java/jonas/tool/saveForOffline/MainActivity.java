@@ -354,6 +354,8 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 		
 		private class deleteItemsTask extends AsyncTask<Object, Integer, Integer> {
 			ProgressDialog pd = null;
+			int currentProgress = 0;
+			
 			@Override
 			protected Integer doInBackground(Object[] selectedPositions) {
 				dataBase = new Database(MainActivity.this).getWritableDatabase();
@@ -363,7 +365,8 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 					DirectoryHelper.deleteDirectory(new File(fileLocation).getParentFile());
 					
 					dataBase.delete(Database.TABLE_NAME, Database.ID + "=" + gridAdapter.getPropertiesByPosition(position, Database.ID), null);
-					publishProgress((Integer)position);
+					currentProgress++;
+					publishProgress(currentProgress);
 				}
 				dataBase.close();
 				return selectedPositions.length;

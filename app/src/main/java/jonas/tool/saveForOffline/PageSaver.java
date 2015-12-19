@@ -319,7 +319,7 @@ public class PageSaver {
 		
 		if (title.isEmpty()) {
 			title = document.title();
-			eventCallback.onPageTitleAvailable("Saving page: " + title);
+			eventCallback.onPageTitleAvailable(title);
 		}
 		
 		if (pageIconUrl.isEmpty()) {
