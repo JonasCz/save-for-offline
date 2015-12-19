@@ -499,7 +499,7 @@ public class PageSaver {
                 cssToParse = cssToParse.replace(matcher.group().replaceAll(patternString, "$2"), getFileName(matcher.group().replaceAll(patternString, "$2")));
 
             }
-            addLinkToList(makeLinkAbsolute(matcher.group().replaceAll(patternString, "$2").trim(), baseUrl), filesToGrab);
+            addLinkToList(matcher.group().replaceAll(patternString, "$2").trim(), baseUrl, filesToGrab);
         }
 
         // find css linked with @import  -  needs testing
@@ -513,7 +513,7 @@ public class PageSaver {
             if (matcher.group().replaceAll(patternString, "$2").contains("/")) {
                 cssToParse = cssToParse.replace(matcher.group().replaceAll(patternString, "$2"), getFileName(matcher.group().replaceAll(patternString, "$2")));
             }
-            addLinkToList(makeLinkAbsolute(matcher.group().replaceAll(patternString, "$2").trim(), baseUrl), cssToGrab);
+            addLinkToList(matcher.group().replaceAll(patternString, "$2").trim(), baseUrl, cssToGrab);
         }
         return cssToParse;
     }
@@ -535,19 +535,23 @@ public class PageSaver {
 			list.add(link);
 		}
     }
-
-    private String makeLinkAbsolute(String link, String baseurl) {
-        try {
-            URL u = new URL(new URL(baseurl), link);
-            return u.toString();
-        } catch (MalformedURLException e) {
-			if (link.length() >= 100) {
-				eventCallback.onError(new MalformedURLException("Bad URL: " + link.substring(0, 100) + " (...), with base URL: " + baseurl).initCause(e));
-			} else {
-				eventCallback.onError(new MalformedURLException("Bad URL: " + link + ", with base URL: " + baseurl).initCause(e));
-			}
-            return link;
-        }
+	
+	private void addLinkToList(String link, String baseUrl, List<String> list) {
+		if (link.startsWith("data:image")) {
+			return;
+		}
+		try {
+			URL u = new URL(new URL(baseUrl), link);
+			link = u.toString();
+		} catch (MalformedURLException e) {
+			return;
+		}
+		
+		if (!isLinkValid(link) || list.contains(link)) {
+			return;
+		} else {
+			list.add(link);
+		}
     }
 
     private String getFileName(String url) {
