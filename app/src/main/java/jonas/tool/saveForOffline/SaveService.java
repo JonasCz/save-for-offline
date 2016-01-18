@@ -75,7 +75,8 @@ private NotificationTools notificationTools;
 			notificationTools.notifySaveStarted(executor.getQueue().size());
 				
 			pageSaver.getOptions().setUserAgent(sharedPreferences.getString("user_agent", getResources().getStringArray(R.array.entries_list_preference)[1]));
-			pageSaver.getOptions().setCache(getApplicationContext().getExternalCacheDir(),1024 * 1024 * 30);
+			//cache is leaking and growing forever for some reason, so disable cache for now.
+			//pageSaver.getOptions().setCache(getApplicationContext().getExternalCacheDir(), 1024 * 1024 * 15);
             boolean success = pageSaver.getPage(pageUrl, destinationDirectory, "index.html");
 			
 			if (pageSaver.isCancelled() || !success) {
