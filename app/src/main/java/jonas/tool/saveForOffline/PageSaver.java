@@ -1,7 +1,4 @@
 /**
-
- This file is part of saveForOffline, an app which saves / downloads complete webpages.
-
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 2 of the License, or
@@ -16,10 +13,26 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
  **/
+ 
+/**
+ This file is part of Save For Offline, an Android app which saves / downloads complete webpages for offine reading.
+**/
+ 
+/**
+ If you modify, redistribute, or write something based on this or parts of it, you MUST,
+ I repeat, you MUST comply with the GPLv2+ license. This means that if you use or modify
+ my code, you MUST release the source code of your modified version, if / when this is
+ required under the terms of the license.
+ 
+ If you cannot / do not want to do this, DO NOT USE MY CODE. Thanks.
+ 
+ (I've added this message to to the source because it's been used in severeral proprietary
+ closed source apps, which I don't want, and which is also a violation of the liense.)
+**/
 
 /**
- This was originally based on https://github.com/PramodKhare/GetMeThatPage/
- with lots of improvements.
+ Written by Jonas Czech (JonasCz, stackoverflow.com/users/4428462/JonasCz and github.com/JonasCz) originally and partially based on https://github.com/PramodKhare/GetMeThatPage/
+ with lots of improvements. (4428462jonascz/eafc4d1afq)
  **/
 
 package jonas.tool.saveForOffline;

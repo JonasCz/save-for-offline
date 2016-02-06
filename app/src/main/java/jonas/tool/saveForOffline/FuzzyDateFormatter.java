@@ -1,12 +1,17 @@
+/**
+ This file is part of Save For Offline, an Android app which saves / downloads complete webpages for offine reading.
+ **/
+ 
+/**
+ * @author Ionut G. Stan <ionut.g.stan@gmail.com>
+ * Modified by JonasCz (Refactored a bit)
+ */
+
 package jonas.tool.saveForOffline;
 
 import java.util.Calendar;
 import java.text.*;
 import java.util.*;
-
-/**
- * @author Ionut G. Stan <ionut.g.stan@gmail.com>
- */
 
 public class FuzzyDateFormatter {
 
