@@ -1,4 +1,4 @@
-#### Note:
+**Note:**
 Do not use the Play Store version, as it is outdated and broken.
 
 # Save For Offline
@@ -9,7 +9,7 @@ In you web browser select 'Share', and then 'Save For Offline'
 
 ## Features
 
-* Save real HTML files which can be opened in other apps / devices
+* Saves real HTML files which can be opened in other apps / devices
 
 * Download & save entire web pages with all assets for offline reading & viewing
 
@@ -23,10 +23,19 @@ In you web browser select 'Share', and then 'Save For Offline'
 
 * User agent change, allows to save either desktop or mobile version of pages
 
-* Nice UI (In my opinion anyway & needs more testing on different devices and screen sizes)
+* Nice UI for both phones and tablets, with various choices for layout and appearance.
 
+## Download
 
-## Screenshots
+* Head to the [Releases section](http://github.com/JonasCz/save-for-offline/releases) to download an APK.
+
+* It's also available [on F-Droid](https://f-droid.org/repository/browse/?fdid=jonas.tool.saveForOffline)
+
+Remember: The play store version is old, broken, and not recommended !
+
+Please report any bugs you find, and contribute if you can!
+
+## Screenshots:
 #### Grid layout for the list of all saved pages.
 ![Grid layout](https://raw.githubusercontent.com/JonasCz/save-for-offline/master/screenshots/gridlayout.png)
 ***
@@ -41,29 +50,39 @@ In you web browser select 'Share', and then 'Save For Offline'
 
 More screenshots can be found in the [screenshots directory](https://github.com/JonasCz/save-for-offline/master/screenshots/).
 
-## Download
-
-* Head to the [Releases section](http://github.com/JonasCz/save-for-offline/releases) to download an APK.
-
-* It's also available [on F-Droid]()
-
-Remember: The play store version is old, broken, and not recommended !
-
-Please report any bugs you find, and contribute if you can!
-
 ## About
 
-#### This app uses
+#### Known bugs:
+
+* (Device / Android version specific) Thumbnails of saved pages don't show up in the list - this can't be fixed, as it's a bug / limitation in the underlying Android WebView component.
+
+* Sometimes does not save stylesheets or other assets - the only problematic site I know of is Wikipedia, where stylesheets (CSS) don't get saved properly, but is otherwise OK - Still trying to figure out why.
+ 
+* Occasionally fails when it encounters a redirect - also trying to figure out why.
+
+* If there are multiple image or asset references on the page pointing to the same URL, but that URL delivers a something different each time, only the first version of the asset will be saved. Maybe this is also the cause of the Wikipedia issue. - Can't really figure out a good way to fix this.
+
+* Other, occasional, random crashes.
+
+If you can fix any of these issues, please do submit a PR!
+
+#### Roadmap:
+
+* General stability and reliability fixes.
+
+#### This app uses:
 
 * [FuzzyDateFormatter](http://github.com/igstan/fuzzyDateFormatter/)
 
 * [GetMeThatPage](https://github.com/PramodKhare/GetMeThatPage/) (not anymore)
 
-* OkHttp
+* [OkHttp](https//github.com/square/OkHttp/)
 
 * [jSoup](http://jsoup.org)
 
-#### Licence is GPLv2+, see the LICENCE file.
+* A few other things, see preferenes > about > credits in the app itself.
+
+#### Licence is GPLv2+, see the LICENCE file:
 
 **Note:** Don't use or modify my code unless you can comply with the license, and release the source
 code of your modifications where necessary. I don't want to see my hard work end up in some commercial
