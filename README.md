@@ -70,6 +70,12 @@ If you can fix any of these issues, please do submit a PR!
 
 * General stability and reliability fixes.
 
+* Import / export feature.
+
+* Code cleanup and refactoring.
+
+* Externalize strings - translations.
+
 #### This app uses:
 
 * [FuzzyDateFormatter](http://github.com/igstan/fuzzyDateFormatter/)
