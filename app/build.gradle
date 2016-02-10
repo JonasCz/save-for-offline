@@ -16,15 +16,14 @@ android {
 
         }
     }
+	compileOptions { 
+	sourceCompatibility JavaVersion.VERSION_1_7 
+	targetCompatibility JavaVersion.VERSION_1_7
+}
 }
 
 dependencies {
     compile 'org.jsoup:jsoup:1.8.3'
     compile 'com.squareup.okhttp:okhttp:2.7.2'
 	compile 'com.squareup.picasso:picasso:2.5.2'
-}
-
-compileOptions { 
-	sourceCompatibility JavaVersion.VERSION_1_7 
-	targetCompatibility JavaVersion.VERSION_1_7
 }
