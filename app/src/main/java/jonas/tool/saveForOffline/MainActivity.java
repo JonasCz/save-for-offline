@@ -397,10 +397,10 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 				dataBase = new Database(MainActivity.this).getWritableDatabase();
 				
 				for (final Object position : selectedPositions) {
-					String fileLocation = gridAdapter.getPropertiesByPosition(position, Database.FILE_LOCATION);
+					String fileLocation = gridAdapter.getPropertiesByPosition((Integer) position, Database.FILE_LOCATION);
 					DirectoryHelper.deleteDirectory(new File(fileLocation).getParentFile());
 					
-					dataBase.delete(Database.TABLE_NAME, Database.ID + "=" + gridAdapter.getPropertiesByPosition(position, Database.ID), null);
+					dataBase.delete(Database.TABLE_NAME, Database.ID + "=" + gridAdapter.getPropertiesByPosition((Integer)position, Database.ID), null);
 					currentProgress++;
 					publishProgress(currentProgress);
 				}

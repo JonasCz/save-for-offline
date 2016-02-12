@@ -285,7 +285,7 @@ public class PageSaver {
                 fos.close();
                 is.close();
 
-            } catch (IllegalArgumentException | IOException | FileNotFoundException e) {
+            } catch (IllegalArgumentException | IOException e) {
 				IOException ex = new IOException("File download failed, URL: " + url + ", Output file path: " + outputFile.getPath());
 				
 				if (isCancelled) {

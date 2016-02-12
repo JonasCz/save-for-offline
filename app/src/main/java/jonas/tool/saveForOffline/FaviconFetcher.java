@@ -160,7 +160,7 @@ public class FaviconFetcher {
 
 			return options;
 
-		} catch (IllegalArgumentException | IOException | FileNotFoundException e) {
+		} catch (IllegalArgumentException | IOException e) {
 			e.printStackTrace();
 			return null;
 		}
