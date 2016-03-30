@@ -36,15 +36,18 @@
 
 package jonas.tool.saveForOffline;
 
-import android.app.*;
-import android.os.*;
-import android.content.*;
-import java.util.concurrent.*;
-import android.database.sqlite.*;
-import java.io.*;
-import android.preference.*;
-import android.util.*;
+import android.app.Service;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.os.IBinder;
+import android.preference.PreferenceManager;
+import android.util.Log;
 import android.widget.Toast;
+
+import java.io.File;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class SaveService extends Service {
 
@@ -155,7 +158,7 @@ public class SaveService extends Service {
 		}
 
 		private String getNewDirectoryPath(String title, String oldDirectoryPath) {
-			String returnString = title.replaceAll("[^a-zA-Z0-9-_\\.]", "_") + DirectoryHelper.createUniqueFilename();
+			String returnString = title.replaceAll("[^a-zA-Z0-9-_\\.]", "_") + DirectoryHelper.createUniqueFilename(); //TODO: Fix this to support non A-Z & 0-9 characters
 
 			File f = new File(oldDirectoryPath);
 			return f.getParentFile().getAbsolutePath() + File.separator  + returnString + File.separator;

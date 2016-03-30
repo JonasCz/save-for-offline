@@ -37,10 +37,10 @@
 
 package jonas.tool.saveForOffline;
 
+import com.squareup.okhttp.Cache;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
-import com.squareup.okhttp.Cache;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -51,20 +51,18 @@ import org.jsoup.select.Elements;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.Iterator;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.SynchronousQueue;
 
 
 public class PageSaver {
@@ -516,7 +514,7 @@ public class PageSaver {
         }
 
         // find css linked with @import  -  needs testing
-        //todo: test this
+        //todo: test this to see if it actually works
         String importString = "@(import\\s*['\"])()([^ '\"]*)";
         pattern = Pattern.compile(importString);
         matcher = pattern.matcher(cssToParse);

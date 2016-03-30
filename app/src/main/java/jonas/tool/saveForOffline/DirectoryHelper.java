@@ -37,25 +37,24 @@
 package jonas.tool.saveForOffline;
 import android.content.SharedPreferences;
 import android.os.Environment;
+import android.util.Log;
 
 import java.io.File;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
-import java.io.*;
-import android.util.*;
 
 public class DirectoryHelper {
 	
 	public static String createUniqueFilename () {
-		//creates filenames based on the date and time, hopefully unique
+		//creates filenames based on the date and time, hopefully unique (TODO: this doesn't work if multiple pages with the same title are saved within 1 sec of each other
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.US);
 		String filename = sdf.format(new Date());
 		return filename;
 	}
 	
 	private static String getStorageDir() {
-		//FIXME!!!! replace this with getExternalFilesDir()
 		String baseDir = Environment.getExternalStorageDirectory().toString();
 		String directory = baseDir + "/Android/data/jonas.tool.saveForOffline/files/";
 		return directory;
