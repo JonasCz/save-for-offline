@@ -51,6 +51,14 @@
 			android:title="Night mode" 
 			android:summary="Use a dark theme, and also use inverted rendering in the viewer (Black becomes white and vice versa). May require app restart to take effect."/>
 
+		<SwitchPreference
+			android:key="default_htmlviewer"
+			android:defaultValue="false"
+			android:switchTextOn="On"
+			android:switchTextOff="Off"
+			android:title="Default html viewer"
+			android:summary="Open page with other application"/>
+
     </PreferenceCategory>
 
 	<PreferenceCategory
