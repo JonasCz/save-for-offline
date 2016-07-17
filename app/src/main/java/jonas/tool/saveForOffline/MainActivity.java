@@ -40,9 +40,11 @@ import android.app.*;
 import android.content.*;
 import android.database.sqlite.*;
 import android.graphics.*;
+import android.net.Uri;
 import android.os.*;
 import android.preference.*;
 import android.view.*;
+import android.webkit.MimeTypeMap;
 import android.widget.*;
 import android.widget.AdapterView.*;
 import java.io.*;
@@ -70,6 +72,7 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 	private ActionBar actionbar;
 
 	private int scrollPosition;
+	private boolean defaultHtmlViewer;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -81,6 +84,8 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 		if (sharedPref.getBoolean("dark_mode", false)) {
 			setTheme(android.R.style.Theme_Holo);
 		}
+		defaultHtmlViewer = sharedPref.getBoolean("default_htmlviewer", false);
+
 		setContentView(R.layout.main);
 		
 		mainGrid = (GridView) findViewById(R.id.List);
@@ -236,23 +241,69 @@ public class MainActivity extends Activity implements SearchView.OnQueryTextList
 					pageLoadDialog.setCancelable(false);
 
 					pageLoadDialog.show();
+                    String filepath = gridAdapter.getPropertiesByPosition(position, Database.FILE_LOCATION);
 
-					Intent i = new Intent(getApplicationContext(),
-										  ViewActivity.class);
-					i.putExtra(Database.ORIGINAL_URL, gridAdapter.getPropertiesByPosition(position, Database.ORIGINAL_URL));
-					i.putExtra(Database.TITLE, gridAdapter.getPropertiesByPosition(position, Database.TITLE));
-					i.putExtra(Database.ID, gridAdapter.getPropertiesByPosition(position, Database.ID));
-					i.putExtra(Database.FILE_LOCATION, gridAdapter.getPropertiesByPosition(position, Database.FILE_LOCATION));
-					i.putExtra(Database.THUMBNAIL, gridAdapter.getPropertiesByPosition(position, Database.THUMBNAIL));
-					i.putExtra(Database.TIMESTAMP, gridAdapter.getPropertiesByPosition(position, Database.TIMESTAMP));
+					if (defaultHtmlViewer) {
 
-					startActivity(i);
+						startDefaultHtmlViewer(filepath);
 
+					} else {
+						try {
+							Intent i = new Intent(getApplicationContext(),
+									ViewActivity.class);
+							i.putExtra(Database.ORIGINAL_URL, gridAdapter.getPropertiesByPosition(position, Database.ORIGINAL_URL));
+							i.putExtra(Database.TITLE, gridAdapter.getPropertiesByPosition(position, Database.TITLE));
+							i.putExtra(Database.ID, gridAdapter.getPropertiesByPosition(position, Database.ID));
+							i.putExtra(Database.FILE_LOCATION, filepath);
+							i.putExtra(Database.THUMBNAIL, gridAdapter.getPropertiesByPosition(position, Database.THUMBNAIL));
+							i.putExtra(Database.TIMESTAMP, gridAdapter.getPropertiesByPosition(position, Database.TIMESTAMP));
 
+							startActivity(i);
+						} catch (Exception e){
+							pageLoadDialog.cancel();
+							Toast.makeText(MainActivity.this, "No application to open  file", Toast.LENGTH_SHORT).show();
+						}
+					}
 				}
 			});
 	}
 
+    private void startDefaultHtmlViewer(String filepath) {
+		pageLoadDialog.cancel();
+
+		final File file = new File(filepath);
+		MimeTypeMap myMime = MimeTypeMap.getSingleton();
+		String mimeType = myMime.getMimeTypeFromExtension(getFileExtension(filepath).substring(1));
+
+		Intent i = new Intent();
+		i.setAction(android.content.Intent.ACTION_VIEW);
+		i.setDataAndType(Uri.fromFile(file), mimeType);
+
+		try {
+			startActivity(i);
+		} catch (Exception e) {
+			Toast.makeText(MainActivity.this, "No application to open  file", Toast.LENGTH_SHORT).show();
+		}
+	}
+
+    private String getFileExtension(String filepath) {
+
+        final File file = new File(filepath);
+        String filename = file.getName().toString();
+
+        String ext = null;
+
+        try {
+            ext = filename.substring(filename.lastIndexOf("."),
+                    filename.length());
+
+        } catch (IndexOutOfBoundsException e) {
+
+            ext = "";
+
+        }
+        return ext;
+    }
 	private void displayData(String searchQuery) {
 
 		gridAdapter.refreshData(searchQuery, sortOrder, true);
