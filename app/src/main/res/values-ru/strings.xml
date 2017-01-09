@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Save For Offline</string>
+	
+	<string name="action_add">Добавить новый</string>
+	<string name="action_delete">Удалить</string>
+	<string name="action_open_in_external">Открыть ссылку</string>
+	<string name="action_bar_subtitle_showing_all">Все сохраненные страницы</string>
+	<string name="one_search_result">Один результат поиска</string>
+	<string name="no_search_results">Нет результатов поиска</string>
+	<string name="num_search_results">результаты поиска</string>
+</resources>
