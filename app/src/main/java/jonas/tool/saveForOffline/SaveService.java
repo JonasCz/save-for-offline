@@ -152,7 +152,7 @@ public class SaveService extends Service {
 
 				notificationTools.notifyFinished(pageSaver.getPageTitle(), newSavedPageDirectory.getPath());
 			} catch (Exception e) {  //so that exceptions don't fpget swallowed and we see them.
-				Toast.makeText(SaveService.this, "SaveService Exception: " + e.getMessage(), Toast.LENGTH_LONG);
+				Toast.makeText(SaveService.this, "SaveService Exception: " + e.getMessage(), Toast.LENGTH_LONG).show();
 				e.printStackTrace();
 			}
 		}

@@ -574,10 +574,12 @@ public class PageSaver {
 		}
 
         if (filename.contains("?")) {
-            filename = filename.substring(0, filename.indexOf("?"));
+            filename = filename.substring(0, filename.indexOf("?")) + filename.substring(filename.indexOf("?") + 1).hashCode();
         }
 
         filename = fileNameReplacementPattern.matcher(filename).replaceAll("_");
+        filename = filename.substring(0, Math.min(200, filename.length()));
+        ;
 
         return filename;
     }
