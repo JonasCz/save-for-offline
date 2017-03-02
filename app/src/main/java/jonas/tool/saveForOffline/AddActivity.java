@@ -64,19 +64,21 @@ import java.util.*;
 public class AddActivity extends Activity {
 	private Button btn_save;
 	private EditText edit_origurl;
+    private TextView tipText;
 
 	private String origurl ;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setTitle("Enter URL to save");
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        setTitle("Enter URL to save");
 		
 		PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
         setContentView(R.layout.add_activity);
 
         btn_save = (Button)findViewById(R.id.save_btn);
-		btn_save.setEnabled(false);
+        tipText = (TextView) findViewById(R.id.tipText);
 
         edit_origurl = (EditText)findViewById(R.id.frst_editTxt);
 		edit_origurl.setText(getIntent().getStringExtra(Intent.EXTRA_TEXT));
@@ -86,22 +88,6 @@ public class AddActivity extends Activity {
 		if (origurl.length() > 0) {
 			startSave(origurl);
 		}
-
-		edit_origurl.addTextChangedListener(new TextWatcher(){
-				public void afterTextChanged(Editable text) {
-					if (edit_origurl.length() == 0) {
-						btn_save.setEnabled(false);
-					} else {
-						btn_save.setEnabled(true);
-					}
-				}
-				public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-				public void onTextChanged(CharSequence s, int start, int before, int count) {}
-		});
-	}
-
-	public void cancelButtonClick(View view) {
-		finish();
 	}
 
 	public void btn_paste(View view) {
@@ -109,24 +95,32 @@ public class AddActivity extends Activity {
 		if (edit_origurl.getText().length() == 0) {
 			edit_origurl.append(clipboard.getText());
 		} else {
-			edit_origurl.append(System.lineSeparator() + clipboard.getText());
-		}
+            edit_origurl.append(System.getProperty("line.separator") + clipboard.getText());
+        }
 	}
 
 	// saveButton click event
 	public void okButtonClick(View view) {
 		origurl = edit_origurl.getText().toString().trim();
-		String[] urls = origurl.split("[\\r\\n]+");
-		for (String url : urls) {
-			if (url.length() > 0 && (url.startsWith("http"))) {
-				startSave(url);	
-			} else if (url.length() > 0) {
-				url = "http://" + url;
-				startSave(url);
+        if (isValidUrlText(origurl)) {
+            String[] urls = origurl.split("[\\r\\n]+");
+            for (String url : urls) {
+                startSave(url);
 			}
-		}
-		
-	}
+        } else {
+            Toast.makeText(this, "Oops, that doesn't look like a valid URL. Make sure you included the 'http://' part.", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private boolean isValidUrlText(String urltext) {
+        String[] urls = urltext.split("[\\r\\n]+");
+        for (String url : urls) {
+            if (url.length() == 0 || (!url.startsWith("http"))) {
+                return false;
+            }
+        }
+        return true;
+    }
 
 
 	private void startSave(String url) {

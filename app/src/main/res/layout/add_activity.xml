@@ -19,22 +19,11 @@
 			android:orientation="vertical">
 
 			<TextView
-				android:layout_height="wrap_content"
-				android:text="Tip: In your web browser, choose 'Share' and then 'Save For Offline' to quickly save pages. You can save multiple URLs, separated by newline."
+				android:layout_height="100dp"
+				android:text="Tip: In your web browser, choose 'Share' and then 'Save For Offline' to quickly save pages. \n\nYou can save multiple URLs, separated by newline.\n"
 				android:layout_width="wrap_content"
 				android:id="@+id/tipText"
-				android:layout_marginRight="146dp"
 				android:layout_marginLeft="5dp"/>
-
-			<Button
-				android:layout_height="wrap_content"
-				style="?android:attr/buttonStyleSmall"
-				android:text="Add from Clipboard"
-				android:layout_width="wrap_content"
-				android:layout_alignParentRight="true"
-				android:onClick="btn_paste"
-				android:id="@+id/pasteButton"
-				android:height="40dp"/>
 
 			<EditText
 				android:id="@+id/frst_editTxt"
@@ -53,15 +42,16 @@
 				android:layout_below="@id/frst_editTxt"
 				android:id="@+id/addactivityLinearLayout1">
 
+
 				<Button
-					style="?android:attr/buttonBarButtonStyle"
-					android:id="@+id/cancel_btn"
 					android:layout_height="wrap_content"
-					android:text="Cancel"
+					style="?android:attr/buttonBarButtonStyle"
+					android:text="URL From Clipboard"
 					android:layout_width="match_parent"
-					android:onClick="cancelButtonClick"
+					android:layout_alignParentRight="true"
+					android:onClick="btn_paste"
 					android:layout_weight="0.5"
-					android:background="@drawable/normal_button_selector"/>
+					android:id="@+id/pasteButton" />
 
 				<Button
 					style="?android:attr/buttonBarButtonStyle"
