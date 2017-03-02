@@ -4,7 +4,6 @@
 	android:layout_width="match_parent"
 	android:layout_height="fill_parent"
 	android:padding="8dp"
-	android:background="#E2E2E2"
 	android:id="@+id/gridCellLayout">
 
 	<ImageView

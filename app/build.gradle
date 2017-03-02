@@ -13,7 +13,9 @@ android {
     }
     buildTypes {
         release {
-
+            lintOptions {
+                disable 'MissingTranslation'
+            }
         }
     }
 	compileOptions { 
