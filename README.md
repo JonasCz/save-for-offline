@@ -27,9 +27,10 @@ In you web browser select 'Share', and then 'Save For Offline'
 
 ## Download
 
-* Head to the [Releases section](http://github.com/JonasCz/save-for-offline/releases) to download an APK.
+Head to the [Releases section](http://github.com/JonasCz/save-for-offline/releases) to download an APK.
 
-* It's also available [on F-Droid](https://f-droid.org/repository/browse/?fdid=jonas.tool.saveForOffline)
+<a href="https://f-droid.org/packages/jonas.tool.saveForOffline/" target="_blank">
+<img src="https://f-droid.org/badge/get-it-on.png" alt="Get it on F-Droid" height="100"/></a>
 
 Remember: The play store version is old, broken, and not recommended !
 
