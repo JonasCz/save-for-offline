@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+  <string name="app_name">Save For Offline</string>
+	
+	<string name="action_add">Ajouter</string>
+	<string name="action_delete">Supprimer</string>
+	<string name="action_open_in_external">Ouvrir le lienpen Link</string>
+	<string name="action_bar_subtitle_showing_all">Toutes les pages sauvegardées</string>
+	<string name="one_search_result">Un résultat de recherche</string>
+	<string name="no_search_results">Aucun résultat trouvé</string>
+	<string name="num_search_results">Résultats de la recherche</string>
+  
+</resources>
