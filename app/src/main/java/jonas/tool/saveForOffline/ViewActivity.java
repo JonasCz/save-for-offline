@@ -122,7 +122,6 @@ public class ViewActivity extends Activity {
 		webview.getSettings().setDisplayZoomControls(false);
 		webview.getSettings().setAllowFileAccess(true);
 		webview.getSettings().setAllowFileAccessFromFileURLs(true);
-		webview.getSettings().setMediaPlaybackRequiresUserGesture(false);
 		webview.getSettings().setDefaultTextEncodingName("UTF-8");
 		
 		webview.setWebViewClient(new WebViewClient() {
