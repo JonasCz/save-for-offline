@@ -1,7 +1,7 @@
 **Warning:**
 
-> This is abandoned at the moment, as I don't have time to work on it. This means you're welcome to report bugs, but I probably won't fix them.
-
+> This is abandoned at the moment, as I don't have time to work on it. This means you're welcome to report bugs, but probably won't fix them.
+>
 > Also, do not use the Play Store version, as it is outdated and broken (someone else uploaded it)
 
 # Save For Offline
