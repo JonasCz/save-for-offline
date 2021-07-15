@@ -1,8 +1,8 @@
 **Warning:**
 
-> This is abandoned at the moment, as I don't have time to work on it. This means you're welcome to report bugs, but probably won't fix them.
->
-> Also, do not use the Play Store version, as it is outdated and broken (someone else uploaded it)
+> This is abandoned, full of bugs, doesn't cope with modern websites, is broken in various ways, may not work on new android versions. I highly recommend using something else: e.g. chrome-based browsers now have offline-page-saving functionality.
+
+> The version on the Play Store is even older and more abandoned (I didn't upload it...), don't use that either.
 
 # Save For Offline
 
